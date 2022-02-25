@@ -38,11 +38,16 @@ y[3,] <- .5*x[1,2:(nT+1)] + .5*x[2,2:(nT+1)] + rnorm(nT, 0, sdo)
 y[4,] <- x[2,2:(nT+1)] + rnorm(nT, 0, sdo)
 y[5,] <- x[2,2:(nT+1)] + rnorm(nT, 0, sdo)
 
+obs <- t(cbind(abs(rnorm(nT, 0, sdo)),
+               abs(rnorm(nT, 0, sdo)),
+               abs(rnorm(nT, 0, sdo)),
+               abs(rnorm(nT, 0, sdo)),
+               abs(rnorm(nT, 0, sdo))))
 
 compile("simpleDFA.cpp")
 dyn.load(dynlib("simpleDFA"))
 
-dataTmb <- list(y =y)
+dataTmb <- list(y =y, obs=obs)
 
 nfac = 2 # Number of factors
 ny = nrow(y) # Number of time series

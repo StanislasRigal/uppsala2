@@ -6,6 +6,8 @@ Type objective_function<Type>::operator() ()
 {
   // Data
   DATA_ARRAY(y);
+  //DATA_ARRAY(logSdO);
+  DATA_ARRAY(obs);
   
   int nSp = y.dim[0];
   int nT = y.dim[1];
@@ -44,7 +46,7 @@ Type objective_function<Type>::operator() ()
   // Observation model
   for(int i = 0; i < nSp; ++i){
     for(int t = 0; t < nT; ++t){
-        nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), sdo, true);
+        nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs(i, t), true);
       //*----------------------- SECTION I --------------------------*/
       // Simulation block for observation equation
       //SIMULATE {
