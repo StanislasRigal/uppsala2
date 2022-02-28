@@ -65,7 +65,7 @@ myFit2 <- runDFA(simObs,NumStates=2,EstCovar=T,Covars=matrix(Zscore(1:25),nrow=1
 
 myFit3 <- runDFA(simObs,NumStates=2,EstCovar=T,indivCovar=T,Covars=matrix(Zscore(1:25),nrow=1))
 
-# test with unconstraaint observation error structure
+# test with unconstraint observation error structure
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 Obs <- dcast(Obs[,c("code_sp","relative_abundance","year")], code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
@@ -133,9 +133,9 @@ Z_hat = (tmbObj$env$parList)(par=tmbOpt$par)$Z
 
 matplot(t(y), pch =20)
 
-matpoints(t(Z_hat %*% x_hat), type = 'l', lwd = 3)
+matpoints(t(Z_hat %*% x_hat[,-1]), type = 'l', lwd = 3)
 
-matplot(t(x_hat), type = 'l')
+matplot(t(x_hat[,-1]), type = 'l')
 
 # Compute AIC
 
@@ -153,6 +153,6 @@ AIC.tmb(tmbObj)
 
 
 # Plot rotated trends, see https://atsa-es.github.io/atsa-labs/sec-dfa-rotating-loadings.html
-matplot(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), type = 'l')
+matplot(t(solve(varimax(Z_hat)$rotmat) %*% x_hat[,-1]), type = 'l')
 
 Z_hat %*% varimax(Z_hat)$rotmat

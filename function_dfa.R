@@ -1,0 +1,114 @@
+library(TMB)
+
+dfa_model_se <- "
+// Dynamic Factor Analysis for multivariate time series
+#include <TMB.hpp>
+
+template<class Type>
+  Type objective_function<Type>::operator() ()
+{
+  // Data
+  DATA_ARRAY(y);
+  //DATA_ARRAY(logSdO);
+  DATA_ARRAY(obs);
+  
+  int nSp = y.dim[0];
+  int nT = y.dim[1];
+  
+  // For one-step-ahead residuals
+  //DATA_ARRAY_INDICATOR(keep, y);
+  
+  // Parameters
+  PARAMETER(logSdO); // Log of st. dev. for the observation error
+  
+  // Loadings matrix
+  PARAMETER_MATRIX(Z);
+  
+  // Latent trends
+  PARAMETER_MATRIX(x);
+  
+  // Observation error standard deviation.
+  Type sdo = exp(logSdO);
+  
+  
+  // Optimization target: negative log-likelihood (nll)
+  Type nll = 0.0;
+  
+  // Latent random walk model. x(0) = 0. 
+  for(int t = 1; t < x.cols(); ++t){
+    for(int f = 0; f < x.rows(); ++f){
+      nll -= dnorm(x(f, t), x(f, t-1), Type(1), true);
+    }
+    
+    // Simulation block for process equation
+    //SIMULATE {
+      //  x(i) = rnorm(x(i-1), sdp);
+      //}
+  }
+  
+  // Observation model
+  for(int i = 0; i < nSp; ++i){
+    for(int t = 0; t < nT; ++t){
+      nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs(i, t), true);
+      //*----------------------- SECTION I --------------------------*/
+        // Simulation block for observation equation
+      //SIMULATE {
+        //  y(i,t) = rnorm(x(t+1), sdo);
+        //}
+    }  
+  }
+  
+  // State the transformed parameters to report
+  // Using ADREPORT will return the point values and the standard errors
+  // Note that we only need to specify this for parameters
+  // we transformed, see section D above
+  // The other parameters, including the random effects (states),
+  // will be returned automatically
+  ADREPORT(sdo);
+  
+  // Report simulated values
+  //SIMULATE{
+    //  REPORT(x);
+    //  REPORT(y);
+    //}
+  
+  return nll;
+  }"
+
+  
+  # Compile .cpp file with TMB DFA model
+  
+  if(!exists('dfamodel')){
+    write(dfa_model_se, file = "dfa_model_se.cpp")
+    dfamodel<-dfa_model_se
+    compile("dfa_model_se.cpp")
+    dyn.load(dynlib("dfa_model_se"))
+  }else if(dfa_model_se != dfamodel){
+    write(dfa_model_se, file = "dfa_model_se.cpp")
+    dfamodel<-dfa_model_se
+    compile("dfa_model_se.cpp")
+    dyn.load(dynlib("dfa_model_se"))
+  }
+
+# Function to zscore error of time series values before DFA
+  
+Zscore_err<-function(err_ts, val_ts){
+  return(err_ts/sd(val_ts,na.rm=T))
+}
+  
+# Function to zscore time series values before DFA
+  
+Zscore<-function(val_ts){
+  return((val_ts-mean(val_ts,na.rm=T))/sd(val_ts,na.rm=T))
+}
+
+
+
+# Function to compute AIC of DFA models
+# Only works if obj has been already optimized
+
+AIC.tmb = function(obj, tol = 0.01) {
+  # Simple convergence check
+  stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
+  as.numeric(2 * obj$env$value.best + 2*sum(obj$env$lfixed()))
+}
