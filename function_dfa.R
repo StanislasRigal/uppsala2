@@ -9,8 +9,8 @@ template<class Type>
 {
   // Data
   DATA_ARRAY(y);
-  //DATA_ARRAY(logSdO);
-  DATA_ARRAY(obs);
+  // Observation standard error
+  DATA_ARRAY(obs_se);
   
   int nSp = y.dim[0];
   int nT = y.dim[1];
@@ -19,7 +19,7 @@ template<class Type>
   //DATA_ARRAY_INDICATOR(keep, y);
   
   // Parameters
-  PARAMETER(logSdO); // Log of st. dev. for the observation error
+  PARAMETER_VECTOR(log_re_sp); // log of random error by species
   
   // Loadings matrix
   PARAMETER_MATRIX(Z);
@@ -27,10 +27,11 @@ template<class Type>
   // Latent trends
   PARAMETER_MATRIX(x);
   
-  // Observation error standard deviation.
-  Type sdo = exp(logSdO);
-  
-  
+  // Random error by species
+  vector<Type> re_sp;
+  re_sp = exp(log_re_sp);
+
+
   // Optimization target: negative log-likelihood (nll)
   Type nll = 0.0;
   
@@ -49,7 +50,8 @@ template<class Type>
   // Observation model
   for(int i = 0; i < nSp; ++i){
     for(int t = 0; t < nT; ++t){
-      nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs(i, t), true);
+      // nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs_se(i, t), true); // without random effect
+      nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       //SIMULATE {
@@ -64,7 +66,7 @@ template<class Type>
   // we transformed, see section D above
   // The other parameters, including the random effects (states),
   // will be returned automatically
-  ADREPORT(sdo);
+  ADREPORT(obs_se);
   
   // Report simulated values
   //SIMULATE{
@@ -139,20 +141,23 @@ make_dfa <- function(data_ts, # dataset of time series
   # Zscore ts value and put se to the same scale
   
   for(i in 1:nrow(data_ts_se)){
-    data_ts_se[i,] <- Zscore_err(data_ts_se[i,], y[i,])
+    data_ts_se[i,] <- Zscore_err(data_ts_se[i,], data_ts[i,])
   }
   data_ts_se <- as.matrix(data_ts_se) 
   data_ts <- as.matrix(t(apply(data_ts,1,Zscore)))
   
   # List of data for DFA
   
-  dataTmb <- list(y = data_ts, obs = data_ts_se)
+  dataTmb <- list(y = data_ts, obs_se = data_ts_se)
   
   # Prepare parameters for DFA
   
   nfac <- nfac # Number of factors
   ny <- nrow(data_ts) # Number of time series
   nT <- ncol(data_ts) # Number of time step
+  
+  set.seed(1)
+  log_re_sp <- runif(ny, 1, 2)
   
   Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
   
@@ -163,7 +168,7 @@ make_dfa <- function(data_ts, # dataset of time series
   
   #List of parameters for DFA
   
-  tmbPar <-  list(logSdO = 0, Z = Zinit,
+  tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
                   x=matrix(c(rep(0, nfac), rnorm(nfac * nT)),
                            ncol = nT+1, nrow = nfac))
   
@@ -179,7 +184,7 @@ make_dfa <- function(data_ts, # dataset of time series
   
   # Make DFA
   
-  tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "simpleDFA")
+  tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se")
   tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
   
   # Check convergence
@@ -215,7 +220,7 @@ make_dfa <- function(data_ts, # dataset of time series
     data_ts_save <- data.frame(code_sp=data_ts_save[,1], data_ts)
     data_ts_se_save <- data.frame(code_sp=data_ts_se_save[,1], data_ts_se)
   }
-  sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
+  sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
   
   data_to_plot_sp <- cbind(melt(data_ts_save, id.vars=names(data_ts_save)[1]),
                            se=melt(data_ts_se_save, id.vars=names(data_ts_se_save)[1])[,3],

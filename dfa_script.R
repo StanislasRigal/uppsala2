@@ -27,17 +27,17 @@ species_sub <- droplevels(species_data[species_data$code_sp %in% c("VANVAN","NUM
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
            code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs <- dcast(Obs[,c("code_sp","Standard_error","year")],
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
              code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
-obs <- obs[,-c(1:2)]
+obs_se <- obs_se[,-c(1:2)]
 y <- y[,-c(1:2)]
-for(i in 1:nrow(obs)){
-  obs[i,] <- Zscore_err(obs[i,], y[i,])
+for(i in 1:nrow(obs_se)){
+  obs_se[i,] <- Zscore_err(obs_se[i,], y[i,])
 }
-obs <- as.matrix(obs) 
+obs_se <- as.matrix(obs_se) 
 y <- as.matrix(t(apply(y,1,Zscore)))
 
-dataTmb <- list(y =y, obs=obs)
+dataTmb <- list(y =y, obs_se=obs_se)
 
 nfac = 2 # Number of factors
 ny = nrow(y) # Number of time series
@@ -49,7 +49,7 @@ constrInd = rep(1:nfac, each = ny) > rep(1:ny,  nfac)
 Zinit[constrInd] = 0
 Zinit
 
-tmbPar =  list(logSdO = 0, Z = Zinit,
+tmbPar =  list(re_sp_para = 1, Z = Zinit,
                x=matrix(c(rep(0, nfac), rnorm(nfac * nT)), ncol = nT+1, nrow = nfac))
 
 ## Set up parameter constraints. Elements set to NA will be fixed and not estimated.
@@ -93,10 +93,10 @@ Z_hat %*% varimax(Z_hat)$rotmat
 
 y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
            code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs <- dcast(Obs[,c("code_sp","Standard_error","year")],
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
              code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
 
-farm_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs, nfac = 2)
-farm_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs, nfac = 3) # best AIC
-farm_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs, nfac = 4)
+farm_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+farm_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
+farm_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
 
