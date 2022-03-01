@@ -125,6 +125,11 @@ make_dfa <- function(data_ts, # dataset of time series
   
   data_ts_save <- as.data.frame(data_ts)
   data_ts_se_save <- as.data.frame(data_ts_se)
+  data_ts_save_long <- cbind(melt(data_ts_save[,-c(2)], id.vars=names(data_ts_save)[1]),
+                             se=melt(data_ts_se_save[,-c(2)], id.vars=names(data_ts_se_save)[1])[,3])
+  names(data_ts_save_long)[2:4] <- c("Year","value_orig","se_orig")
+  data_ts_save_long$Year <- as.numeric(as.character(data_ts_save_long$Year))
+  
   
   # Remove potential column of ts names
   
@@ -158,6 +163,7 @@ make_dfa <- function(data_ts, # dataset of time series
   
   set.seed(1)
   log_re_sp <- runif(ny, 1, 2)
+  #log_re_sp <- rep(1,ny)
   
   Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
   
@@ -190,6 +196,7 @@ make_dfa <- function(data_ts, # dataset of time series
   # Check convergence
   conv <- grepl("relative convergence",tmbOpt$message)
   if(!conv){warning("Convergence issue")}
+  
   sdRep <- summary(sdreport(tmbObj))
   #sdRep[grepl('Z|sdo', rownames(sdRep)),]
   
@@ -201,6 +208,14 @@ make_dfa <- function(data_ts, # dataset of time series
     x_hat <- x_hat[,-c(1)]
   }
   Z_hat <- (tmbObj$env$parList)(par=tmbOpt$par)$Z
+  
+  Z_hat_se <- sdRep[grepl('Z', rownames(sdRep)),2]
+  for(i in 1:(nfac-1)){
+    index_0 <- ny*i
+    Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
+  }
+  Z_hat_se <- matrix(Z_hat_se, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
+  x_hat_se <- matrix(sdRep[grepl('x', rownames(sdRep)),2], nrow=nfac)
   
   ## Compute AIC
   
@@ -220,35 +235,52 @@ make_dfa <- function(data_ts, # dataset of time series
     data_ts_save <- data.frame(code_sp=data_ts_save[,1], data_ts)
     data_ts_se_save <- data.frame(code_sp=data_ts_se_save[,1], data_ts_se)
   }
+  sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
+  sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
+  for(i in 1:nrow(sp_se_ts)){
+    sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
+  }
   sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
   
-  data_to_plot_sp <- cbind(melt(data_ts_save, id.vars=names(data_ts_save)[1]),
+  data_to_plot_sp <- cbind(data_ts_save_long,
+                           melt(data_ts_save, id.vars=names(data_ts_save)[1])[,3],
                            se=melt(data_ts_se_save, id.vars=names(data_ts_se_save)[1])[,3],
-                           pred=melt(sp_ts, id.vars=names(data_ts_se_save)[1])[,3])
-  data_to_plot_sp$Year <- as.numeric(gsub("X", "", as.character(data_to_plot_sp$variable)))
+                           pred=melt(sp_ts, id.vars=names(data_ts_se_save)[1])[,3],
+                           pred_se=melt(sp_se_ts, id.vars=names(data_ts_se_save)[1])[,3])
+  #data_to_plot_sp$Year <- as.numeric(gsub("X", "", as.character(data_to_plot_sp$variable)))
   
   data_to_plot_tr <- data.frame(t(x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
+  data_to_plot_tr_se <- data.frame(t(x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr_rot <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
+  data_to_plot_tr_rot_se <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
-                           rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3])
+                           se=melt(data_to_plot_tr_se, id.vars = "Year")[,3],
+                           rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3],
+                           rot_tr_se=abs(melt(data_to_plot_tr_rot_se, id.vars = "Year")[,3]))
   
-  data_loadings <- melt(data.frame(code_sp=data_ts_save[,1],
-                                   Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp")
-  
+  data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
+                                   Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
+                         se = melt(data.frame(code_sp=data_ts_save[,1],
+                                              abs(Z_hat_se %*% varimax(Z_hat)$rotmat)), id.vars="code_sp")[,3])
+   
   # Plots
   
   plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
     geom_pointrange(aes(ymax = value+se.value, ymin=value-se.value)) + 
-    geom_line(aes(y=pred.value)) + facet_wrap(code_sp ~ ., ncol=4) +
+    geom_line(aes(y=pred.value)) +
+    geom_ribbon(aes(y=pred.value, ymax = pred.value+pred_se.value, ymin=pred.value-pred_se.value), alpha=0.5) +
+    facet_wrap(code_sp ~ ., ncol=4) +
     theme_modern()
   
   plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
     geom_line(aes(colour=variable))+
+    geom_ribbon(aes(ymax = rot_tr.value+rot_tr_se.value, ymin=rot_tr.value-rot_tr_se.value,fill=variable), alpha=0.5) +
     theme_modern()
   
   plot_ld <- ggplot(data_loadings) + 
     geom_col(aes(value, code_sp, fill=variable)) +
     #geom_col(aes(value, reorder(code_sp, -value), fill=variable))+
+    geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
     facet_wrap(variable ~ ., ncol=4) +
     theme_modern() + theme(legend.position = "none")
   

@@ -90,7 +90,12 @@ Z_hat %*% varimax(Z_hat)$rotmat
 
 
 # Test function for farmland birds
+species_sub <- droplevels(species_data[species_data$code_sp %in% c("VANVAN","NUMARQ","ALAARV","HIRRUS",
+                                                                   "MOTFLA","OENOEN","SAXRUB","SYLCOM",
+                                                                   "LANCOL","STUVUL","LINCAN","EMBCIT",
+                                                                   "PASMON","CORFRU","ANTPRA","EMBHOR"),])
 
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
            code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
 obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
@@ -99,4 +104,25 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
 farm_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 farm_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
 farm_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
+
+# Forest bird
+
+species_sub <- droplevels(species_data[species_data$code_sp %in% c("ACCNIS","TETBON","TRIOCH","COLOEN",
+                                                                   "DENMAJ","DRYMAR","PICVIR","JYNTOR",
+                                                                   "DRYMIN","PICTRI","NUCCAR","GARGLA",
+                                                                   "PERATE","LOPCRI","POEPAL","POEMON",
+                                                                   "SITEUR","CERFAM","TURVIS","PHOPHO",
+                                                                   "PHYCOL","PHYSIB","REGREG","FICHYP",
+                                                                   "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+
+forest_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
+forest_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
 
