@@ -224,6 +224,16 @@ make_dfa <- function(data_ts, # dataset of time series
     aic <- AIC.tmb(tmbObj)
     print(aic)
   }
+  
+  H.inv = varimax(Z_hat)$rotmat
+  Z.rot = Z_hat %*% H.inv #maximum variance explained
+  trends.rot = solve(H.inv) %*% x_hat
+  Z_hat<-Z.rot
+  x_hat<-t(trends.rot)
+  x_hat<-t(x_hat)
+  FitSeries<- Z_hat %*% x_hat
+  sp_ts <- data.frame(code_sp=data_ts_save[,1], FitSeries)
+  sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
 
   # Prepare data to plot
   

@@ -132,7 +132,7 @@ n_y <- 25 # number of year
 y <- data.frame(t(rep(NA,(n_y+1))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
 n_sp <- 15 # number of species
-sd_rand <- 0.1# sd of normal draw to simulate observation standard error
+sd_rand <- 0.05# sd of normal draw to simulate observation standard error
 for(i in 1:n_sp){
   set.seed(i)
   a <- rnorm(1,0,0.1) # linear regression coef
