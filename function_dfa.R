@@ -27,9 +27,16 @@ template<class Type>
   // Latent trends
   PARAMETER_MATRIX(x);
   
+  //Test adding random effects explicitly
+  //PARAMETER_MATRIX(eps);
+  
+  // Matrix to hold predicted species trends
+  matrix<Type> x_sp(nSp, nT);
+  
   // Random error by species
   vector<Type> re_sp;
   re_sp = exp(log_re_sp);
+
 
 
   // Optimization target: negative log-likelihood (nll)
@@ -47,11 +54,20 @@ template<class Type>
       //}
   }
   
+  for(int i = 0; i < nSp; ++i) {
+    for(int t = 0; t < nT; ++t) {
+      x_sp(i, t) = (Z.row(i) * x.col(t)).sum();
+    }
+  }
+  
+  
   // Observation model
   for(int i = 0; i < nSp; ++i){
-    for(int t = 0; t < nT; ++t){
+  // Skipping t = 0 when y(i, 0) is fixed at 0. Need to change this if y(i, 0) is not 0.
+  // Also had had to change the index of x from t+1 to t, so that x is fixed at zero at time t=0.
+    for(int t = 1; t < nT; ++t){ 
       // nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs_se(i, t), true); // without random effect
-      nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
+       nll -= dnorm(y(i, t), (Z.row(i) * x.col(t)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       //SIMULATE {
@@ -66,7 +82,8 @@ template<class Type>
   // we transformed, see section D above
   // The other parameters, including the random effects (states),
   // will be returned automatically
-  ADREPORT(obs_se);
+  ADREPORT(re_sp);
+  ADREPORT(x_sp);
   
   // Report simulated values
   //SIMULATE{
@@ -122,7 +139,6 @@ make_dfa <- function(data_ts, # dataset of time series
 {
   
   # Save input data for plot
-  
   data_ts_save <- as.data.frame(data_ts)
   data_ts_se_save <- as.data.frame(data_ts_se)
   data_ts_save_long <- cbind(melt(data_ts_save[,-c(2)], id.vars=names(data_ts_save)[1]),
@@ -138,22 +154,26 @@ make_dfa <- function(data_ts, # dataset of time series
   
   # Remove first year if all se = 0
   
-  if(mean(as.data.frame(data_ts_se)[,1], na.rm=T)==0 & sd(as.data.frame(data_ts_se)[,1], na.rm=T)==0){
-    data_ts_se <- data_ts_se[,-c(1)]
-    data_ts <- data_ts[,-c(1)]
-  }
+  # Jonas: First columns is also needed (the model doesn't 'know' that it is zero).
+  # if(mean(as.data.frame(data_ts_se)[,1], na.rm=T)==0 & sd(as.data.frame(data_ts_se)[,1], na.rm=T)==0){
+  #   data_ts_se <- data_ts_se[,-c(1)]
+  #   data_ts <- data_ts[,-c(1)]
+  # }
   
   # Zscore ts value and put se to the same scale
   
-  for(i in 1:nrow(data_ts_se)){
-    data_ts_se[i,] <- Zscore_err(data_ts_se[i,], data_ts[i,])
-  }
-  data_ts_se <- as.matrix(data_ts_se) 
-  data_ts <- as.matrix(t(apply(data_ts,1,Zscore)))
+  # # Jonas: No need to zscore since we are estimating variances for each series.
+  # for(i in 1:nrow(data_ts_se)){
+  #   data_ts_se[i,] <- Zscore_err(data_ts_se[i,], data_ts[i,])
+  # }
+  # data_ts_se <- as.matrix(data_ts_se) 
+  # data_ts <- as.matrix(t(apply(data_ts,1,Zscore)))
   
   # List of data for DFA
   
-  dataTmb <- list(y = data_ts, obs_se = data_ts_se)
+  # Jonas: Data should be on log scale. The best would be if SEs are also
+  # on the log scale. Here I'm using a delta method approximation.
+  dataTmb <- list(y = log(as.matrix(data_ts)), obs_se = as.matrix(data_ts_se/data_ts))
   
   # Prepare parameters for DFA
   
@@ -161,9 +181,9 @@ make_dfa <- function(data_ts, # dataset of time series
   ny <- nrow(data_ts) # Number of time series
   nT <- ncol(data_ts) # Number of time step
   
-  set.seed(1)
-  log_re_sp <- runif(ny, 1, 2)
-  #log_re_sp <- rep(1,ny)
+  # Worth trying multiple starting values for the optimisation to check that the right optimum is found.
+  set.seed(1) 
+  log_re_sp <- runif(ny, -1, 0)
   
   Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
   
@@ -175,22 +195,21 @@ make_dfa <- function(data_ts, # dataset of time series
   #List of parameters for DFA
   
   tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
-                  x=matrix(c(rep(0, nfac), rnorm(nfac * nT)),
-                           ncol = nT+1, nrow = nfac))
+                  x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
+                           ncol = nT, nrow = nfac))
   
   # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
   
   Zmap <- matrix(ncol = nfac, nrow = ny)
   Zmap[constrInd] <- NA
   Zmap[!constrInd] <- 1:sum(!constrInd)
-  xmap = matrix(ncol <- nT + 1, nrow = nfac)
+  xmap = matrix(ncol = nT, nrow = nfac)
   xmap[,1] <- NA
   xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
   tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
   
   # Make DFA
-  
-  tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se")
+  tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
   tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
   
   # Check convergence
@@ -198,15 +217,22 @@ make_dfa <- function(data_ts, # dataset of time series
   if(!conv){warning("Convergence issue")}
   
   sdRep <- summary(sdreport(tmbObj))
+  
+  
+  # Temporary plot to check results.
+  cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(1996:2020, each = 16)) %>%
+    as.data.frame %>% mutate(species = factor(unlist(rep(obs_se[, 1], 25)))) %>% ggplot(aes(year, y, col = species)) + geom_point() + geom_line(aes(y = Estimate, col = species)) + 
+    geom_ribbon(aes(ymin = Estimate - 2* `Std. Error`, ymax = Estimate + 2* `Std. Error`, col = NULL), alpha = .4) + facet_wrap('species', scales = 'free_y')
+  
+  browser()
+  
   #sdRep[grepl('Z|sdo', rownames(sdRep)),]
   
   # Get point estimates
   #x_hat <- matrix(sdRep[rownames(sdRep)=="x",1], nrow = nfac)
   
   x_hat <- (tmbObj$env$parList)()$x
-  if(mean(x_hat[,1], na.rm=T)==0 & sd(x_hat[,1], na.rm=T)==0){
-    x_hat <- x_hat[,-c(1)]
-  }
+  
   Z_hat <- (tmbObj$env$parList)(par=tmbOpt$par)$Z
   
   Z_hat_se <- sdRep[grepl('Z', rownames(sdRep)),2]
@@ -217,13 +243,17 @@ make_dfa <- function(data_ts, # dataset of time series
   Z_hat_se <- matrix(Z_hat_se, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
   x_hat_se <- matrix(sdRep[grepl('x', rownames(sdRep)),2], nrow=nfac)
   
+  
+  
   ## Compute AIC
   
   if(AIC){
     aic <- AIC.tmb(tmbObj)
     print(aic)
   }
-
+  
+  # Jonas: Code below is now broken due to indexing changes.
+  
   # Prepare data to plot
   
   if(!is.character(data_ts_save[,1]) & !is.factor(data_ts_save[,1])){
@@ -248,7 +278,6 @@ make_dfa <- function(data_ts, # dataset of time series
                            pred=melt(sp_ts, id.vars=names(data_ts_se_save)[1])[,3],
                            pred_se=melt(sp_se_ts, id.vars=names(data_ts_se_save)[1])[,3])
   #data_to_plot_sp$Year <- as.numeric(gsub("X", "", as.character(data_to_plot_sp$variable)))
-  
   data_to_plot_tr <- data.frame(t(x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr_se <- data.frame(t(x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr_rot <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
@@ -287,3 +316,4 @@ make_dfa <- function(data_ts, # dataset of time series
   return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
               plot_sp, plot_tr, plot_ld))
 }
+
