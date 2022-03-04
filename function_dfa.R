@@ -18,7 +18,7 @@ template<class Type>
   //DATA_ARRAY_INDICATOR(keep, y);
   
   // Parameters
-  PARAMETER_VECTOR(log_re_sp); // log of sd for rnadom effect by species
+  PARAMETER_VECTOR(log_re_sp); // log of sd for random effect by species
   
   // Loadings matrix
   PARAMETER_MATRIX(Z);
@@ -55,7 +55,6 @@ template<class Type>
       x_sp(i, t) = (Z.row(i) * x.col(t)).sum();
     }
   }
-  
   
   // Observation model
   for(int i = 0; i < nSp; ++i){
@@ -130,19 +129,18 @@ template<class Type>
   
   make_dfa <- function(data_ts, # dataset of time series
                        data_ts_se, # dataset of standard error of time series 
-                       nfac, # number of trends
-                       init_rand_sd=1, # initial values for the sd of the random effect
-                       AIC=TRUE) # number of trends for the DFA
+                       nfac, # number of trends for the DFA
+                       rand_seed=1, # initial values for the sd of the random effect
+                       AIC=TRUE) # display AIC
   {
     
     # Save input data for plot
     data_ts_save <- as.data.frame(data_ts)
     data_ts_se_save <- as.data.frame(data_ts_se)
-    data_ts_save_long <- cbind(melt(data_ts_save[,-c(2)], id.vars=names(data_ts_save)[1]),
-                               se=melt(data_ts_se_save[,-c(2)], id.vars=names(data_ts_se_save)[1])[,3])
+    data_ts_save_long <- cbind(melt(data_ts_save, id.vars=names(data_ts_save)[1]),
+                               se=melt(data_ts_se_save, id.vars=names(data_ts_se_save)[1])[,3])
     names(data_ts_save_long)[2:4] <- c("Year","value_orig","se_orig")
     data_ts_save_long$Year <- as.numeric(as.character(data_ts_save_long$Year))
-    
     
     # Remove potential column of ts names
     
@@ -179,7 +177,7 @@ template<class Type>
     nT <- ncol(data_ts) # Number of time step
     
     # Worth trying multiple starting values for the optimisation to check that the right optimum is found.
-    set.seed(1) 
+    set.seed(rand_seed) 
     log_re_sp <- runif(ny, -1, 0)
     
     Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
@@ -215,13 +213,14 @@ template<class Type>
     
     sdRep <- summary(sdreport(tmbObj))
     
-    
     # Temporary plot to check results.
-    cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(1996:2020, each = 16)) %>%
-      as.data.frame %>% mutate(species = factor(unlist(rep(obs_se[, 1], 25)))) %>% ggplot(aes(year, y, col = species)) + geom_point() + geom_line(aes(y = Estimate, col = species)) + 
-      geom_ribbon(aes(ymin = Estimate - 2* `Std. Error`, ymax = Estimate + 2* `Std. Error`, col = NULL), alpha = .4) + facet_wrap('species', scales = 'free_y')
+    #cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(as.numeric(names(data_ts)), each = ny)) %>%
+    #  as.data.frame %>%
+    #  mutate(species = factor(unlist(rep(obs_se[, 1], nT)))) %>%
+    #  ggplot(aes(year, y, col = species)) + geom_point() + geom_line(aes(y = Estimate, col = species)) + 
+    #  geom_ribbon(aes(ymin = Estimate - 2* `Std. Error`, ymax = Estimate + 2* `Std. Error`, col = NULL), alpha = .4) + facet_wrap('species', scales = 'free_y')
     
-    browser()
+    #browser()
     
     #sdRep[grepl('Z|sdo', rownames(sdRep)),]
     
@@ -238,9 +237,7 @@ template<class Type>
       Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
     }
     Z_hat_se <- matrix(Z_hat_se, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
-    x_hat_se <- matrix(sdRep[grepl('x', rownames(sdRep)),2], nrow=nfac)
-    
-    
+    x_hat_se <- matrix(c(rep(0,nfac),sdRep[rownames(sdRep)=="x",2]), nrow=nfac)
     
     ## Compute AIC
     
@@ -262,16 +259,19 @@ template<class Type>
       data_ts_save <- data.frame(code_sp=data_ts_save[,1], data_ts)
       data_ts_se_save <- data.frame(code_sp=data_ts_se_save[,1], data_ts_se)
     }
-    sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
-    sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
+    #sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
+    #sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
+    sp_ts <- data.frame(code_sp=data_ts_save[,1], matrix(sdRep[rownames(sdRep)=="x_sp",1], nrow=ny))
+    sp_ts[,-1]<-sp_ts[,-1]+1
+    sp_se_ts <- data.frame(code_sp=data_ts_save[,1], matrix(sdRep[rownames(sdRep)=="x_sp",2], nrow=ny))
     #for(i in 1:nrow(sp_se_ts)){
     #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
     #}
     #sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
-    for(i in 1:nrow(sp_se_ts)){
-      sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], data_ts_save[i,-1])
-      sp_ts[i,-1] <- Zscore_err(sp_ts[i,-1], data_ts_save[i,-1])
-    }
+    #for(i in 1:nrow(sp_se_ts)){
+    #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], data_ts_save[i,-1])
+    #  sp_ts[i,-1] <- Zscore_err(sp_ts[i,-1], data_ts_save[i,-1])
+    #}
     
     data_to_plot_sp <- cbind(data_ts_save_long,
                              melt(data_ts_save, id.vars=names(data_ts_save)[1])[,3],
@@ -298,7 +298,7 @@ template<class Type>
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
       geom_pointrange(aes(ymax = value+se.value, ymin=value-se.value)) + 
       geom_line(aes(y=pred.value)) +
-      geom_ribbon(aes(y=pred.value, ymax = pred.value+pred_se.value, ymin=pred.value-pred_se.value), alpha=0.5) +
+      geom_ribbon(aes(y=pred.value, ymax = pred.value+1.96*pred_se.value, ymin=pred.value-1.96*pred_se.value), alpha=0.5) +
       facet_wrap(code_sp ~ ., ncol=4) +
       theme_modern()
     
@@ -317,3 +317,4 @@ template<class Type>
     return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
                 plot_sp, plot_tr, plot_ld))
   }
+  
