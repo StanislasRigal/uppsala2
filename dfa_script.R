@@ -126,3 +126,34 @@ forest_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
 forest_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
 
+# Simulation to analyse parameter influence on dfa fit
+
+n_y <- 25 # number of year
+y <- data.frame(t(rep(NA,(n_y+1))))
+obs_se <- data.frame(t(rep(NA,(n_y+1))))
+n_sp <- 15 # number of species
+sd_rand <- 0.1# sd of normal draw to simulate observation standard error
+for(i in 1:n_sp){
+  set.seed(i)
+  a <- rnorm(1,0,0.1) # linear regression coef
+  b <- runif(1, -1, 1) # intercept
+  d <- rnorm(n_y) # noise
+  set.seed(10*i)
+  f <- abs(rnorm(n_y,0,sd_rand)) # standard deviation
+  y[i,1] <- obs_se[i,1] <- paste0("SP",i)
+  y[i,2:(n_y+1)] <- a*c(1:n_y)+b+d
+  y[i,2] <- 0
+  y[i,2:(n_y+1)] <- (y[i,2:(n_y+1)]+10)/10
+  obs_se[i,2:(n_y+1)] <- f
+  obs_se[i,2] <- 0
+}
+
+y <- data.table(y)
+obs_se <- data.table(obs_se)
+names(y) <- names(obs_se) <- c("code_sp",1:n_y)
+
+test_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+test_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+test_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
+test_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
+

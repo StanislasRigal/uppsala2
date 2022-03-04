@@ -19,7 +19,7 @@ template<class Type>
   //DATA_ARRAY_INDICATOR(keep, y);
   
   // Parameters
-  PARAMETER_VECTOR(log_re_sp); // log of random error by species
+  PARAMETER_VECTOR(log_re_sp); // log of sd for rnadom effect by species
   
   // Loadings matrix
   PARAMETER_MATRIX(Z);
@@ -134,7 +134,8 @@ AIC.tmb = function(obj, tol = 0.01) {
 
 make_dfa <- function(data_ts, # dataset of time series
                      data_ts_se, # dataset of standard error of time series 
-                     nfac,
+                     nfac, # number of trends
+                     init_rand_sd=1, # initial values for the sd of the random effect
                      AIC=TRUE) # number of trends for the DFA
 {
   
@@ -184,7 +185,7 @@ make_dfa <- function(data_ts, # dataset of time series
   # Worth trying multiple starting values for the optimisation to check that the right optimum is found.
   set.seed(1) 
   log_re_sp <- runif(ny, -1, 0)
-  
+
   Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
   
   # Set constrained elements to zero
@@ -267,10 +268,14 @@ make_dfa <- function(data_ts, # dataset of time series
   }
   sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
   sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
+  #for(i in 1:nrow(sp_se_ts)){
+  #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
+  #}
+  #sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
   for(i in 1:nrow(sp_se_ts)){
-    sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
+    sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], data_ts_save[i,-1])
+    sp_ts[i,-1] <- Zscore_err(sp_ts[i,-1], data_ts_save[i,-1])
   }
-  sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
   
   data_to_plot_sp <- cbind(data_ts_save_long,
                            melt(data_ts_save, id.vars=names(data_ts_save)[1])[,3],

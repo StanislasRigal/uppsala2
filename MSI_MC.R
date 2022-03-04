@@ -71,7 +71,7 @@ ggplot(RES_DFA_farmland, aes(x=year, y=MSI))+
   geom_line(data=RES_farmland,aes(y=Trend), colour="blue", size=1)+ 
   geom_pointrange(data=RES_farmland,aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="blue")
 
-# Influence of each species on MSI
+# Influence of each species on MSI and groups of species
 
 mean_load <- as.data.frame(as.data.frame(farm_nfac3[[3]]) %>% 
                              group_by(variable) %>% summarize(mean_load=mean(value)))
@@ -80,3 +80,17 @@ trend_dfa <- as.matrix(dcast(as.data.frame(farm_nfac3[[2]])[,c("Year","variable"
                              Year~variable, value.var = "rot_tr.value"))
 
 msi_from_trend <- trend_dfa[,-1] %*% (matrix(mean_load$mean_load, ncol=1)/sum(matrix(mean_load$mean_load, ncol=1)))
+
+ggplot(RES_DFA_farmland[-1,], aes(x=year, y=Zscore(MSI))) +
+  geom_point(colour = "green",size=3) +
+  geom_point(data=data.frame(x=1997:2020,y=Zscore(msi_from_trend)),
+             aes(x,y), colour = "blue",size=3) + theme_modern()
+
+dev_from_load <- ddply(as.data.frame(farm_nfac3[[3]]), .(code_sp),
+                       .fun = function(x){dev1 <- x$value[x$variable=="X1"]-mean_load$mean_load[mean_load$variable=="X1"]
+                       dev2 <- x$value[x$variable=="X2"]-mean_load$mean_load[mean_load$variable=="X2"]
+                       dev3 <- x$value[x$variable=="X3"]-mean_load$mean_load[mean_load$variable=="X3"]
+                       return(data.frame(dev1,dev2,dev3))})
+dev_from_load$sig <- paste0(sign(dev_from_load$dev1),sign(dev_from_load$dev2),
+                            sign(dev_from_load$dev3))
+  
