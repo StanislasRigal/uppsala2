@@ -157,3 +157,20 @@ test_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
 test_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
 test_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
+best_aic <- matrix(nrow=4,ncol=100)
+for(i in 1:100){
+  test_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2, rand_seed = i)
+  test_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3, rand_seed = i)
+  test_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4, rand_seed = i)
+  test_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5, rand_seed = i)
+  best_aic[1,i] <- test_nfac2[[7]]
+  best_aic[2,i] <- test_nfac3[[7]]
+  best_aic[3,i] <- test_nfac4[[7]]
+  best_aic[4,i] <- test_nfac5[[7]]
+}
+seed_2 <- which.min(best_aic[1,])
+seed_3 <- which.min(best_aic[2,])
+seed_4 <- which.min(best_aic[3,])
+seed_5 <- which.min(best_aic[4,])
+
+

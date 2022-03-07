@@ -112,18 +112,59 @@ template<class Type>
   
   # Function to zscore time series values before DFA
   
-  Zscore<-function(val_ts){
+  Zscore <- function(val_ts){
     return((val_ts-mean(val_ts,na.rm=T))/sd(val_ts,na.rm=T))
   }
   
   # Function to compute AIC of DFA models
   # Only works if obj has been already optimized
   
-  AIC.tmb = function(obj, tol = 0.01) {
+  AIC.tmb <- function(#obj, tol = 0.01,
+                      data_ts=data_ts, # dataset of time series
+                      data_ts_se=data_ts_se, # dataset of standard error of time series 
+                      nfac=nfac, # number of trends for the DFA
+                      rand_seed=rand_seed) {
+    # Relauch DFA without se=0
+    
+    data_ts[data_ts_se==0] = NA
+    data_ts_se[data_ts_se==0] = NA
+    data_ts <- as.data.table(t(na.omit(t(data_ts))))
+    data_ts_se <- as.data.table(t(na.omit(t(data_ts_se))))
+   
+    dataTmb <- list(y = log(as.matrix(data_ts)), obs_se = as.matrix(data_ts_se/data_ts))
+    nfac <- nfac # Number of factors
+    ny <- nrow(data_ts) # Number of time series
+    nT <- ncol(data_ts) # Number of time step
+    set.seed(rand_seed) 
+    log_re_sp <- runif(ny, -1, 0)
+    Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
+    constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
+    Zinit[constrInd] <- 0
+    tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
+                      x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
+                               ncol = nT, nrow = nfac))
+    Zmap <- matrix(ncol = nfac, nrow = ny)
+    Zmap[constrInd] <- NA
+    Zmap[!constrInd] <- 1:sum(!constrInd)
+    xmap = matrix(ncol = nT, nrow = nfac)
+    xmap[,1] <- NA
+    xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
+    tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
+      
+    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
+    tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+    
+    obj=tmbObj
+    tol=0.01
     # Simple convergence check
     stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
     as.numeric(2 * obj$env$value.best + 2*sum(obj$env$lfixed()))
   }
+  
+  AIC.tmb2 <- function(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed){
+    tryCatch(AIC.tmb(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed),
+             error=function(e) NA)}
+  
   
   # Generalise DFA
   
@@ -168,7 +209,8 @@ template<class Type>
     
     # Jonas: Data should be on log scale. The best would be if SEs are also
     # on the log scale. Here I'm using a delta method approximation.
-    dataTmb <- list(y = log(as.matrix(data_ts)), obs_se = as.matrix(data_ts_se/data_ts))
+    dataTmb <- list(y = log(as.matrix(data_ts)),
+                    obs_se = as.matrix(data_ts_se/data_ts))
     
     # Prepare parameters for DFA
     
@@ -211,10 +253,13 @@ template<class Type>
     conv <- grepl("relative convergence",tmbOpt$message)
     if(!conv){warning("Convergence issue")}
     
-    sdRep <- summary(sdreport(tmbObj))
+    oh = optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
+    diag(oh) = pmax(diag(oh), 1e-5)
+    sdRep = summary(sdreport(tmbObj, hessian.fixed = oh))
+    #sdRep <- summary(sdreport(tmbObj))
     
     # Temporary plot to check results.
-    #cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(as.numeric(names(data_ts)), each = ny)) %>%
+    # cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(as.numeric(names(data_ts)), each = ny)) %>%
     #  as.data.frame %>%
     #  mutate(species = factor(unlist(rep(obs_se[, 1], nT)))) %>%
     #  ggplot(aes(year, y, col = species)) + geom_point() + geom_line(aes(y = Estimate, col = species)) + 
@@ -242,11 +287,9 @@ template<class Type>
     ## Compute AIC
     
     if(AIC){
-      aic <- AIC.tmb(tmbObj)
+      aic <- AIC.tmb2(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed)
       print(aic)
-    }
-    
-    # Jonas: Code below is now broken due to indexing changes.
+    }else{aic <- NA}
     
     # Prepare data to plot
     
@@ -261,9 +304,11 @@ template<class Type>
     }
     #sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
     #sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
-    sp_ts <- data.frame(code_sp=data_ts_save[,1], matrix(sdRep[rownames(sdRep)=="x_sp",1], nrow=ny))
-    sp_ts[,-1]<-sp_ts[,-1]+1
-    sp_se_ts <- data.frame(code_sp=data_ts_save[,1], matrix(sdRep[rownames(sdRep)=="x_sp",2], nrow=ny))
+    sp_ts <- data.frame(code_sp=data_ts_save[,1],
+                        matrix(exp(sdRep[rownames(sdRep)=="x_sp",1]), nrow=ny))
+    #sp_ts[,-1]<-sp_ts[,-1]+1
+    sp_se_ts <- data.frame(code_sp=data_ts_save[,1],
+                           matrix(sdRep[rownames(sdRep)=="x_sp",2], nrow=ny))
     #for(i in 1:nrow(sp_se_ts)){
     #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
     #}
@@ -315,6 +360,6 @@ template<class Type>
       theme_modern() + theme(legend.position = "none")
     
     return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
-                plot_sp, plot_tr, plot_ld))
+                plot_sp, plot_tr, plot_ld, aic))
   }
   
