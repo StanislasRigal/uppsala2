@@ -344,7 +344,7 @@ template<class Type>
       geom_pointrange(aes(ymax = value+se.value, ymin=value-se.value)) + 
       geom_line(aes(y=pred.value)) +
       geom_ribbon(aes(y=pred.value, ymax = pred.value+1.96*pred_se.value, ymin=pred.value-1.96*pred_se.value), alpha=0.5) +
-      facet_wrap(code_sp ~ ., ncol=4) +
+      facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
       theme_modern()
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 

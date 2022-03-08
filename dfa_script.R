@@ -15,10 +15,13 @@ source('function_dfa.R')
 ts_bird_se_allcountry <- readRDS("output/ts_bird_se_allcountry.rds")
 species_data <- readRDS("output/species_data.rds")
 
-# Example with farmland species
+# Clean data 
 
 ts_bird_se_allcountry_data <- ts_bird_se_allcountry[which(!is.na(ts_bird_se_allcountry$relative_abundance) & ts_bird_se_allcountry$CI_inf!=0),]
-ts_bird_se_allcountry_data <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp != names(which(table(ts_bird_se_allcountry_data$code_sp)<=1)),]
+#ts_bird_se_allcountry_data <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp != names(which(table(ts_bird_se_allcountry_data$code_sp)<=1)),]
+
+# Example with farmland species
+
 species_sub <- droplevels(species_data[species_data$code_sp %in% c("VANVAN","NUMARQ","ALAARV","HIRRUS",
                                                                    "MOTFLA","OENOEN","SAXRUB","SYLCOM",
                                                                    "LANCOL","STUVUL","LINCAN","EMBCIT",
@@ -104,6 +107,7 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
 farm_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 farm_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
 farm_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
+farm_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # Forest bird
 
@@ -125,6 +129,7 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
 forest_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
 forest_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
+forest_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # Simulation to analyse parameter influence on dfa fit
 

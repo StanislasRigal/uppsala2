@@ -1,8 +1,13 @@
 # look at abundance for each species
 
-bird_se<-readRDS("output/bird_se.rds")
+bird_se <- readRDS("output/bird_se.rds")
 
-ab_sp <- as.data.frame(bird_se %>% group_by(code_sp) %>% summarize(ab_tot=sum(abund)))
+# Use data from 1998 because low number of routes monitored in 1996 and 1997: https://doi.org/10.34080/os.v17.22684)
+
+bird_se_1998 <- droplevels(bird_se[bird_se$year>1997,])
+saveRDS(bird_se_1998,"output/bird_se_1998.rds")
+
+ab_sp <- as.data.frame(bird_se_1998 %>% group_by(code_sp) %>% summarize(ab_tot=sum(abund)))
 
 ggplot(ab_sp, aes(x=reorder(code_sp, -ab_tot, sum), y=ab_tot)) + 
   geom_bar(stat = "identity")+ theme_classic() + scale_y_continuous(trans = "log")+
@@ -13,7 +18,7 @@ ggplot(ab_sp, aes(x=reorder(code_sp, -ab_tot, sum), y=ab_tot)) +
 
 ## example for one species
 
-data_ex <- droplevels(bird_se[bird_se$code_sp=="CORFRU",])
+data_ex <- droplevels(bird_se_1998[bird_se_1998$code_sp=="CORFRU",])
 timestep <- length(levels(as.factor(data_ex$year)))-1
 
 glm1 <- glm(abund~as.factor(code_route)+as.factor(year), data=data_ex, family = quasipoisson)
@@ -50,7 +55,7 @@ ggplot(tab_plot, aes(year, value)) + geom_line() +
 
 ### for loop from French birds analysis
 
-listSp<-levels(as.factor(bird_se$code_sp))
+listSp<-levels(as.factor(bird_se_1998$code_sp))
   
 i<-0
 for (sp in listSp) {
@@ -60,7 +65,7 @@ for (sp in listSp) {
     
     ## d data for species i
     sp<-listSp[i]
-    d <- droplevels(bird_se[bird_se$code_sp==sp,])
+    d <- droplevels(bird_se_1998[bird_se_1998$code_sp==sp,])
     
     ## Occurrence
     ## number of route followed by year
@@ -312,18 +317,18 @@ get_ts <- function(data_bird_input){
 
 # require(plyr) but need to be done before loading dplyr, see package script
 
-ts_test <- ddply(droplevels(bird_se[bird_se$code_sp %in% levels(as.factor(bird_se$code_sp))[1:5]]),
+ts_test <- ddply(droplevels(bird_se_1998[bird_se_1998$code_sp %in% levels(as.factor(bird_se$code_sp))[1:5]]),
                  .(code_sp), .fun=get_ts, .progress="text")
 
-ts_bird_se_allcountry <- ddply(bird_se, .(code_sp), .fun=get_ts, .progress="text")
+ts_bird_se_allcountry <- ddply(bird_se_1998, .(code_sp), .fun=get_ts, .progress="text")
 
-ts_bird_se_byreg <- ddply(bird_se, .(code_sp, ln_kod), .fun=get_ts, .progress="text")
+ts_bird_se_byreg <- ddply(bird_se_1998, .(code_sp, ln_kod), .fun=get_ts, .progress="text")
 ts_bird_se_byreg_clean <- ts_bird_se_byreg[which(!is.na(ts_bird_se_byreg$relative_abundance)),]
 
-ts_bird_se_byecoreg <- ddply(bird_se, .(code_sp, ecoreg), .fun=get_ts, .progress="text")
+ts_bird_se_byecoreg <- ddply(bird_se_1998, .(code_sp, ecoreg), .fun=get_ts, .progress="text")
 ts_bird_se_byecoreg_clean <- ts_bird_se_byecoreg[which(!is.na(ts_bird_se_byecoreg$relative_abundance)),]
 
-ts_bird_se_bysubecoreg <- ddply(bird_se, .(code_sp, subecoreg), .fun=get_ts, .progress="text")
+ts_bird_se_bysubecoreg <- ddply(bird_se_1998, .(code_sp, subecoreg), .fun=get_ts, .progress="text")
 ts_bird_se_bysubecoreg_clean <- ts_bird_se_bysubecoreg[which(!is.na(ts_bird_se_bysubecoreg$relative_abundance)),]
 
 
