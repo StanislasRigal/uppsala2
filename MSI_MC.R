@@ -26,13 +26,13 @@ ts_forest <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$
 # load main function
 source("function_ts.R")
 
-RES_farmland <- MSI_MC_func(ts_farmland)
+RES_farmland <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
-RES_forest <- MSI_MC_func(ts_forest)
+RES_forest <- MSI_MC_func(ts_forest,SEbaseyear=1998, plotbaseyear=1998)
 
 ggplot(RES_farmland, aes(x=year, y=MSI))+
   geom_point(colour = "dark green",size=3)+
-  ylim(50, NA)+ ylab("MSI (1996= 100 )")+
+  ylim(50, NA)+ ylab("MSI (1998 = 100 )")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend), colour="dark green", size=1)+ theme_modern() +
   geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="dark green")
@@ -43,26 +43,28 @@ farm_nfac3 <- readRDS("output/farm_nfac3.rds")
 prep_data_msi <- function(x){
   x <- droplevels(x)
   x_reshape <- data.frame(code_sp=x$code_sp[1],
-                          year=c(1996,x$Year),
-                          relative_abundance=c(1,x$pred.value*sd(c(1,x$value_orig), na.rm=T)+mean(c(1,x$value_orig), na.rm=T)),
-                          CI_inf=c(1,x$pred.value*sd(c(1,x$value_orig), na.rm=T)+mean(c(1,x$value_orig), na.rm=T)-x$pred_se.value*1.96*sd(c(1,x$value_orig), na.rm=T)))
+                          year=x$Year,
+                          #relative_abundance=c(x$pred.value*sd(x$value_orig, na.rm=T)+mean(x$value_orig, na.rm=T)),
+                          #CI_inf=c(x$pred.value*sd(x$value_orig, na.rm=T)+mean(x$value_orig, na.rm=T)-x$pred_se.value*1.96*sd(x$value_orig, na.rm=T)))
+                          relative_abundance=x$pred.value,
+                          CI_inf=c(x$pred.value-1.96*x$pred_se.value))
   return(x_reshape)
 }
 
 farm_nfac3_reshape <- ddply(as.data.frame(farm_nfac3[[1]]), .(code_sp), .fun = prep_data_msi, .progress="text")
 
-RES_DFA_farmland <- MSI_MC_func(farm_nfac3_reshape)
+RES_DFA_farmland <- MSI_MC_func(farm_nfac3_reshape, SEbaseyear=1998, plotbaseyear=1998)
 
 ggplot(RES_DFA_farmland, aes(x=year, y=MSI))+
   geom_point(colour = "dark green",size=3)+
-  ylim(50, NA)+ ylab("MSI (1996 = 100 )")+
+  ylim(50, NA)+ ylab("MSI (1998 = 100 )")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend), colour="dark green", size=1)+ theme_modern() +
   geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="dark green")
 
 ggplot(RES_DFA_farmland, aes(x=year, y=MSI))+
   geom_point(colour = "green",size=3)+
-  ylim(50, NA)+ ylab("MSI (1996 = 100 )")+
+  ylim(50, NA)+ ylab("MSI (1998 = 100 )")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend), colour="green", size=1)+ theme_modern() +
   geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="green")+
@@ -70,6 +72,21 @@ ggplot(RES_DFA_farmland, aes(x=year, y=MSI))+
   geom_ribbon(data=RES_farmland,aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(data=RES_farmland,aes(y=Trend), colour="blue", size=1)+ 
   geom_pointrange(data=RES_farmland,aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="blue")
+
+forest_nfac4_reshape <- ddply(as.data.frame(forest_nfac4[[1]]), .(code_sp), .fun = prep_data_msi, .progress="text")
+
+RES_DFA_forest <- MSI_MC_func(forest_nfac4_reshape, SEbaseyear=1998, plotbaseyear=1998)
+
+ggplot(RES_DFA_forest, aes(x=year, y=MSI))+
+  geom_point(colour = "green",size=3)+
+  ylim(50, NA)+ ylab("MSI (1998 = 100 )")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), colour="green", size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="green")+
+  geom_point(data=RES_forest,colour = "blue",size=3)+
+  geom_ribbon(data=RES_forest,aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(data=RES_forest,aes(y=Trend), colour="blue", size=1)+ 
+  geom_pointrange(data=RES_forest,aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="blue")
 
 # Influence of each species on MSI and groups of species
 
@@ -83,7 +100,7 @@ msi_from_trend <- trend_dfa[,-1] %*% (matrix(mean_load$mean_load, ncol=1)/sum(ma
 
 ggplot(RES_DFA_farmland[-1,], aes(x=year, y=Zscore(MSI))) +
   geom_point(colour = "green",size=3) +
-  geom_point(data=data.frame(x=1997:2020,y=Zscore(msi_from_trend)),
+  geom_point(data=data.frame(x=1998:2020,y=Zscore(msi_from_trend)),
              aes(x,y), colour = "blue",size=3) + theme_modern()
 
 dev_from_load <- ddply(as.data.frame(farm_nfac3[[3]]), .(code_sp),
