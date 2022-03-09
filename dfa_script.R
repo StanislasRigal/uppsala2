@@ -32,40 +32,47 @@ y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
            code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
 obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
              code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
-obs_se <- obs_se[,-c(1:2)]
-y <- y[,-c(1:2)]
-for(i in 1:nrow(obs_se)){
-  obs_se[i,] <- Zscore_err(obs_se[i,], y[i,])
-}
-obs_se <- as.matrix(obs_se) 
-y <- as.matrix(t(apply(y,1,Zscore)))
+#obs_se <- obs_se[,-c(1:2)]
+#y <- y[,-c(1:2)]
+#for(i in 1:nrow(obs_se)){
+#  obs_se[i,] <- Zscore_err(obs_se[i,], y[i,])
+#}
+#obs_se <- as.matrix(obs_se) 
+#y <- as.matrix(t(apply(y,1,Zscore)))
 
-dataTmb <- list(y =y, obs_se=obs_se)
+# Remove column of ts names
 
-nfac = 2 # Number of factors
-ny = nrow(y) # Number of time series
-nT = ncol(y) # Number of time step
+y <- y %>% select_if(Negate(is.character))
+obs_se <- obs_se %>% select_if(Negate(is.character))
 
-Zinit = matrix(rnorm(ny * nfac), ncol = nfac)
+dataTmb <- list(y =log(as.matrix(y)),
+                obs_se = as.matrix(obs_se/y))
+
+nfac <- 2 # Number of factors
+ny <- nrow(y) # Number of time series
+nT <- ncol(y) # Number of time step
+set.seed(1) 
+log_re_sp <- runif(ny, -1, 0)
+Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
 ## Set constrained elements to zero
-constrInd = rep(1:nfac, each = ny) > rep(1:ny,  nfac)
-Zinit[constrInd] = 0
+constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
+Zinit[constrInd] <- 0
 Zinit
 
-tmbPar =  list(re_sp_para = 1, Z = Zinit,
-               x=matrix(c(rep(0, nfac), rnorm(nfac * nT)), ncol = nT+1, nrow = nfac))
-
+tmbPar <- list(log_re_sp=log_re_sp, Z = Zinit,
+               x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
+                        ncol = nT, nrow = nfac))
 ## Set up parameter constraints. Elements set to NA will be fixed and not estimated.
-Zmap = matrix(ncol = nfac, nrow = ny)
-Zmap[constrInd] = NA
-Zmap[!constrInd] = 1:sum(!constrInd)
-xmap = matrix(ncol = nT + 1, nrow = nfac)
-xmap[,1] = NA
-xmap[(nfac + 1) : length(tmbPar$x)] = 1:(length(tmbPar$x) - nfac)
-tmbMap = list(Z = as.factor(Zmap), x = as.factor(xmap))
+Zmap <- matrix(ncol = nfac, nrow = ny)
+Zmap[constrInd] <- NA
+Zmap[!constrInd] <- 1:sum(!constrInd)
+xmap <- matrix(ncol = nT, nrow = nfac)
+xmap[,1] <- NA
+xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
+tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
 
-tmbObj = MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "simpleDFA")
-tmbOpt = nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se")
+tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
 tmbOpt$message
 sdRep <- summary(sdreport(tmbObj))
 sdRep[grepl('Z|sdo', rownames(sdRep)),]
@@ -90,6 +97,39 @@ AIC.tmb(tmbObj)
 ## Plot rotated trends, see https://atsa-es.github.io/atsa-labs/sec-dfa-rotating-loadings.html
 matplot(t(solve(varimax(Z_hat)$rotmat) %*% x_hat[,-1]), type = 'l')
 Z_hat %*% varimax(Z_hat)$rotmat
+
+# Simulate the data (same code as above)
+set.seed(553)
+mSimTmb <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
+simTmb <- mSimTmb$simulate(complete = T)
+# Fit the model to check estimation
+mCheckTmb <- MakeADFun(list(y = simTmb$y,obs_se = simTmb$obs_se), # Note difference in this argument
+                       tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
+fCheckTmb <- nlminb(mCheckTmb$par, mCheckTmb$fn, mCheckTmb$gr)
+fCheckTmb$message
+
+nrep <- 200 # Number of replicates
+set.seed(999) # Set the random seed to be able to reproduce the simulation
+# Create matrix to keep track of replicate test statistic values
+repsT <- matrix(NA, nrow=nrep, ncol=2)
+colnames(repsT) <- c("Mean", "SD")
+# Parameter to use to simulate
+parSp <- m2pTmb$env$par
+# Set to estimated values
+parSp[1:2] <- f2pTmb$par
+for(i in 1:nrep){ # For each replicate
+  yrep <- mSimTmb$simulate(par=parSp)$y # simulate observations
+  repsT[i, "Mean"] <- mean(yrep)
+  repsT[i, "SD"] <- sd(yrep)
+}
+
+
+
+
+
+
+
+
 
 
 # Test function for farmland birds
@@ -127,9 +167,94 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
                 code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
 
 forest_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
-forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
-forest_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4)
+forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+forest_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) # best AIC
 forest_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
+
+# All common birds
+
+species_sub <- droplevels(species_data[species_data$code_sp %in%
+                                         levels(as.factor(species_data$code_sp))[c(1:24,26:48,50:65,67:93,95:116,118:137,139:144,147:169,171:187,189:253)],])
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
+
+y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+
+all_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+all_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+all_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) 
+all_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
+
+# Distinguish north populations from south populations
+ts_bird_se_byecoreg <- readRDS("output/ts_bird_se_byecoreg.rds")
+ts_bird_se_byecoreg_data <- ts_bird_se_byecoreg[which(!is.na(ts_bird_se_byecoreg$relative_abundance)),]
+
+ts_bird_se_byecoreg_data$code_sp <- paste0(ts_bird_se_byecoreg_data$code_sp,
+                                           sep="_", ts_bird_se_byecoreg_data$ecoreg)
+
+species_sub <- expand.grid(code_sp = c("VANVAN","NUMARQ","ALAARV","HIRRUS",
+                                       "MOTFLA","OENOEN","SAXRUB","SYLCOM",
+                                       "LANCOL","STUVUL","LINCAN","EMBCIT",
+                                       "PASMON","CORFRU","ANTPRA","EMBHOR"),
+                           eco_reg = c("north","south"))
+species_sub <- merge(species_sub,species_data,by="code_sp",all.x=T)
+species_sub$code_sp_eco <- paste0(species_sub$code_sp,
+                                  sep="_", species_sub$eco_reg)
+species_sub$name_long_eco <- paste0(species_sub$name_long,
+                                    sep="_", species_sub$eco_reg)
+species_sub <- merge(species_sub,
+                     data.frame(code_sp_eco=levels(as.factor(ts_bird_se_byecoreg_data[,"code_sp"]))),
+                     by="code_sp_eco")
+
+Obs <- ts_bird_se_byecoreg_data[ts_bird_se_byecoreg_data$code_sp %in% species_sub$code_sp_eco,]
+
+Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
+
+y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+
+farm_eco_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+farm_eco_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+farm_eco_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) 
+farm_eco_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
+
+# forest by eco region
+
+species_sub <- expand.grid(code_sp = c("TRIOCH","DENMAJ","DRYMAR","JYNTOR",
+                                       "GARGLA","PERATE","LOPCRI","POEMON",
+                                       "CERFAM","TURVIS","PHOPHO","PHYCOL",
+                                       "PHYSIB","REGREG","FICHYP","ANTTRI",
+                                       "SPISPI","PYRPYR"),
+                           eco_reg = c("north","south"))
+species_sub <- merge(species_sub,species_data,by="code_sp",all.x=T)
+species_sub$code_sp_eco <- paste0(species_sub$code_sp,
+                                  sep="_", species_sub$eco_reg)
+species_sub$name_long_eco <- paste0(species_sub$name_long,
+                                    sep="_", species_sub$eco_reg)
+species_sub <- merge(species_sub,
+                     data.frame(code_sp_eco=levels(as.factor(ts_bird_se_byecoreg_data[,"code_sp"]))),
+                     by="code_sp_eco")
+
+Obs <- ts_bird_se_byecoreg_data[ts_bird_se_byecoreg_data$code_sp %in% species_sub$code_sp_eco,]
+
+Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
+
+y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
+obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+
+forest_eco_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
+forest_eco_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+forest_eco_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) 
+forest_eco_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # Simulation to analyse parameter influence on dfa fit
 
@@ -178,4 +303,47 @@ seed_3 <- which.min(best_aic[2,])
 seed_4 <- which.min(best_aic[3,])
 seed_5 <- which.min(best_aic[4,])
 
+# Analyse DFA results
+
+farm_nfac3_val <- dcast(farm_nfac3[[3]], code_sp~variable, value.var = "value")
+farm_nfac3_se <- dcast(farm_nfac3[[3]], code_sp~variable, value.var = "se.value")
+names(farm_nfac3_se)[2:4] <- c("se_X1","se_X2","se_X3")
+farm_nfac3_load <- merge(farm_nfac3_val, farm_nfac3_se, by="code_sp")
+
+ggplot(farm_nfac3_load, aes(x=X1, y=X2)) + geom_point() +
+  geom_pointrange(aes(ymax = X2+se_X2, ymin=X2-se_X2)) +
+  geom_errorbarh(aes(xmax = X1+se_X1, xmin=X1-se_X1)) +
+  theme_modern()
+
+forest_nfac4_val <- dcast(forest_nfac4[[3]], code_sp~variable, value.var = "value")
+forest_nfac4_se <- dcast(forest_nfac4[[3]], code_sp~variable, value.var = "se.value")
+names(forest_nfac4_se)[2:5] <- c("se_X1","se_X2","se_X3","se_X4")
+forest_nfac4_load <- merge(forest_nfac4_val, forest_nfac4_se, by="code_sp")
+
+ggplot(forest_nfac4_load, aes(x=X1, y=X2)) + geom_point() +
+  geom_pointrange(aes(ymax = X2+se_X2, ymin=X2-se_X2)) +
+  geom_errorbarh(aes(xmax = X1+se_X1, xmin=X1-se_X1)) +
+  theme_modern()
+
+farm_eco_nfac3_val <- dcast(farm_eco_nfac3[[3]], code_sp~variable, value.var = "value")
+farm_eco_nfac3_se <- dcast(farm_eco_nfac3[[3]], code_sp~variable, value.var = "se.value")
+names(farm_eco_nfac3_se)[2:4] <- c("se_X1","se_X2","se_X3")
+farm_eco_nfac3_load <- merge(farm_eco_nfac3_val, farm_eco_nfac3_se, by="code_sp")
+farm_eco_nfac3_load$eco_reg <- sub(".*_", "", farm_eco_nfac3_load$code_sp)
+
+ggplot(farm_eco_nfac3_load, aes(x=X1, y=X2, col=eco_reg)) + geom_point() +
+  geom_pointrange(aes(ymax = X2+se_X2, ymin=X2-se_X2)) +
+  geom_errorbarh(aes(xmax = X1+se_X1, xmin=X1-se_X1)) +
+  theme_modern()
+
+forest_eco_nfac3_val <- dcast(forest_eco_nfac3[[3]], code_sp~variable, value.var = "value")
+forest_eco_nfac3_se <- dcast(forest_eco_nfac3[[3]], code_sp~variable, value.var = "se.value")
+names(forest_eco_nfac3_se)[2:4] <- c("se_X1","se_X2","se_X3")
+forest_eco_nfac3_load <- merge(forest_eco_nfac3_val, forest_eco_nfac3_se, by="code_sp")
+forest_eco_nfac3_load$eco_reg <- sub(".*_", "", forest_eco_nfac3_load$code_sp)
+
+ggplot(forest_eco_nfac3_load, aes(x=X1, y=X2, col=eco_reg)) + geom_point() +
+  geom_pointrange(aes(ymax = X2+se_X2, ymin=X2-se_X2)) +
+  geom_errorbarh(aes(xmax = X1+se_X1, xmin=X1-se_X1)) +
+  theme_modern()
 

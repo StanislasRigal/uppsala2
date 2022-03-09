@@ -2,7 +2,7 @@
 
 bird_se <- readRDS("output/bird_se.rds")
 
-# Use data from 1998 because low number of routes monitored in 1996 and 1997: https://doi.org/10.34080/os.v17.22684)
+# Use data from 1998 because low number of routes monitored in 1996 and 1997: https://doi.org/10.34080/os.v17.22684 )
 
 bird_se_1998 <- droplevels(bird_se[bird_se$year>1997,])
 saveRDS(bird_se_1998,"output/bird_se_1998.rds")
