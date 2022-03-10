@@ -122,59 +122,18 @@ template<class Type>
   # Only works if obj has been already optimized
   # AIC is computed excluding zero variance
   
-  AIC.tmb <- function(#obj,
-                      tol = 0.01,
-                      data_ts=data_ts,
-                      data_ts_se=data_ts_se,
-                      nfac=nfac,
-                      rand_seed=rand_seed) {
-    
-    # Relauch DFA without se=0
-    
-    data_ts[data_ts_se==0] <- NA
-    data_ts_se[data_ts_se==0] <- NA
-    data_ts <- as.data.table(t(na.omit(t(data_ts))))
-    data_ts_se <- as.data.table(t(na.omit(t(data_ts_se))))
-   
-    dataTmb <- list(y = log(as.matrix(data_ts)), obs_se = as.matrix(data_ts_se/data_ts))
-    nfac <- nfac 
-    ny <- nrow(data_ts) 
-    nT <- ncol(data_ts) 
-    set.seed(rand_seed) 
-    log_re_sp <- runif(ny, -1, 0)
-    Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
-    constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
-    Zinit[constrInd] <- 0
-    tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
-                      x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
-                               ncol = nT, nrow = nfac))
-    Zmap <- matrix(ncol = nfac, nrow = ny)
-    Zmap[constrInd] <- NA
-    Zmap[!constrInd] <- 1:sum(!constrInd)
-    xmap <- matrix(ncol = nT, nrow = nfac)
-    xmap[,1] <- NA
-    xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
-    tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
-      
-    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
-    tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
-    
-    obj <- tmbObj
-    tol <- tol
-    
+  AIC.tmb <- function(obj, tol = 0.01, dontCount = 0) {
     # Simple convergence check
-    
     stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
     
     # AIC
     
-    as.numeric(2 * obj$env$value.best + 2*sum(obj$env$lfixed()))
+    as.numeric(2 * obj$env$value.best + 2*(sum(obj$env$lfixed()) - dontCount))
   }
   
   # Prevent function to stop (to be use in loops)  
-  
-  AIC.tmb2 <- function(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed){
-    tryCatch(AIC.tmb(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed),
+  AIC.tmb2 <- function(obj, dontCount = 0){
+    tryCatch(AIC.tmb(obj, dontCount),
              error=function(e) NA)}
   
   
@@ -200,23 +159,6 @@ template<class Type>
     
     data_ts <- data_ts %>% select_if(Negate(is.character))
     data_ts_se <- data_ts_se %>% select_if(Negate(is.character))
-    
-    # Remove first year if all se = 0
-    
-    # First columns is also needed (the model doesn't 'know' that it is zero).
-    # if(mean(as.data.frame(data_ts_se)[,1], na.rm=T)==0 & sd(as.data.frame(data_ts_se)[,1], na.rm=T)==0){
-    #   data_ts_se <- data_ts_se[,-c(1)]
-    #   data_ts <- data_ts[,-c(1)]
-    # }
-    
-    # Zscore ts value and put se to the same scale
-    
-    # # No need to zscore since we are estimating variances for each series.
-    # for(i in 1:nrow(data_ts_se)){
-    #   data_ts_se[i,] <- Zscore_err(data_ts_se[i,], data_ts[i,])
-    # }
-    # data_ts_se <- as.matrix(data_ts_se) 
-    # data_ts <- as.matrix(t(apply(data_ts,1,Zscore)))
     
     # List of data for DFA
     
@@ -271,19 +213,11 @@ template<class Type>
     # Avoid infinite SE when SD are close or equal to zero
     
     oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
-    diag(oh) <- pmax(diag(oh), 1e-5)
+    singularThreshold = 1e-5
+    nSingular = sum(diag(oh) < singularThreshold)
+    diag(oh) <- pmax(diag(oh), singularThreshold)
     sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
     #sdRep <- summary(sdreport(tmbObj))
-    
-    # Temporary plot to check results.
-    # cbind(y = as.numeric(dataTmb$y), sdRep[grepl( 'x_sp', rownames(sdRep)),], year = rep(as.numeric(names(data_ts)), each = ny)) %>%
-    #  as.data.frame %>%
-    #  mutate(species = factor(unlist(rep(obs_se[, 1], nT)))) %>%
-    #  ggplot(aes(year, y, col = species)) + geom_point() + geom_line(aes(y = Estimate, col = species)) + 
-    #  geom_ribbon(aes(ymin = Estimate - 2* `Std. Error`, ymax = Estimate + 2* `Std. Error`, col = NULL), alpha = .4) + facet_wrap('species', scales = 'free_y')
-    # browser()
-    
-    #sdRep[grepl('Z|sdo', rownames(sdRep)),]
     
     # Get point estimates
     #x_hat <- matrix(sdRep[rownames(sdRep)=="x",1], nrow = nfac)
@@ -301,11 +235,12 @@ template<class Type>
     x_hat_se <- matrix(c(rep(0,nfac),sdRep[rownames(sdRep)=="x",2]), nrow=nfac)
     
     # Compute AIC
-    
     if(AIC){
-      aic <- AIC.tmb2(data_ts=data_ts, data_ts_se=data_ts_se,nfac=nfac,rand_seed=rand_seed)
-      print(aic)
-    }else{aic <- NA}
+      aic <- AIC.tmb2(tmbObj, dontCount = 0) 
+      aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
+      writeLines(paste('AIC: ', aic))
+      writeLines(paste('AIC not counting singular random effects: ', aic2))
+    } else {aic <- NA}
     
     # Prepare data to plot
     
@@ -325,17 +260,6 @@ template<class Type>
                         matrix(exp(sdRep[rownames(sdRep)=="x_sp",1]), nrow=ny))
     sp_se_ts <- data.frame(code_sp=data_ts_save[,1],
                            matrix(sdRep[rownames(sdRep)=="x_sp",2], nrow=ny))
-    
-    #sp_ts <- data.frame(code_sp=data_ts_save[,1], Z_hat %*% x_hat)
-    #sp_se_ts <- data.frame(code_sp=data_ts_save[,1], abs(Z_hat_se %*% x_hat))
-    #for(i in 1:nrow(sp_se_ts)){
-    #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], sp_ts[i,-1])
-    #}
-    #sp_ts <- data.frame(code_sp=data_ts_save[,1], t(apply(Z_hat %*% x_hat,1,Zscore)))
-    #for(i in 1:nrow(sp_se_ts)){
-    #  sp_se_ts[i,-1] <- Zscore_err(sp_se_ts[i,-1], data_ts_save[i,-1])
-    #  sp_ts[i,-1] <- Zscore_err(sp_ts[i,-1], data_ts_save[i,-1])
-    #}
     
     # Data for species time-series plot
     
