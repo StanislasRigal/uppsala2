@@ -236,8 +236,8 @@ template<class Type>
     
     # Compute AIC
     if(AIC){
-      aic <- AIC.tmb2(tmbObj, dontCount = 0) 
-      aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
+      aic <- AIC.tmb(tmbObj, dontCount = 0) 
+      aic2 <- AIC.tmb(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
       writeLines(paste('AIC: ', aic))
       writeLines(paste('AIC not counting singular random effects: ', aic2))
     } else {aic <- NA}

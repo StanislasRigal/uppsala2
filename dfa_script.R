@@ -114,16 +114,20 @@ set.seed(999) # Set the random seed to be able to reproduce the simulation
 repsT <- matrix(NA, nrow=nrep, ncol=2)
 colnames(repsT) <- c("Mean", "SD")
 # Parameter to use to simulate
-parSp <- m2pTmb$env$par
+parSp <- tmbObj$env$par
 # Set to estimated values
-parSp[1:2] <- f2pTmb$par
+parSp[1:47] <- tmbOpt$par
 for(i in 1:nrep){ # For each replicate
-  yrep <- mSimTmb$simulate(par=parSp)$y # simulate observations
+  yrep <- mSimTmb$simulate(complete=T, par=parSp)$y # simulate observations
   repsT[i, "Mean"] <- mean(yrep)
   repsT[i, "SD"] <- sd(yrep)
 }
 
-
+sim <- replicate(50, {
+  simdata <- tmbObj$simulate(par=tmbObj$env$par, complete=TRUE)
+  mSimTmb <- MakeADFun(simdata, tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
+  nlminb(mSimTmb$par, mSimTmb$fn, mSimTmb$gr)$par
+})
 
 
 
@@ -261,19 +265,23 @@ forest_eco_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 n_y <- 25 # number of year
 y <- data.frame(t(rep(NA,(n_y+1))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
-n_sp <- 15 # number of species
-sd_rand <- 0.05# sd of normal draw to simulate observation standard error
+n_sp <- 20 # number of species
+#sd_rand <- 0.05# sd of normal draw to simulate observation standard error
+sd_rand <-0.15
 for(i in 1:n_sp){
   set.seed(i)
-  a <- rnorm(1,0,0.1) # linear regression coef
+  a1 <- rnorm(1,0,0.1) # linear regression coef
+  a2 <- rnorm(1,0,0.0005) # second order coef
+  a3 <- rnorm(1,0,0.0005) # third order coef
   b <- runif(1, -1, 1) # intercept
-  d <- rnorm(n_y) # noise
-  set.seed(10*i)
-  f <- abs(rnorm(n_y,0,sd_rand)) # standard deviation
+  d <- rnorm(n_y,0,2) # noise
+  set.seed(100*i)
+  #f <- abs(rnorm(n_y,0,sd_rand)) # standard deviation
+  f <- runif(n_y,0.1,sd_rand)
   y[i,1] <- obs_se[i,1] <- paste0("SP",i)
-  y[i,2:(n_y+1)] <- a*c(1:n_y)+b+d
+  y[i,2:(n_y+1)] <- a3*(c(1:n_y))^3+a2*c(1:n_y)^2+a1*c(1:n_y)+b+d
   y[i,2] <- 0
-  y[i,2:(n_y+1)] <- (y[i,2:(n_y+1)]+10)/10
+  y[i,2:(n_y+1)] <- abs((y[i,2:(n_y+1)]+10)/10)
   obs_se[i,2:(n_y+1)] <- f
   obs_se[i,2] <- 0
 }
