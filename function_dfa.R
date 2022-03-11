@@ -15,7 +15,7 @@ template<class Type>
   int nT = y.dim[1];
   
   // For one-step-ahead residuals
-  //DATA_ARRAY_INDICATOR(keep, y);
+  DATA_ARRAY_INDICATOR(keep, y);
   
   // Parameters
   PARAMETER_VECTOR(log_re_sp); // log of sd for random effect by species
@@ -63,7 +63,7 @@ template<class Type>
   // Also had had to change the index of x from t+1 to t, so that x is fixed at zero at time t=0.
     for(int t = 1; t < nT; ++t){ 
       // nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs_se(i, t), true); // without random effect
-       nll -= dnorm(y(i, t), (Z.row(i) * x.col(t)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
+       nll -= keep(i) * dnorm(y(i, t), (Z.row(i) * x.col(t)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       SIMULATE {

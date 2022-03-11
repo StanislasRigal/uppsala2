@@ -69,7 +69,11 @@ Zmap[!constrInd] <- 1:sum(!constrInd)
 xmap <- matrix(ncol = nT, nrow = nfac)
 xmap[,1] <- NA
 xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
-tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
+#log_re_spmap <- matrix(ncol = ny, nrow = 1)
+#log_re_spmap[,1] <- NA
+#log_re_spmap[nfac : ny] <- 1:(ny - nfac+1)
+tmbMap <- list(#log_re_sp = as.factor(log_re_spmap),
+               Z = as.factor(Zmap), x = as.factor(xmap))
 
 tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se")
 tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
@@ -84,7 +88,7 @@ x_hat = (tmbObj$env$parList)()$x
 Z_hat = (tmbObj$env$parList)(par=tmbOpt$par)$Z
 
 matplot(t(y), pch =20)
-matpoints(t(Z_hat %*% x_hat[,-1]), type = 'l', lwd = 3)
+matpoints(t(exp(Z_hat %*% x_hat[,-1])), type = 'l', lwd = 3)
 matplot(t(x_hat[,-1]), type = 'l')
 
 ## Compute AIC
@@ -111,27 +115,62 @@ fCheckTmb$message
 nrep <- 200 # Number of replicates
 set.seed(999) # Set the random seed to be able to reproduce the simulation
 # Create matrix to keep track of replicate test statistic values
-repsT <- matrix(NA, nrow=nrep, ncol=2)
-colnames(repsT) <- c("Mean", "SD")
+repsT <- matrix(NA, nrow=nrep, ncol=2*nfac)
+name_vec <- c()
+for(i in 1:nfac){
+  name_vec <- c(name_vec,paste0("Mean_x",i),paste0("SD_x",i))
+}
+colnames(repsT) <- name_vec
 # Parameter to use to simulate
 parSp <- tmbObj$env$par
 # Set to estimated values
-parSp[1:47] <- tmbOpt$par
+parSp[1:length(tmbOpt$par)] <- tmbOpt$par
 for(i in 1:nrep){ # For each replicate
-  yrep <- mSimTmb$simulate(complete=T, par=parSp)$y # simulate observations
-  repsT[i, "Mean"] <- mean(yrep)
-  repsT[i, "SD"] <- sd(yrep)
+  yrep <- mSimTmb$simulate(complete=T, par=parSp)$x # simulate observations
+  for(j in 1:nfac){
+    repsT[i, (2*j-1)] <- mean(yrep[j,])
+    repsT[i, (2*j)] <- sd(yrep[j,])
+  }
 }
 
-sim <- replicate(50, {
-  simdata <- tmbObj$simulate(par=tmbObj$env$par, complete=TRUE)
-  mSimTmb <- MakeADFun(simdata, tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
-  nlminb(mSimTmb$par, mSimTmb$fn, mSimTmb$gr)$par
-})
+hist(repsT[,"Mean_x1"])
+abline(v=mean(x_hat[1,]), col="hotpink", lwd=4)
+hist(repsT[,"SD_x1"])
+abline(v=sd(x_hat[1,]), col="hotpink", lwd=4)
+hist(repsT[,"Mean_x2"])
+abline(v=mean(x_hat[2,]), col="hotpink", lwd=4)
+hist(repsT[,"SD_x2"])
+abline(v=sd(x_hat[2,]), col="hotpink", lwd=4)
+hist(repsT[,"Mean_x3"])
+abline(v=mean(x_hat[3,]), col="hotpink", lwd=4)
+hist(repsT[,"SD_x3"])
+abline(v=sd(x_hat[3,]), col="hotpink", lwd=4)
+
+#sim <- replicate(50, {
+#  simdata <- tmbObj$simulate(par=tmbObj$env$par, complete=TRUE)
+#  mSimTmb <- MakeADFun(simdata, tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
+#  nlminb(mSimTmb$par, mSimTmb$fn, mSimTmb$gr)$par
+#})
 
 
+# Model assumptions
 
+source("function_onesteppred_modif.R")
 
+tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se")
+tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+res2pTmb <- oneStepPredict2(tmbObj, observation.name ="y",
+                           data.term.indicator = "keep",
+                           method="oneStepGaussianOffMode",
+                           trace=FALSE, discrete = F)
+
+qqnorm(res2pTmb$residual,main="", pch=16, cex=0.8)
+qqline(res2pTmb$residual, col="hotpink", lwd=2)
+acf(res2pTmb$residual)
+
+source("function_checkConsistency_modif.R")
+set.seed(1)
+checkConsistency(tmbObj)
 
 
 
