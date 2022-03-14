@@ -394,3 +394,106 @@ ggplot(forest_eco_nfac3_load, aes(x=X1, y=X2, col=eco_reg)) + geom_point() +
   geom_errorbarh(aes(xmax = X1+se_X1, xmin=X1-se_X1)) +
   theme_modern()
 
+# reduce dimension with NMDS
+
+farm_NMDS <- monoMDS(vegdist(farm_nfac3_val[,-1], method = "euclidean"), k=2)
+stressplot(farm_NMDS)
+ggplot(data.frame(farm_NMDS$points), aes(x=MDS1, y=MDS2)) +
+  geom_point() + theme_modern()
+
+farm_eco_NMDS <- monoMDS(vegdist(farm_eco_nfac3_val[,-1], method = "euclidean"), k=2)
+stressplot(farm_eco_NMDS)
+ggplot(data.frame(farm_eco_NMDS$points,eco_reg=sub(".*_", "", farm_eco_nfac3_val$code_sp)),
+       aes(x=MDS1, y=MDS2, col=eco_reg)) +
+  geom_point() + theme_modern()
+
+# Group species a posteriori
+
+dfa_res <- farm_nfac3
+
+dfa_res_val <- dcast(dfa_res[[3]], code_sp~variable, value.var = "value")
+dfa_res_se <- dcast(dfa_res[[3]], code_sp~variable, value.var = "se.value")
+names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
+
+mat_loading <- as.matrix(dfa_res_val[,-1])
+nb_dim <- ncol(farm_nfac3_se) -1 
+weight_loading <- apply(dfa_res_se[,-1], 1, 
+                        FUN= function(x){
+                          vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
+                          return(vol)
+                        })
+weight_loading<-weight_loading/min(weight_loading)
+
+#calculate gap statistic based on number of clusters
+gap_stat <- clusGap(mat_loading,
+                    FUN = kmeans,
+                    nstart = 25,
+                    K.max = 10,
+                    B = 500)
+
+#plot number of clusters vs. gap statistic
+fviz_gap_stat(gap_stat)
+
+nb_group <- 4
+
+df.kmeans <- cclust(mat_loading, nb_group, weights = 1/weight_loading, 
+                    method = "hardcl")
+plot(mat_loading, col=predict(df.kmeans))
+points(df.kmeans@centers, pch="x", cex=2, col=3)
+
+myPCA <- prcomp(mat_loading, scale. = F, center = F)
+
+# Group all info as output
+kmeans_res <- list(data.frame(code_sp=dfa_res_val[,1],
+                         myPCA$x[,1:2],
+                         group=as.factor(predict(df.kmeans)),
+                         dfa_res_val[,-1],
+                         dfa_res_se[,-1]),
+                   data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
+                              df.kmeans@centers %*% myPCA$rotation[,1:2]))
+
+# get area for each group
+find_hull <- function(x){x[chull(x$PC2, x$PC1), ]}
+hulls <- ddply(kmeans_res[[1]], "group", find_hull)
+
+#get average trend for each group
+trend_dfa <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","rot_tr.value")],
+                             Year~variable, value.var = "rot_tr.value"))
+trend_dfa_se <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","rot_tr_se.value")],
+                             Year~variable, value.var = "rot_tr_se.value"))
+mean_trend <- data.frame(trend_dfa[,1],
+                         trend_dfa[,-1] %*% t(df.kmeans@centers),
+                         trend_dfa_se[,-1] %*% t(df.kmeans@centers))
+names(mean_trend) <- c("year",paste0("group_",1:nb_group),
+                       paste0("se_group_",1:nb_group))
+
+centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) 
+
+graph <- setNames(lapply(1:nb_group, function(i){
+  test<-mean_trend[,c(1,i+1, i+nb_group+1)]
+  test$Index_SE<-test[,3]
+  test$Index<-test[,2]
+  ggplot(test, aes(x=year, y=Index)) +
+    geom_line() +
+    geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+    xlab(NULL) + 
+    ylab(NULL) + 
+    theme_modern() + #theme_transparent()+
+    theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+}), names(mean_trend)[2:(nb_group+1)])
+
+
+centroid_c<-tibble(x=centroids$PC1,
+                   y=centroids$PC2,
+                   width=1000,
+                   pie = graph)
+
+# plot final output
+ggplot(kmeans_res[[1]], aes(PC1,PC2, col=group, fill=group)) +
+  geom_point() + geom_polygon(data=hulls, alpha=.2) +
+  geom_point(data=(kmeans_res[[2]]), shape=2) +
+  geom_text(label=kmeans_res[[1]]$code_sp, nudge_x = 0.005, nudge_y = 0.005, check_overlap = T) +
+  geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroid_c) +
+  theme_modern()
+
