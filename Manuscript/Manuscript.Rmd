@@ -1,0 +1,66 @@
+---
+title: Short Paper
+#author:
+#  - name: Alice Anonymous
+#    email: alice@example.com
+#    affiliation: Some Institute of Technology
+#    correspondingauthor: true
+#    footnote: 1
+#  - name: Bob Security
+#    email: bob@example.com
+#    affiliation: Another University
+#address:
+#  - code: Some Institute of Technology
+#    address: Department, Street, City, State, Zip
+#  - code: Another University
+#    address: Department, Street, City, State, Zip
+#footnote:
+#  - code: 1
+#    text: "This is the first author footnote."
+#abstract: |
+#  This is the abstract.
+#  It consists of two paragraphs.
+#keywords: 
+#  - keyword1
+#  - keyword2
+#journal: "An awesome journal"
+#date: "`r Sys.Date()`"
+classoption: preprint, 3p, authoryear
+bibliography: MyLibrary.bib
+linenumbers: false
+numbersections: true
+# Use a CSL with `citation_package = "default"`
+# csl: https://www.zotero.org/styles/elsevier-harvard
+output: 
+  rticles::elsevier_article:
+    keep_tex: true
+    citation_package: natbib
+---
+# Introduction
+
+
+# Materiel and methods
+
+## Bird data
+
+Data on abundance of breeding common bird in Sweden have been obtained from @lindstromSwedishBirdSurvey2021. Abundances of 252 bird species have been monitored between 1996 and 2020 on 716 fixed routes consisting in eight 1km-line transects. Counting has been carried out between 20 May and 5 July of each year and has consisted in reporting all bird except young of the year heard or seen, while slowly walking along the transect. 
+
+## Bird time-series
+
+Time-series have been computed for the 168 species with enough data (more than three consecutive year with data, less than four consecutive year without data, data from the first year, a median of occurrence per year > 3, a median of abundance per year > 5 and an overdispersion < 2) between 1998 and 2020 as the number of routes monitored in 1996 and 1997 was relatively low [@lindstromDistributionPopulationChanges2007].
+
+For each species yearly variations from the first year have been obtained using a quasi poisson Generalised Linear Model as follows:
+
+$$
+log(\operatorname{Abundance}_{i,j,k}) = \alpha_i + \beta_{1}(\operatorname{Year}_j) + \beta_{2}(\operatorname{Route}_k) + \epsilon
+$$
+
+
+
+# Results
+
+# Discussion
+
+
+# References {-}
+

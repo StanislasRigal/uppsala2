@@ -72,13 +72,13 @@ for (sp in listSp) {
     nb_route <- tapply(rep(1,nrow(d)),d$year,sum)
     ## number of route with species i by year
     nb_route_presence <- tapply(ifelse(d$abund>0,1,0),d$year,sum)
-    year<-as.numeric(as.character(levels(as.factor(d$year))))
+    year <- as.numeric(as.character(levels(as.factor(d$year))))
     firstY <- min(year)
     lastY <- max(year)
     timestep <- length(year)-1
     
     ## table for analysis result
-    threshold_occurrence<-3
+    threshold_occurrence <- 3
     tab_ana <- data.frame(year=rep(year,2),val=c(nb_route,nb_route_presence),LL = NA,UL=NA,
                        catPoint=NA,pval=NA,
                        curve=rep(c("route","presence"),each=length(year)))
@@ -95,18 +95,18 @@ for (sp in listSp) {
                                                            "inf_threshold",NA))
     
     # remove criteria
-    remove_sp<-FALSE
+    remove_sp <- FALSE
     
     ## if first year empty
-    if(tab_fig$val[1]==0){remove_sp<-TRUE}
+    if(tab_fig$val[1]==0){remove_sp <- TRUE}
     
     ## if four consecutive years empty
-    ab_vec<-paste(tab_fig$val,collapse="")
-    if(str_detect(ab_vec, "0000")){remove_sp<-TRUE}
+    ab_vec <- paste(tab_fig$val,collapse="")
+    if(str_detect(ab_vec, "0000")){remove_sp <- TRUE}
     
     ## if less than consecutive years
-    ab_vec2<-paste(sign(tab_fig$val),collapse="")
-    if(!str_detect(ab_vec2, "111")){remove_sp<-TRUE}
+    ab_vec2 <- paste(sign(tab_fig$val),collapse="")
+    if(!str_detect(ab_vec2, "111")){remove_sp <- TRUE}
     
     if(anyNA(tab_fig$catPoint) & anyNA(tab_ana$catPoint[tab_ana$curve=="presence"]) & remove_sp==F){
       
@@ -211,7 +211,7 @@ get_ts <- function(data_bird_input){
     timestep <- length(year)-1
     
     ## table for analysis result
-    threshold_occurrence<-3
+    threshold_occurrence <- 3
     tab_ana <- data.frame(year=rep(year,2),val=c(nb_route,nb_route_presence),LL = NA,UL=NA,
                           catPoint=NA,pval=NA,
                           curve=rep(c("route","presence"),each=length(year)))
@@ -228,18 +228,18 @@ get_ts <- function(data_bird_input){
                                                            "inf_threshold",NA))
     
     # remove criteria
-    remove_sp<-FALSE
+    remove_sp <- FALSE
     
     ## if first year empty
-    if(tab_fig$val[1]==0){remove_sp<-TRUE}
+    if(tab_fig$val[1]==0){remove_sp <- TRUE}
     
     ## if four consecutive years empty
-    ab_vec<-paste(tab_fig$val,collapse="")
-    if(str_detect(ab_vec, "0000")){remove_sp<-TRUE}
+    ab_vec <- paste(tab_fig$val,collapse="")
+    if(str_detect(ab_vec, "0000")){remove_sp <- TRUE}
     
     ## if less than consecutive years
-    ab_vec2<-paste(sign(tab_fig$val),collapse="")
-    if(!str_detect(ab_vec2, "111")){remove_sp<-TRUE}
+    ab_vec2 <- paste(sign(tab_fig$val),collapse="")
+    if(!str_detect(ab_vec2, "111")){remove_sp <- TRUE}
     
     if(anyNA(tab_fig$catPoint) & anyNA(tab_ana$catPoint[tab_ana$curve=="presence"]) & remove_sp==F){
       

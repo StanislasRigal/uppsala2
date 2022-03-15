@@ -538,5 +538,6 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
 group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp), name_long=paste0("Species",1:n_sp)))
 group_farm <- group_from_dfa(farm_nfac3,species_farm)
 group_forest <- group_from_dfa(forest_nfac4,species_forest)
+group_all <- group_from_dfa(all_nfac2,species_all)
 group_farm_eco <- group_from_dfa(farm_eco_nfac3,species_farm_eco, eco_reg = T)
 group_forest_eco <- group_from_dfa(forest_eco_nfac3,species_forest_eco, eco_reg = T)
