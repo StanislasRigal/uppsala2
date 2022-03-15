@@ -122,7 +122,7 @@ template<class Type>
   # Only works if obj has been already optimized
   # AIC is computed excluding zero variance
   
-  AIC.tmb <- function(obj, tol = 0.01, dontCount = 0) {
+  AIC.tmb <- function(obj, tol = 0.01, dontCount) {
     # Simple convergence check
     stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
     
@@ -132,8 +132,8 @@ template<class Type>
   }
   
   # Prevent function to stop (to be use in loops)  
-  AIC.tmb2 <- function(obj, dontCount = 0){
-    tryCatch(AIC.tmb(obj, dontCount),
+  AIC.tmb2 <- function(obj, tol = 0.01, dontCount){
+    tryCatch(AIC.tmb(obj, tol = 0.01, dontCount),
              error=function(e) NA)}
   
   
@@ -236,8 +236,8 @@ template<class Type>
     
     # Compute AIC
     if(AIC){
-      aic <- AIC.tmb(tmbObj, dontCount = 0) 
-      aic2 <- AIC.tmb(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
+      aic <- AIC.tmb2(tmbObj, dontCount = 0) 
+      aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
       writeLines(paste('AIC: ', aic))
       writeLines(paste('AIC not counting singular random effects: ', aic2))
     } else {aic <- NA}

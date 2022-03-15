@@ -88,12 +88,15 @@ x_hat = (tmbObj$env$parList)()$x
 Z_hat = (tmbObj$env$parList)(par=tmbOpt$par)$Z
 
 matplot(t(y), pch =20)
-matpoints(t(exp(Z_hat %*% x_hat[,-1])), type = 'l', lwd = 3)
+matpoints(t(matrix(exp(sdRep[rownames(sdRep)=="x_sp",1]), nrow=ny)), type = 'l', lwd = 3)
+# equivalent to
+#matplot(t(y), pch =20)
+#matpoints(t(exp(Z_hat %*% x_hat)), type = 'l', lwd = 3)
 matplot(t(x_hat[,-1]), type = 'l')
 
 ## Compute AIC
 
-AIC.tmb(tmbObj)
+AIC.tmb(tmbObj, dontCount = 0)
 
 #aic = 2 * as.numeric(tmbObj$fn(tmbOpt$par)) + 2 * length(tmbOpt$par)
 #aic
@@ -107,7 +110,7 @@ set.seed(553)
 mSimTmb <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
 simTmb <- mSimTmb$simulate(complete = T)
 # Fit the model to check estimation
-mCheckTmb <- MakeADFun(list(y = simTmb$y,obs_se = simTmb$obs_se), # Note difference in this argument
+mCheckTmb <- MakeADFun(list(y = simTmb$y, obs_se = simTmb$obs_se), # Note difference in this argument
                        tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
 fCheckTmb <- nlminb(mCheckTmb$par, mCheckTmb$fn, mCheckTmb$gr)
 fCheckTmb$message
@@ -116,11 +119,19 @@ nrep <- 200 # Number of replicates
 set.seed(999) # Set the random seed to be able to reproduce the simulation
 # Create matrix to keep track of replicate test statistic values
 repsT <- matrix(NA, nrow=nrep, ncol=2*nfac)
+repsT2 <- matrix(NA, nrow=nrep, ncol=2*ny)
 name_vec <- c()
 for(i in 1:nfac){
   name_vec <- c(name_vec,paste0("Mean_x",i),paste0("SD_x",i))
 }
 colnames(repsT) <- name_vec
+
+name_vec <- c()
+for(i in 1:ny){
+  name_vec <- c(name_vec,paste0("Mean_sp",i),paste0("SD_sp",i))
+}
+colnames(repsT2) <- name_vec
+
 # Parameter to use to simulate
 parSp <- tmbObj$env$par
 # Set to estimated values
@@ -131,21 +142,28 @@ for(i in 1:nrep){ # For each replicate
     repsT[i, (2*j-1)] <- mean(yrep[j,])
     repsT[i, (2*j)] <- sd(yrep[j,])
   }
+  yrep <- mSimTmb$simulate(complete=T, par=parSp)$y # simulate observations
+  for(j in 1:ny){
+    repsT2[i, (2*j-1)] <- mean(yrep[j,])
+    repsT2[i, (2*j)] <- sd(yrep[j,])
+  }
 }
 
-hist(repsT[,"Mean_x1"])
-abline(v=mean(x_hat[1,]), col="hotpink", lwd=4)
-hist(repsT[,"SD_x1"])
-abline(v=sd(x_hat[1,]), col="hotpink", lwd=4)
-hist(repsT[,"Mean_x2"])
-abline(v=mean(x_hat[2,]), col="hotpink", lwd=4)
-hist(repsT[,"SD_x2"])
-abline(v=sd(x_hat[2,]), col="hotpink", lwd=4)
-hist(repsT[,"Mean_x3"])
-abline(v=mean(x_hat[3,]), col="hotpink", lwd=4)
-hist(repsT[,"SD_x3"])
-abline(v=sd(x_hat[3,]), col="hotpink", lwd=4)
+par(mfrow=c(2,2))
+for(i in 1:nfac){
+  hist(repsT[,(2*i-1)])
+  abline(v=mean(x_hat[i,]), col="hotpink", lwd=4)
+  hist(repsT[,(2*i)])
+  abline(v=sd(x_hat[i,]), col="hotpink", lwd=4)
+}
 
+for(i in 1:ny){
+  hist(repsT2[,(2*i-1)])
+  abline(v=mean(Z_hat[i,]), col="hotpink", lwd=4)
+  hist(repsT2[,(2*i)])
+  abline(v=sd(Z_hat[i,]), col="hotpink", lwd=4)
+}
+par(mfrow=c(1,1))
 #sim <- replicate(50, {
 #  simdata <- tmbObj$simulate(par=tmbObj$env$par, complete=TRUE)
 #  mSimTmb <- MakeADFun(simdata, tmbPar, map=tmbMap, random= "x", DLL= "dfa_model_se", silent = TRUE)
@@ -420,7 +438,7 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
   
   # Calculate weight for each species as the inverse of the volume of the n dimension ellipse (one dimension by DFA trends) defined by SE of each loadings (equivallent to semi axes in the ellipse)
   mat_loading <- as.matrix(dfa_res_val[,-1])
-  nb_dim <- ncol(farm_nfac3_se) -1 
+  nb_dim <- ncol(dfa_res_se) -1 
   weight_loading <- apply(dfa_res_se[,-1], 1, 
                           FUN= function(x){
                             vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
@@ -517,6 +535,7 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
   return(list(kmeans_res,final_plot))
 }
 
+group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp), name_long=paste0("Species",1:n_sp)))
 group_farm <- group_from_dfa(farm_nfac3,species_farm)
 group_forest <- group_from_dfa(forest_nfac4,species_forest)
 group_farm_eco <- group_from_dfa(farm_eco_nfac3,species_farm_eco, eco_reg = T)
