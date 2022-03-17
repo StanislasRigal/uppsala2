@@ -179,7 +179,7 @@ tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= "
 tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
 res2pTmb <- oneStepPredict2(tmbObj, observation.name ="y",
                            data.term.indicator = "keep",
-                           method="oneStepGaussianOffMode",
+                           method="oneStepGaussian",
                            trace=FALSE, discrete = F)
 
 qqnorm(res2pTmb$residual,main="", pch=16, cex=0.8)
@@ -285,7 +285,7 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
 
 farm_eco_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 farm_eco_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
-farm_eco_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) 
+farm_eco_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) # best without convergence issue
 farm_eco_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # forest by eco region
@@ -315,7 +315,7 @@ obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
                 code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
 
 forest_eco_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
-forest_eco_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
+forest_eco_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best without convergence issue
 forest_eco_nfac4 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 4) 
 forest_eco_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
@@ -539,5 +539,5 @@ group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp),
 group_farm <- group_from_dfa(farm_nfac3,species_farm)
 group_forest <- group_from_dfa(forest_nfac4,species_forest)
 group_all <- group_from_dfa(all_nfac2,species_all)
-group_farm_eco <- group_from_dfa(farm_eco_nfac3,species_farm_eco, eco_reg = T)
+group_farm_eco <- group_from_dfa(farm_eco_nfac4,species_farm_eco, eco_reg = T)
 group_forest_eco <- group_from_dfa(forest_eco_nfac3,species_forest_eco, eco_reg = T)
