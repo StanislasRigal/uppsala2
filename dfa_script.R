@@ -498,6 +498,9 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
                                   Year~variable, value.var = "rot_tr_se.value"))
   mean_trend <- data.frame(trend_dfa[,1],
                            trend_dfa[,-1] %*% t(df.kmeans@centers),
+                           sqrt(trend_dfa_se[,-1]^2 %*% t(df.kmeans@centers)^2))
+  mean_trend_old <- data.frame(trend_dfa[,1],
+                           trend_dfa[,-1] %*% t(df.kmeans@centers),
                            trend_dfa_se[,-1] %*% t(df.kmeans@centers))
   names(mean_trend) <- c("year",paste0("group_",1:nb_group),
                          paste0("se_group_",1:nb_group))
@@ -532,7 +535,7 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
     geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
     theme_modern()
   
-  return(list(kmeans_res,final_plot))
+  return(list(kmeans_res,final_plot,mean_trend,mean_trend_old))
 }
 
 group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp), name_long=paste0("Species",1:n_sp)))

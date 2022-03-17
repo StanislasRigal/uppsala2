@@ -208,7 +208,7 @@ template<class Type>
     # Check convergence
     
     conv <- grepl("relative convergence",tmbOpt$message)
-    if(!conv){warning("Convergence issue")}
+    if(!conv){warning(paste0("Convergence issue:", tmbOpt$message))}
     
     # Avoid infinite SE when SD are close or equal to zero
     
