@@ -251,7 +251,7 @@ get_ts <- function(data_bird_input){
       coef_yr <- tail(matrix(sglm1$coefficients[,1]), timestep)
       coef_yr <- rbind(1, exp(coef_yr))
       error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-      error_yr <- rbind(0, error_yr)*coef_yr
+      error_yr <- rbind(0, error_yr)
       pval <- c(1,tail(matrix(coefficients(sglm1)[,4]),timestep))
       
       ## CIs

@@ -162,10 +162,9 @@ template<class Type>
     
     # List of data for DFA
     
-    # Data should be on log scale. The best would be if SEs are also
-    # on the log scale. Here I'm using a delta method approximation.
+    # Jonas: se now is on log-scale, so no transformation should be used.
     dataTmb <- list(y = log(as.matrix(data_ts)),
-                    obs_se = as.matrix(data_ts_se/data_ts))
+                    obs_se = as.matrix(data_ts_se))
     
     # Prepare parameters for DFA
     
@@ -257,7 +256,12 @@ template<class Type>
     # Back-transform log values of prediction of species ts
     
     sp_ts <- data.frame(code_sp=data_ts_save[,1],
-                        matrix(exp(sdRep[rownames(sdRep)=="x_sp",1]), nrow=ny))
+                        matrix(sdRep[rownames(sdRep)=="x_sp",1], nrow=ny))
+    
+    # Jonas: This does not work as it will not give the SE of exp(x_sp).
+    # It is better to transform in the plot instead. I.e. plot(exp(x_sp)) and
+    # use ymin = exp(x_sp - 2*x_sp_se), ymax = exp(x_sp + 2*x_sp_se) to get 
+    # confidence bands. I have changed this in plot_sp below.
     sp_se_ts <- data.frame(code_sp=data_ts_save[,1],
                            matrix(sdRep[rownames(sdRep)=="x_sp",2], nrow=ny))
     
@@ -277,31 +281,32 @@ template<class Type>
     # Add rotated trends
     
     data_to_plot_tr_rot <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
-    data_to_plot_tr_rot_se <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
+    
+    #Jonas: The below does not work, i.e. you will not get the correct SE from doing the same transformation as for the prediction.
+    # Getting the SEs for the varimax rotation will be somewhat complicated, better leave it for now, I don't really see that we need them.
+    #data_to_plot_tr_rot_se <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat_se), Year=min(data_to_p´lot_sp$Year):max(data_to_plot_sp$Year))
+    
     data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
-                             se=melt(data_to_plot_tr_se, id.vars = "Year")[,3],
-                             rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3],
-                             rot_tr_se=abs(melt(data_to_plot_tr_rot_se, id.vars = "Year")[,3]))
+                             se=melt(data_to_plot_tr_se, id.vars = "Year")[,3], # This SE is ok as it comes directly from TMB
+                             rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3])
     
     # Data for species loadings
     
     data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
                                            Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
-                           se = melt(data.frame(code_sp=data_ts_save[,1],
-                                                abs(Z_hat_se %*% varimax(Z_hat)$rotmat)), id.vars="code_sp")[,3])
+                           se.value = NA)
     
     # Plots
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
-      geom_pointrange(aes(ymax = value+se.value, ymin=value-se.value)) + 
-      geom_line(aes(y=pred.value)) +
-      geom_ribbon(aes(y=pred.value, ymax = pred.value+1.96*pred_se.value, ymin=pred.value-1.96*pred_se.value), alpha=0.5) +
+      geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
+      geom_line(aes(y=exp(pred.value))) +
+      geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
       facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
       theme_modern()
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
       geom_line(aes(colour=variable))+
-      geom_ribbon(aes(ymax = rot_tr.value+rot_tr_se.value, ymin=rot_tr.value-rot_tr_se.value,fill=variable), alpha=0.5) +
       theme_modern()
     
     plot_ld <- ggplot(data_loadings) + 
