@@ -26,8 +26,8 @@ template<class Type>
   // Latent trends
   PARAMETER_MATRIX(x);
   
-  //Test adding random effects explicitly
-  //PARAMETER_MATRIX(eps);
+  //Mean of latent trends
+  matrix<Type> x_mean(x.rows(), 1);
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
@@ -50,10 +50,18 @@ template<class Type>
      }
     }
   }
+
+  for (int f = 0; f < x.rows(); ++f) {
+    x_mean(f) = x.row(f).sum() / nT;
+    SIMULATE {
+      x_mean(f) = x.row(f).sum() / nT;
+    }
+  }
+
   
   for(int i = 0; i < nSp; ++i) {
     for(int t = 0; t < nT; ++t) {
-      x_sp(i, t) = (Z.row(i) * x.col(t)).sum();
+      x_sp(i, t) = (Z.row(i) * (x.col(t) - x_mean)).sum();
     }
   }
   
@@ -61,13 +69,12 @@ template<class Type>
   for(int i = 0; i < nSp; ++i){
   // Skipping t = 0 when y(i, 0) is fixed at 0. Need to change this if y(i, 0) is not 0.
   // Also had had to change the index of x from t+1 to t, so that x is fixed at zero at time t=0.
-    for(int t = 1; t < nT; ++t){ 
-      // nll -= dnorm(y(i, t), (Z.row(i) * x.col(t+1)).sum(), obs_se(i, t), true); // without random effect
-       nll -= keep(i) * dnorm(y(i, t), (Z.row(i) * x.col(t)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
+    for(int t = 0; t < nT; ++t){ 
+       nll -= keep(i) * dnorm(y(i, t), x_sp(i, t), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       SIMULATE {
-          y(i,t) = rnorm((Z.row(i) * x.col(t)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)));
+          y(i,t) = rnorm((Z.row(i) * (x.col(t) - x_mean)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)));
           REPORT(y);
         }
     }  
@@ -203,7 +210,7 @@ template<class Type>
     
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
     tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
-    
+    browser()
     # Check convergence
     
     conv <- grepl("relative convergence",tmbOpt$message)
