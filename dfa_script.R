@@ -202,10 +202,10 @@ species_sub <- species_farm <-  droplevels(species_data[species_data$code_sp %in
                                                                    "PASMON","CORFRU","ANTPRA","EMBHOR"),])
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
-y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
-           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
-             code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+y <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+             code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 
 farm_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 farm_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3) # best AIC
@@ -224,10 +224,10 @@ species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %i
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 
-y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
-           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
-                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+y <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 
 forest_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 forest_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
@@ -236,17 +236,22 @@ forest_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # All common birds
 
-species_sub <- species_all <- droplevels(species_data[species_data$code_sp %in%
+species_sub <- droplevels(species_data[species_data$code_sp %in%
                                          levels(as.factor(species_data$code_sp))[c(1:24,26:48,50:65,67:93,95:116,118:137,139:144,147:169,171:187,189:253)],])
+ab_sp2 <- readRDS("output/ab_sp2.rds")
 
+# select species representing more than 99 % of the total abundance
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+Obs <- droplevels(Obs[Obs$code_sp %in% levels(as.factor(droplevels(ab_sp2[ab_sp2$perc_cum<0.99,])$code_sp)),])
+#Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
 
-Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
+species_all <- droplevels(species_data[species_data$code_sp %in%
+                                         levels(as.factor(Obs$code_sp)),])
 
-y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
-           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
-                code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+y <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 
 all_nfac2 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 2)
 all_nfac3 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 3)
@@ -429,22 +434,28 @@ ggplot(data.frame(farm_eco_NMDS$points,eco_reg=sub(".*_", "", farm_eco_nfac3_val
 
 # Group species a posteriori
 
-group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
+group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE, weight=FALSE){
   
   # Get loadings from DFA
   dfa_res_val <- dcast(dfa_res[[3]], code_sp~variable, value.var = "value")
   dfa_res_se <- dcast(dfa_res[[3]], code_sp~variable, value.var = "se.value")
   names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
   
-  # Calculate weight for each species as the inverse of the volume of the n dimension ellipse (one dimension by DFA trends) defined by SE of each loadings (equivallent to semi axes in the ellipse)
   mat_loading <- as.matrix(dfa_res_val[,-1])
   nb_dim <- ncol(dfa_res_se) -1 
-  weight_loading <- apply(dfa_res_se[,-1], 1, 
-                          FUN= function(x){
-                            vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
-                            return(vol)
-                          })
-  weight_loading<-weight_loading/min(weight_loading)
+  
+  # Calculate weight for each species as the inverse of the volume of the n dimension ellipse (one dimension by DFA trends) defined by SE of each loadings (equivallent to semi axes in the ellipse)
+  if(weight==TRUE){
+    weight_loading <- apply(dfa_res_se[,-1], 1, 
+                            FUN= function(x){
+                              vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
+                              return(vol)
+                            })
+    weight_loading <- weight_loading/min(weight_loading)
+  }else{
+    weight_loading <- 1
+  }
+  
   
   # Calculate gap statistic to find the best number of clusters
   gap_stat <- clusGap(mat_loading,
@@ -492,16 +503,13 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
   hulls <- ddply(kmeans_res[[1]], "group", find_hull)
   
   # Get average trend for each group
-  trend_dfa <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","rot_tr.value")],
-                               Year~variable, value.var = "rot_tr.value"))
-  trend_dfa_se <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","rot_tr_se.value")],
-                                  Year~variable, value.var = "rot_tr_se.value"))
+  trend_dfa <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","value")],
+                               Year~variable, value.var = "value"))
+  trend_dfa_se <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","se.value")],
+                                  Year~variable, value.var = "se.value"))
   mean_trend <- data.frame(trend_dfa[,1],
                            trend_dfa[,-1] %*% t(df.kmeans@centers),
                            sqrt(trend_dfa_se[,-1]^2 %*% t(df.kmeans@centers)^2))
-  mean_trend_old <- data.frame(trend_dfa[,1],
-                           trend_dfa[,-1] %*% t(df.kmeans@centers),
-                           trend_dfa_se[,-1] %*% t(df.kmeans@centers))
   names(mean_trend) <- c("year",paste0("group_",1:nb_group),
                          paste0("se_group_",1:nb_group))
   
@@ -535,7 +543,7 @@ group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE){
     geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
     theme_modern()
   
-  return(list(kmeans_res,final_plot,mean_trend,mean_trend_old))
+  return(list(kmeans_res,final_plot,mean_trend))
 }
 
 group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp), name_long=paste0("Species",1:n_sp)))

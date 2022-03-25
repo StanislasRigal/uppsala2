@@ -14,6 +14,10 @@ ggplot(ab_sp, aes(x=reorder(code_sp, -ab_tot, sum), y=ab_tot)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + xlab("Species")+
   ylab("Abundance (log)")
 
+ab_sp2 <- ab_sp[order(ab_sp$ab_tot, decreasing = T),]
+ab_sp2$perc_cum <- cumsum(ab_sp2$ab_tot)/sum(ab_sp2$ab_tot)
+saveRDS(ab_sp2,"output/ab_sp2.rds")
+
 # time-series from the SBBS
 
 ## example for one species
@@ -247,12 +251,27 @@ get_ts <- function(data_bird_input){
       glm1 <- glm(abund~as.factor(code_route)+as.factor(year),data=d,family=quasipoisson)
       sglm1 <- summary(glm1)
       
+      ## mean-centered values
+      con.mat <- diag(length(year)) - 1/length(year)
+      colnames(con.mat) <- year#firstY:lastY
+      rg <- ref_grid(glm1, nuisance = 'code_route')
+      sglm2 <- summary(contrast(rg, as.data.frame(con.mat)))
+      
       ## as link function is log, estimates need to be back transformed
+      # from sglm1 (first year set to 1 and se to 0)
       coef_yr <- tail(matrix(sglm1$coefficients[,1]), timestep)
       coef_yr <- rbind(1, exp(coef_yr))
       error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-      error_yr <- rbind(0, error_yr)
+      error_yr <- rbind(0, error_yr)*coef_yr # approximated se values
+      log_error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
+      log_error_yr <- rbind(0, log_error_yr)
       pval <- c(1,tail(matrix(coefficients(sglm1)[,4]),timestep))
+      
+      # from sglm2 (mean value to 0)
+      coef_yr_m0 <- exp(sglm2$estimate)
+      error_yr_m0 <- sglm2$SE*coef_yr_m0 # approximated se values
+      log_error_yr_m0 <- sglm2$SE
+      pval_m0 <- sglm2$p.value
       
       ## CIs
       glm1.sim <- sim(glm1)
@@ -261,7 +280,7 @@ get_ts <- function(data_bird_input){
       
       ## table for result and figures
       thresold_signif <- 0.05
-      tab_res <- data.frame(year,val=coef_yr,
+      tab_res <- data.frame(year,val=coef_yr,val_m0=coef_yr_m0,
                             LL=ci_inf_sim,UL=ci_sup_sim,
                             catPoint=ifelse(pval<thresold_signif,"significatif",NA),pval)
       ## cleaning out of range CIs			   
@@ -270,6 +289,7 @@ get_ts <- function(data_bird_input){
       tab_res$UL <-  ifelse(tab_res$UL > 1.000000e+20, NA,tab_res$UL)
       tab_res$UL[1] <- 1
       tab_res$val <-  ifelse(tab_res$val > 1.000000e+20,1.000000e+20,tab_res$val)
+      tab_res$val_m0 <-  ifelse(tab_res$val_m0 > 1.000000e+20,1.000000e+20,tab_res$val_m0)
       
       ## overdispersion index
       dispAn <- sglm1$deviance/sglm1$null.deviance
@@ -290,11 +310,16 @@ get_ts <- function(data_bird_input){
       
       ## table for saving results      
       tab_tot <- data.frame(code_sp=sp, year = tab_res$year, nb_year=timestep,
-                            firstY=firstY, lastY=lastY,
-                            relative_abundance=round(tab_res$val,3),
-                            CI_inf = round(tab_res$LL,3), CI_sup = round(tab_res$UL,3),
-                            Standard_error = round(error_yr,4),
-                            p_value = round(tab_res$pval,3), signif = !is.na(tab_res$catPoint),
+                            firstY = firstY, lastY = lastY,
+                            relative_abundance = tab_res$val,
+                            CI_inf = tab_res$LL, CI_sup = tab_res$UL,
+                            Standard_error = error_yr,
+                            Log_SE = log_error_yr,
+                            p_value = tab_res$pval,
+                            relative_abundance_m0 = tab_res$val_m0,
+                            Standard_error_m0 = error_yr_m0,
+                            Log_SE_m0 = log_error_yr_m0,
+                            p_value_m0 = pval_m0, signif = !is.na(tab_res$catPoint),
                             nb_route,nb_route_presence,abundance=abund,
                             mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
                             valid = catIncert, uncertanity_reason = reason_uncert)
@@ -306,7 +331,11 @@ get_ts <- function(data_bird_input){
                             relative_abundance=NA,
                             CI_inf = NA, CI_sup = NA,
                             Standard_error = NA,
-                            p_value = NA, signif = NA,
+                            p_value = NA, 
+                            relative_abundance_m0 = NA,
+                            Standard_error_m0 = NA,
+                            Log_SE_m0 = NA,
+                            p_value_m0 = NA,signif = NA,
                             nb_route,nb_route_presence,abundance=abund,
                             mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
                             valid = NA, uncertanity_reason = NA)
@@ -322,7 +351,7 @@ ts_test <- ddply(droplevels(bird_se_1998[bird_se_1998$code_sp %in% levels(as.fac
 
 ts_bird_se_allcountry <- ddply(bird_se_1998, .(code_sp), .fun=get_ts, .progress="text")
 
-ts_bird_se_byreg <- ddply(bird_se_1998, .(code_sp, ln_kod), .fun=get_ts, .progress="text")
+ts_bird_se_byreg <- ddply(droplevels(bird_se_1998[!is.na(bird_se_1998$ln_kod),]), .(code_sp, ln_kod), .fun=get_ts, .progress="text")
 ts_bird_se_byreg_clean <- ts_bird_se_byreg[which(!is.na(ts_bird_se_byreg$relative_abundance)),]
 
 ts_bird_se_byecoreg <- ddply(bird_se_1998, .(code_sp, ecoreg), .fun=get_ts, .progress="text")

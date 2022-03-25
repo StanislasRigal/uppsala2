@@ -210,7 +210,7 @@ template<class Type>
     
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
     tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
-    browser()
+    #browser()
     # Check convergence
     
     conv <- grepl("relative convergence",tmbOpt$message)
