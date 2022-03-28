@@ -14,6 +14,7 @@ template<class Type>
   int nSp = y.dim[0];
   int nT = y.dim[1];
   
+  
   // For one-step-ahead residuals
   DATA_ARRAY_INDICATOR(keep, y);
   
@@ -26,11 +27,17 @@ template<class Type>
   // Latent trends
   PARAMETER_MATRIX(x);
   
+  // Declare number of trends
+  int nfac = x.rows();
+
   //Mean of latent trends
   matrix<Type> x_mean(x.rows(), 1);
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
+  
+  // Declare object to store loadings
+  matrix<Type> loading_sp(nSp, nfac);
   
   // Random error by species
   vector<Type> re_sp;
@@ -58,12 +65,20 @@ template<class Type>
     }
   }
 
-  
+  // Species trends
   for(int i = 0; i < nSp; ++i) {
     for(int t = 0; t < nT; ++t) {
       x_sp(i, t) = (Z.row(i) * (x.col(t) - x_mean)).sum();
     }
   }
+  
+  // Loadings
+  //for(int i = 0; i < nSp; ++i) {
+    //for(int k = 0; k < nfac; ++k) {
+      //load_x_sp(i,k) = (Z.row(i) * x.row(k)).sum();
+    //}
+  //}
+  
   
   // Observation model
   for(int i = 0; i < nSp; ++i){
@@ -78,6 +93,20 @@ template<class Type>
           REPORT(y);
         }
     }  
+  }
+  
+  // Initial values to 0
+  for(i=0; i < nSp; ++i)
+	  for(j=0; j < nfac; ++j) {
+	  loading_sp[i][j] = 0;
+}
+
+  // Calculate loading as matrix multiplication 
+  // currently done in make_dfa by Z_hat %*% varimax(Z_hat)$rotmat
+  for(i=0; i < nSp; ++i)
+	  for(j=0; j < nfac; ++j)
+		  for(k=0; k < nfac; ++k) {
+		  loading_sp[i][j] += Z[i][k] * Z.varimax()$rotmat[k][j];
   }
   
   // State the transformed parameters to report
