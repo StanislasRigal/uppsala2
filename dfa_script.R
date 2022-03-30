@@ -28,10 +28,10 @@ species_sub <- droplevels(species_data[species_data$code_sp %in% c("VANVAN","NUM
                                                                    "PASMON","CORFRU","ANTPRA","EMBHOR"),])
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
-y <- dcast(Obs[,c("code_sp","relative_abundance","year")],
-           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance")
-obs_se <- dcast(Obs[,c("code_sp","Standard_error","year")],
-             code_sp~year, fun.aggregate = sum, value.var = "Standard_error")
+y <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+             code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 #obs_se <- obs_se[,-c(1:2)]
 #y <- y[,-c(1:2)]
 #for(i in 1:nrow(obs_se)){
@@ -552,3 +552,14 @@ group_forest <- group_from_dfa(forest_nfac4,species_forest)
 group_all <- group_from_dfa(all_nfac2,species_all)
 group_farm_eco <- group_from_dfa(farm_eco_nfac4,species_farm_eco, eco_reg = T)
 group_forest_eco <- group_from_dfa(forest_eco_nfac3,species_forest_eco, eco_reg = T)
+
+
+# clustering from TMB
+
+farm_nfac3_firststep <- make_dfa(data_ts = y, data_ts_se = obs_se,
+                                 nfac = 3, with_kmeans=T, first_step = T)
+group_farm_firststep <- group_from_dfa(farm_nfac3_firststep,species_farm)
+farm_nfac3_secondstep <- make_dfa(data_ts = y, data_ts_se = obs_se,
+                                 nfac = 3, with_kmeans=T, ngroup=group_farm_firststep[[1]][[2]], 
+                                 Z_pred_from_kmeans=as.matrix(group_farm_firststep[[1]][[2]][grepl("X",names(group_farm_firststep[[1]][[2]]))])
+                                 )
