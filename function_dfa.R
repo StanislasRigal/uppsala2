@@ -1,6 +1,6 @@
 library(TMB)
 
-dfa_model_se <- "
+dfa_model_se1 <- "
 // Dynamic Factor Analysis for multivariate time series
 #include <TMB.hpp>
 template<class Type>
@@ -207,8 +207,10 @@ template<class Type>
   return nll;
   }"
 
-
-# Compile first .cpp file with TMB DFA model
+  
+dfa_model_se <- dfa_model_se1
+  
+# Compile .cpp file with TMB DFA model
   
   if(!exists('dfamodel')){
     write(dfa_model_se, file = "dfa_model_se.cpp")
@@ -222,19 +224,6 @@ template<class Type>
     dyn.load(dynlib("dfa_model_se"))
   }
   
-# Compile second .cpp file with TMB DFA model
-
-if(!exists('dfamodel2')){
-  write(dfa_model_se2, file = "dfa_model_se2.cpp")
-  dfamodel2 <- dfa_model_se2
-  compile("dfa_model_se2.cpp")
-  dyn.load(dynlib("dfa_model_se2"))
-}else if(dfa_model_se2 != dfamodel2){
-  write(dfa_model_se2, file = "dfa_model_se2.cpp")
-  dfamodel2 <- dfa_model_se2
-  compile("dfa_model_se2.cpp")
-  dyn.load(dynlib("dfa_model_se2"))
-}
 
 # Function to zscore error of time series values before DFA
 
@@ -306,7 +295,8 @@ make_dfa <- function(data_ts, # dataset of time series
     if(first_step==T){
       # Prepare parameters for DFA
       
-      ngroup <- nfac <- nfac # Number of factors
+      ngroup <- 10 # Arbitrary number of groups
+      nfac <- nfac # Number of factors
       ny <- nrow(data_ts) # Number of time series
       nT <- ncol(data_ts) # Number of time step
       
@@ -344,23 +334,24 @@ make_dfa <- function(data_ts, # dataset of time series
       
       # Recompile .cpp
       
-      dfa_model_se2 <- dfa_model_se
+      dfa_model_se <- dfa_model_se1
       
-      if(!exists('dfamodel2')){
-        write(dfa_model_se2, file = "dfa_model_se2.cpp")
-        dfamodel2 <- dfa_model_se2
-        compile("dfa_model_se2.cpp")
-        dyn.load(dynlib("dfa_model_se2"))
-      }else if(dfa_model_se2 != dfamodel2){
-        write(dfa_model_se2, file = "dfa_model_se2.cpp")
-        dfamodel2 <- dfa_model_se2
-        compile("dfa_model_se2.cpp")
-        dyn.load(dynlib("dfa_model_se2"))
+      if(!exists('dfamodel')){
+        write(dfa_model_se, file = "dfa_model_se.cpp")
+        dfamodel <- dfa_model_se
+        compile("dfa_model_se.cpp")
+        dyn.load(dynlib("dfa_model_se"))
+      }else if(dfa_model_se != dfamodel){
+        write(dfa_model_se, file = "dfa_model_se.cpp")
+        dfamodel <- dfa_model_se
+        compile("dfa_model_se.cpp")
+        dyn.load(dynlib("dfa_model_se"))
       }
+      
       
       # Make DFA
       
-      tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
+      tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
       tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
       
       # Avoid infinite SE when SD are close or equal to zero
@@ -411,24 +402,23 @@ make_dfa <- function(data_ts, # dataset of time series
       
       # Recompile .cpp
       
-      dfa_model_se2 <- dfa_model_se
+      dfa_model_se <- dfa_model_se1
       
-      if(!exists('dfamodel2')){
-        write(dfa_model_se2, file = "dfa_model_se2.cpp")
-        dfamodel2 <- dfa_model_se2
-        compile("dfa_model_se2.cpp")
-        dyn.load(dynlib("dfa_model_se2"))
-      }else if(dfa_model_se2 != dfamodel2){
-        write(dfa_model_se2, file = "dfa_model_se2.cpp")
-        dfamodel2 <- dfa_model_se2
-        compile("dfa_model_se2.cpp")
-        dyn.load(dynlib("dfa_model_se2"))
+      if(!exists('dfamodel')){
+        write(dfa_model_se, file = "dfa_model_se.cpp")
+        dfamodel <- dfa_model_se
+        compile("dfa_model_se.cpp")
+        dyn.load(dynlib("dfa_model_se"))
+      }else if(dfa_model_se != dfamodel){
+        write(dfa_model_se, file = "dfa_model_se.cpp")
+        dfamodel <- dfa_model_se
+        compile("dfa_model_se.cpp")
+        dyn.load(dynlib("dfa_model_se"))
       }
       
       # Make DFA
       
-      tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
-      # optimisation require for oh
+      tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
       tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
 
       # Avoid infinite SE when SD are close or equal to zero
@@ -444,7 +434,7 @@ make_dfa <- function(data_ts, # dataset of time series
       r <- tmbObj$env$random
       tmbPar3 <- tmbPar2[-r]
       
-      sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh, par.fixed = tmbPar3 ))
+      sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh, par.fixed = tmbPar3, ignore.parm.uncertainty = T))
       #sdRep <- summary(sdreport(tmbObj, par.fixed = tmbPar3 ))
       
     }
@@ -487,9 +477,23 @@ make_dfa <- function(data_ts, # dataset of time series
     xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
     tmbMap <- list(Z = as.factor(Zmap), x = as.factor(xmap))
     
+    dfa_model_se <- dfa_model_se2
+    
+    if(!exists('dfamodel')){
+      write(dfa_model_se, file = "dfa_model_se.cpp")
+      dfamodel <- dfa_model_se
+      compile("dfa_model_se.cpp")
+      dyn.load(dynlib("dfa_model_se"))
+    }else if(dfa_model_se != dfamodel){
+      write(dfa_model_se, file = "dfa_model_se.cpp")
+      dfamodel <- dfa_model_se
+      compile("dfa_model_se.cpp")
+      dyn.load(dynlib("dfa_model_se"))
+    }
+    
     # Make DFA
     
-    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
+    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
     tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
   
     # Avoid infinite SE when SD are close or equal to zero

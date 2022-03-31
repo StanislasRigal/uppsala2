@@ -560,7 +560,7 @@ farm_nfac3_firststep <- make_dfa(data_ts = y, data_ts_se = obs_se,
                                  nfac = 3, with_kmeans = T, first_step = T)
 group_farm_firststep <- group_from_dfa(farm_nfac3_firststep,species_farm)
 farm_nfac3_secondstep <- make_dfa(data_ts = y, data_ts_se = obs_se,
-                                 nfac = 3, with_kmeans = T, ngroup = group_farm_firststep[[1]][[2]],
+                                 nfac = 3, with_kmeans = T, ngroup = nrow(group_farm_firststep[[1]][[2]]),
                                  param_first_step = farm_nfac3_firststep[[8]],
                                  Z_pred_from_kmeans = as.matrix(group_farm_firststep[[1]][[2]][grepl("X",names(group_farm_firststep[[1]][[2]]))])
                                  )
@@ -568,8 +568,8 @@ farm_nfac3_secondstep <- make_dfa(data_ts = y, data_ts_se = obs_se,
 farm_nfac3_firststep[[9]][grepl("x_pred",row.names(farm_nfac3_firststep[[9]])),]
 farm_nfac3_secondstep[[9]][grepl("x_pred",row.names(farm_nfac3_secondstep[[9]])),]
 
-test<-data.frame(group=c(rep("g1",23),rep("g2",23),rep("g3",23),rep("g4",23)),
-                 year=rep(c(1998:2020),4),
+test <- data.frame(group=rep(paste0("g",1:nrow(group_farm_firststep[[1]][[2]])),23),
+                 year=sort(rep(c(1998:2020),nrow(group_farm_firststep[[1]][[2]]))),
                  farm_nfac3_secondstep[[9]][grepl("x_pred",row.names(farm_nfac3_secondstep[[9]])),])
 
 ggplot(test, aes(x=year, y=Estimate, col=group)) +
