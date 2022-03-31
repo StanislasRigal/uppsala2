@@ -278,6 +278,7 @@ make_dfa <- function(data_ts, # dataset of time series
                      first_step=FALSE, # if TRUE, first DFA.cpp is use as the first step for clustering analysis
                                        # if FALSE, second step
                      ngroup=NULL, # number of group from kmeans, required for second step of cluster analysis
+                     param_first_step=NULL, # parameters from first step
                      Z_pred_from_kmeans=NULL) # cluster loadings from kmeans, required for second step of cluster analysis
 {
   
@@ -300,6 +301,7 @@ make_dfa <- function(data_ts, # dataset of time series
   # SE is on log-scale, so no transformation needed
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se))
+  
   if(with_kmeans==T){
     if(first_step==T){
       # Prepare parameters for DFA
@@ -361,7 +363,25 @@ make_dfa <- function(data_ts, # dataset of time series
       tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
       tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
       
+      # Avoid infinite SE when SD are close or equal to zero
+      
+      oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
+      singularThreshold = 1e-5
+      nSingular = sum(diag(oh) < singularThreshold)
+      diag(oh) <- pmax(diag(oh), singularThreshold)
+      
+      sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
+      
+      # Save parameter for the second step
+      
+      param_first_step <- (tmbObj$env$parList)()
+      
+            
     }else{
+      # remove attr from param_first_step
+      
+      attr(param_first_step,"check.passed") <- NULL
+      
       # Prepare parameters for DFA
       
       ngroup <- ngroup # number of group from kmeans
@@ -369,24 +389,13 @@ make_dfa <- function(data_ts, # dataset of time series
       ny <- nrow(data_ts) # Number of time series
       nT <- ncol(data_ts) # Number of time step
       
-      # Worth trying multiple starting values for the optimisation to check that the right optimum is found.
-      set.seed(rand_seed) 
-      log_re_sp <- runif(ny, -1, 0)
-      
-      Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
-      
-      # Set constrained elements to zero
-      
-      constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
-      Zinit[constrInd] <- 0
-      
       Z_predinit <- Z_pred_from_kmeans
       
       # List of parameters for DFA
       
-      tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit, Z_pred = Z_predinit,
-                      x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
-                               ncol = nT, nrow = nfac))
+      tmbPar <-  list(log_re_sp = param_first_step$log_re_sp,
+                      Z = param_first_step$Z, Z_pred = Z_predinit,
+                      x = param_first_step$x)
       
       # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
       
@@ -419,11 +428,32 @@ make_dfa <- function(data_ts, # dataset of time series
       # Make DFA
       
       tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
+      # optimisation require for oh
       tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+
+      # Avoid infinite SE when SD are close or equal to zero
+      
+      oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
+      singularThreshold = 1e-5
+      nSingular = sum(diag(oh) < singularThreshold)
+      diag(oh) <- pmax(diag(oh), singularThreshold)
+      
+      # Prepare par.fixed
+      tmbPar2 <- unlist(tmbPar)
+      tmbPar2 <- tmbPar2[tmbPar2!=0]
+      r <- tmbObj$env$random
+      tmbPar3 <- tmbPar2[-r]
+      
+      sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh, par.fixed = tmbPar3 ))
+      #sdRep <- summary(sdreport(tmbObj, par.fixed = tmbPar3 ))
       
     }
   }else{
-      
+    
+    # Create NA parameter object for output when with_kmeans = F
+    
+    param_first_step <- NA
+    
     # Prepare parameters for DFA
     
     nfac <- nfac # Number of factors
@@ -461,21 +491,20 @@ make_dfa <- function(data_ts, # dataset of time series
     
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se2")
     tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+  
+    # Avoid infinite SE when SD are close or equal to zero
+    
+    oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
+    singularThreshold = 1e-5
+    nSingular = sum(diag(oh) < singularThreshold)
+    diag(oh) <- pmax(diag(oh), singularThreshold)
+    sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
   }
   
   # Check convergence
   
   conv <- grepl("relative convergence",tmbOpt$message)
   if(!conv){warning(paste0("Convergence issue:", tmbOpt$message))}
-  
-  # Avoid infinite SE when SD are close or equal to zero
-  
-  oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
-  singularThreshold = 1e-5
-  nSingular = sum(diag(oh) < singularThreshold)
-  diag(oh) <- pmax(diag(oh), singularThreshold)
-  sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
-  #sdRep <- summary(sdreport(tmbObj))
   
   # Get point estimates
   #x_hat <- matrix(sdRep[rownames(sdRep)=="x",1], nrow = nfac)
@@ -484,7 +513,7 @@ make_dfa <- function(data_ts, # dataset of time series
   
   Z_hat <- (tmbObj$env$parList)(par=tmbOpt$par)$Z
   
-  Z_hat_se <- sdRep[grepl('Z', rownames(sdRep)),2]
+  Z_hat_se <- sdRep[rownames(sdRep)=="Z",2]
   for(i in 1:(nfac-1)){
     index_0 <- ny*i
     Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
@@ -575,5 +604,5 @@ make_dfa <- function(data_ts, # dataset of time series
     theme_modern() + theme(legend.position = "none")
   
   return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
-              plot_sp, plot_tr, plot_ld, aic))
+              plot_sp, plot_tr, plot_ld, aic, param_first_step, sdRep))
 }
