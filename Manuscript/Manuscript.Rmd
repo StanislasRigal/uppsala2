@@ -54,8 +54,9 @@ For each species yearly variations from the first year have been obtained using 
 $$
 log(\operatorname{Abundance}_{i,j,k}) = \alpha_i + \beta_{1}(\operatorname{Year}_j) + \beta_{2}(\operatorname{Route}_k) + \epsilon
 $$
+This gave us yearly abundance index for each species and the associated uncertainty.
 
-
+## Dynamical factor analysis
 
 # Results
 

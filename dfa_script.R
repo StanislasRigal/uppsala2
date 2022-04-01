@@ -236,17 +236,50 @@ forest_nfac5 <- make_dfa(data_ts = y, data_ts_se = obs_se, nfac = 5)
 
 # All common birds
 
+## Selection by abundance (species representing 99 % of the total abundance)
 species_sub <- droplevels(species_data[species_data$code_sp %in%
                                          levels(as.factor(species_data$code_sp))[c(1:24,26:48,50:65,67:93,95:116,118:137,139:144,147:169,171:187,189:253)],])
 ab_sp2 <- readRDS("output/ab_sp2.rds")
 
-# select species representing more than 99 % of the total abundance
+## Or selecting the 107 species in the SBS report
+
+species_sub <- species_all <- droplevels(species_data[species_data$code_sp %in% c("ACCNIS","TETBON","TRIOCH","COLOEN", # forest
+                                                                                  "DENMAJ","DRYMAR","PICVIR","JYNTOR",
+                                                                                  "DRYMIN","PICTRI","NUCCAR","GARGLA",
+                                                                                  "PERATE","LOPCRI","POEPAL","POEMON",
+                                                                                  "SITEUR","CERFAM","TURVIS","PHOPHO",
+                                                                                  "PHYCOL","PHYSIB","REGREG","FICHYP",
+                                                                                  "ANTTRI","COCCOC","SPISPI","PYRPYR",
+                                                                                  "EMBRUS",
+                                                                                  "VANVAN","NUMARQ","ALAARV","HIRRUS", # farmland
+                                                                                  "MOTFLA","OENOEN","SAXRUB","SYLCOM",
+                                                                                  "LANCOL","STUVUL","LINCAN","EMBCIT",
+                                                                                  "PASMON","CORFRU","ANTPRA","EMBHOR",
+                                                                                  "PODCRI","ARDCIN","ANAPLA","TADTAD",# others
+                                                                                  "CYGOLO","BUTBUT","CIRAER","LYRTET",
+                                                                                  "PHACOL","GRUGRU","GALCHL","FULATR",
+                                                                                  "HAEOST","PLUAPR","GALGAL","NUMARQ",
+                                                                                  "TRIGLA","ACTHYP","TRITOT","TRINEB",
+                                                                                  "CHRRID","COLPAL","STRDEC","CUCCAN",
+                                                                                  "APUAPU","JYNTOR","LULARB","DELURB",
+                                                                                  "CORCOX","CORCOR","COLMON","PICPIC",
+                                                                                  "AEGCAU","PARMAJ","CYACAE","TROTRO",
+                                                                                  "TURPIL","TURPHI","TURILI","TURMER",
+                                                                                  "OENOEN","LUSLUS","ERIRUB","LOCNAE",
+                                                                                  "ACRSCI","ACRPAL","ACRSCH","HIPICT",
+                                                                                  "SYLATR","SYLBOR","SYLCUR","PHYTRO",
+                                                                                  "MUSSTR","PRUMOD","MOTALB","MOTCIN",
+                                                                                  "CHLCHL","CARCAR","ACAFLA","CARERY",
+                                                                                  "FRICOE","FRIMON","EMBSCH","PASDOM"),])
+
+
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 Obs <- droplevels(Obs[Obs$code_sp %in% levels(as.factor(droplevels(ab_sp2[ab_sp2$perc_cum<0.99,])$code_sp)),])
 #Obs <- droplevels(Obs[Obs$uncertanity_reason!="too rare species",])
-
 species_all <- droplevels(species_data[species_data$code_sp %in%
                                          levels(as.factor(Obs$code_sp)),])
+
+
 
 y <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
            code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
@@ -432,119 +465,7 @@ ggplot(data.frame(farm_eco_NMDS$points,eco_reg=sub(".*_", "", farm_eco_nfac3_val
        aes(x=MDS1, y=MDS2, col=eco_reg)) +
   geom_point() + theme_modern()
 
-# Group species a posteriori
-
-group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE, weight=FALSE){
-  
-  # Get loadings from DFA
-  dfa_res_val <- dcast(dfa_res[[3]], code_sp~variable, value.var = "value")
-  dfa_res_se <- dcast(dfa_res[[3]], code_sp~variable, value.var = "se.value")
-  names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
-  
-  mat_loading <- as.matrix(dfa_res_val[,-1])
-  nb_dim <- ncol(dfa_res_se) -1 
-  
-  # Calculate weight for each species as the inverse of the volume of the n dimension ellipse (one dimension by DFA trends) defined by SE of each loadings (equivallent to semi axes in the ellipse)
-  if(weight==TRUE){
-    weight_loading <- apply(dfa_res_se[,-1], 1, 
-                            FUN= function(x){
-                              vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
-                              return(vol)
-                            })
-    weight_loading <- weight_loading/min(weight_loading)
-  }else{
-    weight_loading <- 1
-  }
-  
-  
-  # Calculate gap statistic to find the best number of clusters
-  gap_stat <- clusGap(mat_loading,
-                      FUN = kmeans,
-                      nstart = 25,
-                      K.max = 10,
-                      B = 500)
-  
-  # Plot number of clusters vs. gap statistic and let the user choose the number of cluster
-  print(fviz_gap_stat(gap_stat))
-  print(fviz_nbclust(mat_loading, kmeans, method = "wss"))
-  #print(fviz_nbclust(mat_loading, kmeans, method = "silhouette"))
-  nb_group <- as.numeric(readline(prompt = "Enter number of clusters: "))
-  
-  # Compute kmeans
-  df.kmeans <- cclust(mat_loading, nb_group, weights = 1/weight_loading, 
-                      method = "hardcl")
-  #plot(mat_loading, col=predict(df.kmeans))
-  #points(df.kmeans@centers, pch="x", cex=2, col=3)
-  
-  myPCA <- prcomp(mat_loading, scale. = F, center = F)
-  
-  # Group all info as output
-  if(eco_reg==FALSE){
-    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
-                                        myPCA$x[,1:2],
-                                        group=as.factor(predict(df.kmeans)),
-                                        dfa_res_val[,-1],
-                                        dfa_res_se[,-1]),species_sub[,c("name_long","code_sp")],by="code_sp"),
-                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
-                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
-  }else{
-    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
-                                        myPCA$x[,1:2],
-                                        group=as.factor(predict(df.kmeans)),
-                                        dfa_res_val[,-1],
-                                        dfa_res_se[,-1]),species_sub[,c("name_long_eco","code_sp_eco")],by.x="code_sp", by.y="code_sp_eco"),
-                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
-                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
-  }
-  
-  
-  # Get area (convex hull) for each group for plotting
-  find_hull <- function(x){x[chull(x$PC2, x$PC1), ]}
-  hulls <- ddply(kmeans_res[[1]], "group", find_hull)
-  
-  # Get average trend for each group
-  trend_dfa <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","value")],
-                               Year~variable, value.var = "value"))
-  trend_dfa_se <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","se.value")],
-                                  Year~variable, value.var = "se.value"))
-  mean_trend <- data.frame(trend_dfa[,1],
-                           trend_dfa[,-1] %*% t(df.kmeans@centers),
-                           sqrt(trend_dfa_se[,-1]^2 %*% t(df.kmeans@centers)^2))
-  names(mean_trend) <- c("year",paste0("group_",1:nb_group),
-                         paste0("se_group_",1:nb_group))
-  
-  # Prepare subgraph of these trend to add to the final graph
-  centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) 
-  
-  graph <- setNames(lapply(1:nb_group, function(i){
-    test<-mean_trend[,c(1,i+1, i+nb_group+1)]
-    test$Index_SE<-test[,3]
-    test$Index<-test[,2]
-    ggplot(test, aes(x=year, y=Index)) +
-      geom_line() +
-      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
-      xlab(NULL) + 
-      ylab(NULL) + 
-      theme_modern() + theme_transparent()+
-      theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
-            axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
-  }), names(mean_trend)[2:(nb_group+1)])
-  
-  centroids_data<-tibble(x=centroids$PC1,
-                     y=centroids$PC2,
-                     width=0.03,
-                     pie = graph)
-  
-  # Plot final output
-  final_plot <- ggplot(kmeans_res[[1]], aes(PC1,PC2, col=group, fill=group)) +
-    geom_point() + geom_polygon(data=hulls, alpha=.2) +
-    geom_point(data=(kmeans_res[[2]]), shape=2) +
-    geom_text(label=kmeans_res[[1]]$name_long, nudge_x = 0.005, nudge_y = 0.005, check_overlap = F) +
-    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
-    theme_modern()
-  
-  return(list(kmeans_res,final_plot,mean_trend))
-}
+# group species
 
 group_test <- group_from_dfa(test_nfac3, data.frame(code_sp=paste0("SP",1:n_sp), name_long=paste0("Species",1:n_sp)))
 group_farm <- group_from_dfa(farm_nfac3,species_farm)
@@ -564,6 +485,7 @@ farm_nfac3_secondstep <- make_dfa(data_ts = y, data_ts_se = obs_se,
                                  param_first_step = farm_nfac3_firststep[[8]],
                                  Z_pred_from_kmeans = as.matrix(group_farm_firststep[[1]][[2]][grepl("X",names(group_farm_firststep[[1]][[2]]))])
                                  )
+# Explore results
 
 farm_nfac3_firststep[[9]][grepl("x_pred",row.names(farm_nfac3_firststep[[9]])),]
 farm_nfac3_secondstep[[9]][grepl("x_pred",row.names(farm_nfac3_secondstep[[9]])),]
@@ -576,3 +498,17 @@ ggplot(test, aes(x=year, y=Estimate, col=group)) +
   geom_line(aes(col=group)) +
   geom_ribbon(aes(ymin=Estimate-Std..Error,ymax=Estimate+Std..Error, col=group),alpha=0.2)+
   theme_modern()
+
+# Plot groups
+
+plot_group(nb_group = nrow(group_farm_firststep[[1]][[2]]),
+           centroids = group_farm_firststep[[4]],
+           kmeans_res = group_farm_firststep[[1]],
+           dfa_second_step = farm_nfac3_secondstep,
+           hulls = group_farm_firststep[[5]])
+
+# DFA with TMB
+source('function_dfa_test.R')
+
+farm_nfac2 <- make_dfa2(data_ts = y, data_ts_se = obs_se,
+                        nfac = 2, species_sub = species_farm)

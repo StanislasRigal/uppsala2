@@ -389,7 +389,7 @@ make_dfa <- function(data_ts, # dataset of time series
                       x = param_first_step$x)
       
       # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
-      
+      constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
       Zmap <- matrix(ncol = nfac, nrow = ny)
       Zmap[constrInd] <- NA
       Zmap[!constrInd] <- 1:sum(!constrInd)
@@ -609,4 +609,179 @@ make_dfa <- function(data_ts, # dataset of time series
   
   return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
               plot_sp, plot_tr, plot_ld, aic, param_first_step, sdRep))
+}
+
+# Group species a posteriori
+
+group_from_dfa <- function(dfa_res, species_sub, eco_reg=FALSE, weight=FALSE){
+  
+  # Get loadings from DFA
+  dfa_res_val <- dcast(dfa_res[[3]], code_sp~variable, value.var = "value")
+  dfa_res_se <- dcast(dfa_res[[3]], code_sp~variable, value.var = "se.value")
+  names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
+  
+  mat_loading <- as.matrix(dfa_res_val[,-1])
+  nb_dim <- ncol(dfa_res_se) -1 
+  
+  # Calculate weight for each species as the inverse of the volume of the n dimension ellipse (one dimension by DFA trends) defined by SE of each loadings (equivallent to semi axes in the ellipse)
+  if(weight==TRUE){
+    weight_loading <- apply(dfa_res_se[,-1], 1, 
+                            FUN= function(x){
+                              vol <- 2/nb_dim * (pi^(nb_dim/2)) / gamma(nb_dim/2) * prod(x)
+                              return(vol)
+                            })
+    weight_loading <- weight_loading/min(weight_loading)
+  }else{
+    weight_loading <- 1
+  }
+  
+  
+  # Calculate gap statistic to find the best number of clusters
+  gap_stat <- clusGap(mat_loading,
+                      FUN = kmeans,
+                      nstart = 25,
+                      K.max = 10,
+                      B = 500)
+  
+  # Plot number of clusters vs. gap statistic and let the user choose the number of cluster
+  print(fviz_gap_stat(gap_stat))
+  print(fviz_nbclust(mat_loading, kmeans, method = "wss"))
+  #print(fviz_nbclust(mat_loading, kmeans, method = "silhouette"))
+  nb_group <- as.numeric(readline(prompt = "Enter number of clusters: "))
+  
+  # Compute kmeans
+  df.kmeans <- cclust(mat_loading, nb_group, weights = 1/weight_loading, 
+                      method = "hardcl")
+  #plot(mat_loading, col=predict(df.kmeans))
+  #points(df.kmeans@centers, pch="x", cex=2, col=3)
+  
+  myPCA <- prcomp(mat_loading, scale. = F, center = F)
+  
+  # Group all info as output
+  if(eco_reg==FALSE){
+    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
+                                        myPCA$x[,1:2],
+                                        group=as.factor(predict(df.kmeans)),
+                                        dfa_res_val[,-1],
+                                        dfa_res_se[,-1]),species_sub[,c("name_long","code_sp")],by="code_sp"),
+                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
+                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+  }else{
+    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
+                                        myPCA$x[,1:2],
+                                        group=as.factor(predict(df.kmeans)),
+                                        dfa_res_val[,-1],
+                                        dfa_res_se[,-1]),species_sub[,c("name_long_eco","code_sp_eco")],by.x="code_sp", by.y="code_sp_eco"),
+                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
+                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+  }
+  
+  
+  # Get area (convex hull) for each group for plotting
+  find_hull <- function(x){x[chull(x$PC2, x$PC1), ]}
+  hulls <- ddply(kmeans_res[[1]], "group", find_hull)
+  
+  # Get average trend for each group
+  trend_dfa <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","value")],
+                               Year~variable, value.var = "value"))
+  trend_dfa_se <- as.matrix(dcast(as.data.frame(dfa_res[[2]])[,c("Year","variable","se.value")],
+                                  Year~variable, value.var = "se.value"))
+  mean_trend <- data.frame(trend_dfa[,1],
+                           trend_dfa[,-1] %*% t(df.kmeans@centers),
+                           sqrt(trend_dfa_se[,-1]^2 %*% t(df.kmeans@centers)^2))
+  names(mean_trend) <- c("year",paste0("group_",1:nb_group),
+                         paste0("se_group_",1:nb_group))
+  
+  # Prepare subgraph of these trend to add to the final graph
+  centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) 
+  
+  graph <- setNames(lapply(1:nb_group, function(i){
+    test <- mean_trend[,c(1,i+1, i+nb_group+1)]
+    test$Index_SE <- test[,3]
+    test$Index <- test[,2]
+    ggplot(test, aes(x=year, y=Index)) +
+      geom_line() +
+      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+      xlab(NULL) + 
+      ylab(NULL) + 
+      theme_modern() + theme_transparent()+
+      theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+            axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+  }), names(mean_trend)[2:(nb_group+1)])
+  
+  centroids_data <- tibble(x=centroids$PC1,
+                           y=centroids$PC2,
+                           width=0.03,
+                           pie = graph)
+  
+  # Plot final output
+  final_plot <- ggplot(kmeans_res[[1]], aes(PC1,PC2, col=group, fill=group)) +
+    geom_point() + geom_polygon(data=hulls, alpha=.2) +
+    geom_point(data=(kmeans_res[[2]]), shape=2) +
+    geom_text(label=kmeans_res[[1]]$name_long, nudge_x = 0.005, nudge_y = 0.005, check_overlap = F) +
+    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
+    theme_modern()
+  
+  return(list(kmeans_res,final_plot,mean_trend, centroids, hulls))
+}
+
+# Plot groups and clustering trends
+
+plot_group <- function(nb_group, centroids, kmeans_res, dfa_second_step, hulls){
+  
+  data_trend_group <- data.frame(group=rep(paste0("g",1:nb_group),23),
+                                 year=sort(rep(c(1998:2020), nb_group)),
+                                 dfa_second_step[[9]][grepl("x_pred",row.names(dfa_second_step[[9]])),])
+  
+  
+  graph <- setNames(lapply(1:nb_group, function(i){
+    test <- data_trend_group[data_trend_group$group==paste0("g",i),]
+    test$Index_SE <- test$Std..Error
+    test$Index <- test$Estimate
+    ggplot(test, aes(x=year, y=Index)) +
+      geom_line() +
+      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+      xlab(NULL) + 
+      ylab(NULL) + 
+      theme_modern() + theme_transparent()+
+      theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+            axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+  }), levels(as.factor(data_trend_group$group)))
+  
+  centroids_data <- tibble(x=centroids$PC1,
+                           y=centroids$PC2,
+                           width=0.03,
+                           pie = graph)
+  
+  # Get polygons and area
+  xys <- st_as_sf(hulls, coords=c("PC1","PC2"))
+  
+  polys <- xys %>% 
+    dplyr::group_by(group) %>% 
+    dplyr::summarise() %>%
+    st_cast("POLYGON") %>%
+    st_convex_hull()
+  centroids$area <- st_area(polys)
+  random_point <- ddply(centroids,.(group),.fun=function(x){
+    x <- as.numeric(x)
+    y <- data.frame(PC1=rnorm(round(10000*x[4]),x[2],2*x[4]),
+                    PC2=rnorm(round(10000*x[4]),x[3],2*x[4]))
+    return(y)
+  })
+  
+  # Plot final output
+  final_plot <- ggplot(kmeans_res[[1]], aes(PC1,PC2)) +
+    #geom_polygon(data=hulls, alpha=.2) +
+    stat_density_2d(data=random_point, aes(PC1,PC2,fill = ..level..), geom = "polygon") +
+    #stat_density_2d(data=random_point, aes(PC1,PC2,fill = ..density..), geom = "raster", contour = FALSE) +
+    #scale_x_continuous(expand = c(0, 0)) +
+    #scale_y_continuous(expand = c(0, 0)) +
+    scale_fill_gradient2(low="white", mid="yellow", high = "red",midpoint = 100) +
+    geom_point() + #geom_point(data=(kmeans_res[[2]]), shape=2) +
+    geom_text(label=kmeans_res[[1]]$name_long, nudge_x = 0.005, nudge_y = 0.005, check_overlap = F) +
+    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
+    theme_modern() +
+    theme(legend.position='none')
+  
+  return(final_plot)
 }
