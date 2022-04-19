@@ -269,8 +269,8 @@ plot_group2 <- function(nb_group, centroids, kmeans_res, hulls, sdrep){
     
     random_point <- ddply(centroids,.(group),.fun=function(x){
       x <- as.numeric(x)
-      y <- data.frame(PC1=rnorm(max(10,round(10000*x[4])),x[2],max(0.01,x[4])),
-                      PC2=rnorm(max(10,round(10000*x[4])),x[3],max(0.01,x[4])))
+      y <- data.frame(PC1=rnorm(max(50,round(10000*x[4])),x[2],max(0.01,x[4])),
+                      PC2=rnorm(max(50,round(10000*x[4])),x[3],max(0.01,x[4])))
       return(y)
     })
   }else{
@@ -278,13 +278,11 @@ plot_group2 <- function(nb_group, centroids, kmeans_res, hulls, sdrep){
     
     random_point <- ddply(centroids,.(group),.fun=function(x){
       x <- as.numeric(x)
-      y <- data.frame(PC1=rnorm(max(10,round(10000*x[4])),x[2],max(0.01,x[4])),
-                      PC2=rnorm(max(10,round(10000*x[4])),x[3],max(0.01,x[4])))
+      y <- data.frame(PC1=rnorm(max(50,round(10000*x[4])),x[2],max(0.01,2*x[4])),
+                      PC2=rnorm(max(50,round(10000*x[4])),x[3],max(0.01,2*x[4])))
       return(y)
     })
   }
-  
-
   
   # Plot final output
   final_plot <- ggplot(kmeans_res[[1]], aes(PC1,PC2)) +

@@ -510,5 +510,7 @@ plot_group(nb_group = nrow(group_farm_firststep[[1]][[2]]),
 # DFA with TMB
 source('function_dfa_test.R')
 
-farm_nfac2 <- make_dfa2(data_ts = y, data_ts_se = obs_se,
-                        nfac = 2, species_sub = species_farm)
+farm_nfac3 <- make_dfa2(data_ts = y, data_ts_se = obs_se,
+                        nfac = 3, species_sub = species_farm)
+forest_nfac4 <- make_dfa2(data_ts = y, data_ts_se = obs_se,
+                          nfac = 4, species_sub = species_forest)
