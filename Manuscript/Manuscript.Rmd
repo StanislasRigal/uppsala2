@@ -39,6 +39,14 @@ output:
 # Introduction
 
 
+Population dynamics are a key aspect of the current biodiversity change. Many species have experienced population declines across the world, even the most common species. On the other hand, particular groups of species, for instance generalists, human commensals or species with affinity for warm habitat have increased.
+
+
+There are multiple means to assess the changes in species populations. Among those, Multi Species Index (MSI) enables to summarise the main trajectory of a group of species. MSI are therefore commonly used as proxies to evaluate the state of a given milieu based on groups of species that share a similar habitat. Despite the ability of MSI to provide information about a group of species, all population do not follow the same pattern. More specifically, aggregating the dynamics of several populations into one trajectory can hide trajectories with opposite trend, i.e. a stable MSI could emerge from an similar amount of increasing and decreasing populations. We still lack of approaches that distinguish groups of species according to their main trajectory while keeping the habitat information given by aggregated indices like MSI.
+
+Dynamic Factor Analysis
+
+
 # Materiel and methods
 
 ## Bird data
