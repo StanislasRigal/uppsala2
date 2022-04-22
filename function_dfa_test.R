@@ -171,22 +171,103 @@ group_from_dfa2 <- function(dfa_res, species_sub, eco_reg=FALSE, weight=FALSE){
   
   
   # Calculate gap statistic to find the best number of clusters
-  gap_stat <- clusGap(mat_loading,
-                      FUN = kmeans,
-                      nstart = 25,
-                      K.max = 10,
-                      B = 500)
+  nb <- NbClust(mat_loading, diss=NULL, distance = "euclidean",
+                method = "kmeans", min.nc=2, max.nc=10, 
+                index = "alllong", alphaBeale = 0.1)
   
-  # Plot number of clusters vs. gap statistic and let the user choose the number of cluster
-  print(fviz_gap_stat(gap_stat))
-  print(fviz_nbclust(mat_loading, kmeans, method = "wss"))
-  #print(fviz_nbclust(mat_loading, kmeans, method = "silhouette"))
+  # Plot number of clusters and let the user choose the number of cluster
+  print(hist(nb$Best.nc[1,], breaks = max(na.omit(nb$Best.nc[1,]))))
+  
   nb_group <- as.numeric(readline(prompt = "Enter number of clusters: "))
   
   # Compute kmeans
   df.kmeans <- cclust(mat_loading, nb_group, weights = 1/weight_loading, 
                       method = "hardcl")
 
+  
+  myPCA <- prcomp(mat_loading, scale. = F, center = F)
+  
+  # Group all info as output
+  
+  if(eco_reg==FALSE){
+    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
+                                        myPCA$x[,1:2],
+                                        group=as.factor(predict(df.kmeans)),
+                                        dfa_res_val[,-1],
+                                        dfa_res_se[,-1]),species_sub[,c("name_long","code_sp")],by="code_sp"),
+                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
+                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+  }else{
+    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
+                                        myPCA$x[,1:2],
+                                        group=as.factor(predict(df.kmeans)),
+                                        dfa_res_val[,-1],
+                                        dfa_res_se[,-1]),species_sub[,c("name_long_eco","code_sp_eco")],by.x="code_sp", by.y="code_sp_eco"),
+                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
+                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+  }
+  
+  
+  # Get area (convex hull) for each group for plotting
+  
+  find_hull <- function(x){x[chull(x$PC2, x$PC1), ]}
+  hulls <- ddply(kmeans_res[[1]], "group", find_hull)
+  
+  # Get centroid of groups
+  
+  centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) 
+  
+  return(list(kmeans_res, centroids, hulls))
+}
+
+
+group_from_dfa_boot <- function(dfa_res, species_sub, nboot=100, eco_reg=FALSE, weight=FALSE){
+  
+  # Get loadings from DFA
+  dfa_res_val <- dcast(dfa_res, code_sp~variable, value.var = "value")
+  dfa_res_se <- dcast(dfa_res, code_sp~variable, value.var = "se.value")
+  names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
+  
+  mat_loading <- as.matrix(dfa_res_val[,-1])
+  nb_dim <- ncol(dfa_res_se) - 1 
+  mat_se_loading <- as.matrix(dfa_res_se[,-1])
+  
+  array_loading <- abind(mat_loading, mat_se_loading, along=3)
+  
+  nb_group_best <- c()
+  all_partition <- rep(0, nrow(dfa_res_se))
+  for(i in 1:nboot){
+    set.seed(i+8)
+    
+    mat_loading2 <- apply(array_loading, c(1,2), FUN = function(x){return(rnorm(1, x[1], x[2]))})
+    
+    # Find the best number of clusters
+    nb <- NbClust(mat_loading2, diss=NULL, distance = "euclidean",
+                  method = "kmeans", min.nc=2, max.nc=10, 
+                  index = "alllong", alphaBeale = 0.1)
+    
+    nb_group_best <- c(nb_group_best, max(nb$Best.partition))
+    all_partition <- rbind(all_partition,nb$Best.partition)
+  }
+  
+  # Cluster stability
+  nb_group <- as.numeric(names(which.max(table(nb_group_best))))
+  
+  all_partition <- all_partition[-1,]
+  
+  all_partition_best <- all_partition[nb_group_best==nb_group,]
+  
+  stability_cluster <- c()
+  for(i in 1:nb_group){
+    all_partition_test <- all_partition_best
+    all_partition_test[all_partition_test!=i] <- 0
+    stability_cluster <- c(stability_cluster, (1 - mean(vegdist(all_partition_test, method="jaccard"))))
+  }
+  
+  
+  # Compute kmeans
+  df.kmeans <- cclust(mat_loading, nb_group, method = "kmeans")
+  
   
   myPCA <- prcomp(mat_loading, scale. = F, center = F)
   
@@ -398,13 +479,27 @@ make_dfa2 <- function(data_ts, # dataset of time series
     Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
   }
   Z_hat_se <- matrix(Z_hat_se, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
+  
+  Z_hat_orig <- sdRep_test[rownames(sdRep_test)=="Z",1]
+  for(i in 1:(nfac-1)){
+    index_0 <- ny*i
+    Z_hat_orig <- append(Z_hat_orig, rep(0,i), after=index_0)
+  }
+  Z_hat_orig <- matrix(Z_hat_orig, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
+  
   x_hat_se <- matrix(c(rep(0,nfac),sdRep_test[rownames(sdRep_test)=="x",2]), nrow=nfac)
   
   # Data for species loadings
   
-  data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
-                                         Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
-                         se.value = NA)
+  #data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
+  #                                      Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
+  #                      se.value = NA)
+  data_loadings <- merge(melt(data.frame(code_sp=data_ts_save[,1],
+                                         Z_hat_orig), id.vars="code_sp"),
+                         melt(data.frame(code_sp=data_ts_save[,1],
+                                         Z_hat_se), id.vars="code_sp"),
+                         by=c("code_sp","variable"))
+  names(data_loadings)[3:4] <- c("value","se.value") 
   
   # Get groups from clustering
   

@@ -8,7 +8,7 @@ source("package_used.R")
 source("function_ts.R")
 
 # DFA with TMB
-source('function_dfa.R')
+source('function_dfa_test.R')
 
 # Time-series from the SBBS
 
