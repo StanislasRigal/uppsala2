@@ -221,34 +221,51 @@ group_from_dfa2 <- function(dfa_res, species_sub, eco_reg=FALSE, weight=FALSE){
 }
 
 
-group_from_dfa_boot <- function(dfa_res, species_sub, nboot=100, eco_reg=FALSE, weight=FALSE){
+group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100, eco_reg=FALSE, weight=FALSE, ny){
   
-  # Get loadings from DFA
-  dfa_res_val <- dcast(dfa_res, code_sp~variable, value.var = "value")
-  dfa_res_se <- dcast(dfa_res, code_sp~variable, value.var = "se.value")
-  names(dfa_res_se) <- c("code_sp",paste0("se_",names(dfa_res_val[,-1])))
+  row_col_0 <- which(data_loadings$value==0)
   
-  mat_loading <- as.matrix(dfa_res_val[,-1])
-  nb_dim <- ncol(dfa_res_se) - 1 
-  mat_se_loading <- as.matrix(dfa_res_se[,-1])
-  
-  array_loading <- abind(mat_loading, mat_se_loading, along=3)
-  
-  nb_group_best <- c()
-  all_partition <- rep(0, nrow(dfa_res_se))
   for(i in 1:nboot){
-    set.seed(i+8)
+    set.seed(i)
     
-    mat_loading2 <- apply(array_loading, c(1,2), FUN = function(x){return(rnorm(1, x[1], x[2]))})
+    rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
     
+    for(j in 1:(nfac-1)){
+      index_0 <- ny*j
+      rand_load <- append(rand_load, rep(0,j), after=index_0)
+    }
+    
+    rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+
     # Find the best number of clusters
-    nb <- NbClust(mat_loading2, diss=NULL, distance = "euclidean",
-                  method = "kmeans", min.nc=2, max.nc=10, 
+    
+    NbClust2 <- function(rand_load, diss=NULL, distance = "euclidean",
+                         method = "kmeans", min.nc=2, max.nc=max(c(2,round(ny/3))), 
+                         index = "alllong", alphaBeale = 0.1){
+      tryCatch(
+        #try to do this
+        {
+        NbClust(rand_load, diss=NULL, distance = "euclidean",
+                method = "kmeans", min.nc=2, max.nc=max(c(2,round(ny/3))), 
+                index = "alllong", alphaBeale = 0.1)
+        },
+        #if an error occurs
+        error=function(e) {
+         data.frame(Best.partition=rep(NA,nrow(rand_load)))
+        }
+      )
+    }
+    
+    nb <- NbClust2(rand_load, diss=NULL, distance = "euclidean",
+                  method = "kmeans", min.nc=2, max.nc=max(c(2,round(ny/3))), 
                   index = "alllong", alphaBeale = 0.1)
     
     nb_group_best <- c(nb_group_best, max(nb$Best.partition))
     all_partition <- rbind(all_partition,nb$Best.partition)
   }
+  
+  all_partition <- na.omit(all_partition)
+  nb_group_best <- na.omit(nb_group_best)
   
   # Cluster stability
   nb_group <- as.numeric(names(which.max(table(nb_group_best))))
@@ -264,9 +281,19 @@ group_from_dfa_boot <- function(dfa_res, species_sub, nboot=100, eco_reg=FALSE, 
     stability_cluster <- c(stability_cluster, (1 - mean(vegdist(all_partition_test, method="jaccard"))))
   }
   
+  all_partition_uncertainty <- apply(all_partition_best, 2,
+                                     FUN = function(x){
+                                       y <- max(table(x))/length(x)
+                                       return(y)
+                                     })
+  all_partition_group <- apply(all_partition_best, 2,
+                                     FUN = function(x){
+                                       xmax <- as.numeric(names(which.max(table(x))))
+                                       return(xmax)
+                                     })
   
   # Compute kmeans
-  df.kmeans <- cclust(mat_loading, nb_group, method = "kmeans")
+  #df.kmeans <- cclust(mat_loading, nb_group, method = "kmeans")
   
   
   myPCA <- prcomp(mat_loading, scale. = F, center = F)
@@ -274,21 +301,45 @@ group_from_dfa_boot <- function(dfa_res, species_sub, nboot=100, eco_reg=FALSE, 
   # Group all info as output
   
   if(eco_reg==FALSE){
-    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
-                                        myPCA$x[,1:2],
-                                        group=as.factor(predict(df.kmeans)),
-                                        dfa_res_val[,-1],
-                                        dfa_res_se[,-1]),species_sub[,c("name_long","code_sp")],by="code_sp"),
-                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
-                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+    kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
+                                 myPCA$x[,1:2],
+                                 group = all_partition_group,#as.factor(predict(df.kmeans)),
+                                 dfa_res_val[,-1],
+                                 dfa_res_se[,-1],
+                                 uncert = all_partition_uncertainty),species_sub[,c("name_long","code_sp")],by="code_sp")
+    kmeans_center <- rep(NA,nb_dim)
+    for(i in 1:nb_group){
+      kmeans_center_row <- c()
+      for(j in 1:nb_dim){
+        kmeans_center_row <- c(kmeans_center_row,weighted.mean(kmeans_1[kmeans_1$group==i,paste0("X",j)],
+                                                               kmeans_1[kmeans_1$group==i,"uncert"]))
+      }
+      kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+    }
+    kmeans_center <- kmeans_center[-1,]
+    kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                           kmeans_center %*% myPCA$rotation[,1:2])
+    kmeans_res <- list(kmeans_1,kmeans_2)
   }else{
-    kmeans_res <- list(merge(data.frame(code_sp=dfa_res_val[,1],
-                                        myPCA$x[,1:2],
-                                        group=as.factor(predict(df.kmeans)),
-                                        dfa_res_val[,-1],
-                                        dfa_res_se[,-1]),species_sub[,c("name_long_eco","code_sp_eco")],by.x="code_sp", by.y="code_sp_eco"),
-                       data.frame(group=as.factor(1:nb_group),df.kmeans@centers,
-                                  df.kmeans@centers %*% myPCA$rotation[,1:2]))
+    kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
+                                 myPCA$x[,1:2],
+                                 group = as.factor(predict(df.kmeans)),
+                                 dfa_res_val[,-1],
+                                 dfa_res_se[,-1],
+                                 uncert = all_partition_uncertainty),species_sub[,c("name_long_eco","code_sp_eco")],by.x="code_sp", by.y="code_sp_eco")
+    kmeans_center <- rep(NA,nb_dim)
+    for(i in 1:nb_group){
+      kmeans_center_row <- c()
+      for(j in 1:nb_dim){
+        kmeans_center_row <- c(kmeans_center_row,weighted.mean(kmeans_1[kmeans_1$group==i,paste0("X",j)],
+                                                               kmeans_1[kmeans_1$group==i,"uncert"]))
+      }
+      kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+    }
+    kmeans_center <- kmeans_center[-1,]
+    kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                           kmeans_center %*% myPCA$rotation[,1:2])
+    kmeans_res <- list(kmeans_1,kmeans_2)
   }
   
   
@@ -381,16 +432,59 @@ plot_group2 <- function(nb_group, centroids, kmeans_res, hulls, sdrep){
 }
 
 
+plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
+  
+  data_trend_group <- data.frame(group=rep(paste0("g",1:nb_group),nT),
+                                 year=sort(rep(c(1998:(nT+1997)), nb_group)),
+                                 sdrep[grepl("x_pred",row.names(sdrep)),])
+  
+  
+  graph <- setNames(lapply(1:nb_group, function(i){
+    test <- data_trend_group[data_trend_group$group==paste0("g",i),]
+    test$Index_SE <- test$Std..Error
+    test$Index <- test$Estimate
+    ggplot(test, aes(x=year, y=Index)) +
+      geom_line() +
+      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+      xlab(NULL) + 
+      ylab(NULL) + 
+      theme_modern() + theme_transparent()+
+      theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+            axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+  }), levels(as.factor(data_trend_group$group)))
+  
+  # Plot final output
+  res_to_plot <- kmeans_res[[1]]
+  res_to_plot$group2 <- res_to_plot$group
+  res_to_plot$group2 <- as.factor(res_to_plot$group2)
+  
+  width_graph <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/10
+  
+  centroids_data <- tibble(x=centroids$PC1,
+                           y=centroids$PC2,
+                           width=width_graph,
+                           pie = graph)
+  
+  width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
+  
+  final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
+    geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+    geom_text(label=res_to_plot$name_long, nudge_x = width_nudge, nudge_y = width_nudge, check_overlap = F) +
+    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
+    theme_modern() +
+    theme(legend.position='none')
+  
+  return(final_plot)
+}
+
 # Generalise DFA
 
-make_dfa2 <- function(data_ts, # dataset of time series
+core_dfa <- function(data_ts, # dataset of time series
                      data_ts_se, # dataset of standard error of time series 
                      nfac, # number of trends for the DFA
                      rand_seed=1, # initial values for the sd of the random effect
-                     AIC=TRUE, # display AIC
-                     species_sub,  # list of species
-                     eco_reg=FALSE, weight=FALSE)  # option for group_from_dfa2
-{
+                     AIC=TRUE # display AIC
+                     ){
   
   # Save input data for plot
   
@@ -416,28 +510,28 @@ make_dfa2 <- function(data_ts, # dataset of time series
                   obs_se = as.matrix(data_ts_se),
                   Z_pred = Z_predinit)
   # Prepare parameters for DFA
-    
+  
   nfac <- nfac # Number of factors
   ny <- nrow(data_ts) # Number of time series
   nT <- ncol(data_ts) # Number of time step
-    
+  
   # Worth trying multiple starting values for the optimisation to check that the right optimum is found.
   set.seed(rand_seed) 
   log_re_sp <- runif(ny, -1, 0)
-    
+  
   Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
-    
+  
   # Set constrained elements to zero
-    
+  
   constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
   Zinit[constrInd] <- 0
-    
+  
   # List of parameters for DFA
-    
+  
   tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
                   x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
-                             ncol = nT, nrow = nfac))
-    
+                           ncol = nT, nrow = nfac))
+  
   # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
   
   Zmap <- matrix(ncol = nfac, nrow = ny)
@@ -448,24 +542,89 @@ make_dfa2 <- function(data_ts, # dataset of time series
   xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
   tmbMap <- list(Z = as.factor(Zmap),
                  x = as.factor(xmap))
-    
+  
   # Make DFA
-    
+  
   tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
   tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
   
   # Avoid infinite SE when SD are close or equal to zero
-    
+  
   oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
   singularThreshold = 1e-5
   nSingular = sum(diag(oh) < singularThreshold)
   diag(oh) <- pmax(diag(oh), singularThreshold)
   sdRep_test <- summary(sdreport(tmbObj, hessian.fixed = oh))
+  sdRep_test_all <- sdreport(tmbObj, hessian.fixed = oh)
   
   # Check convergence
   
   conv <- grepl("relative convergence",tmbOpt$message)
   if(!conv){warning(paste0("Convergence issue:", tmbOpt$message))}
+  
+  # Compute AIC
+  
+  if(AIC){
+    aic <- AIC.tmb2(tmbObj, dontCount = 0) 
+    aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) 
+    writeLines(paste('AIC: ', aic))
+    writeLines(paste('AIC not counting singular random effects: ', aic2))
+  } else {aic <- aic2 <- NA}
+  
+  return(list(tmbObj, tmbOpt, data_ts, data_ts_se, data_ts_save,
+              data_ts_save_long, data_ts_se_save, ny, nT,
+              aic, aic2, conv, sdRep_test, sdRep_test_all))
+}
+
+make_dfa2 <- function(data_ts, # dataset of time series
+                     data_ts_se, # dataset of standard error of time series 
+                     nfac=0, # number of trends for the DFA, 0 to estimate the best number of trends
+                     mintrend=1, # minimum number of trends to test
+                     maxtrend=6, # maximum number of trends to test
+                     rand_seed=1, # initial values for the sd of the random effect
+                     AIC=TRUE, # display AIC
+                     species_sub,  # list of species
+                     nboot=100,
+                     eco_reg=FALSE, weight=FALSE)  # option for group_from_dfa2
+{
+  
+  if(nfac==0){
+    aic2_best <- aic_best <- c()
+    for(i in mintrend:maxtrend){
+      core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i))
+      
+      if(core_dfa_res[[12]]==T){
+        aic_best <- c(aic_best, core_dfa_res[[10]])
+        aic2_best <- c(aic2_best, core_dfa_res[[11]])
+      } else {
+        aic_best <- c(aic_best, NA)
+        aic2_best <- c(aic2_best, NA)
+      }
+    }
+    if(length(which.min(aic2_best))==0){stop("Convergence issues")}
+    nfac <- which.min(aic2_best)
+    core_dfa_res <- get(paste0("core_dfa",nfac))
+  }else{
+    core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac)
+  }
+  tmbObj <- core_dfa_res[[1]]
+  tmbOpt <- core_dfa_res[[2]]
+  data_ts <- core_dfa_res[[3]]
+  data_ts_se <- core_dfa_res[[4]]
+  data_ts_save <- core_dfa_res[[5]]
+  data_ts_save_long <- core_dfa_res[[6]]
+  data_ts_se_save <- core_dfa_res[[7]]
+  ny <- core_dfa_res[[8]]
+  nT <- core_dfa_res[[9]]
+  aic <- core_dfa_res[[10]]
+  aic2 <- core_dfa_res[[11]]
+  conv <- core_dfa_res[[12]]
+  sdRep_test <- core_dfa_res[[13]]
+  sdRep_test_all <- core_dfa_res[[14]]
+  
+  if(is.na(aic2)){
+    stop("Convergence issues")
+  }
   
   # Get point estimates
 
@@ -474,16 +633,20 @@ make_dfa2 <- function(data_ts, # dataset of time series
   Z_hat <- (tmbObj$env$parList)(par=tmbOpt$par)$Z
   
   Z_hat_se <- sdRep_test[rownames(sdRep_test)=="Z",2]
-  for(i in 1:(nfac-1)){
-    index_0 <- ny*i
-    Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
+  if(nfac>1){
+    for(i in 1:(nfac-1)){
+      index_0 <- ny*i
+      Z_hat_se <- append(Z_hat_se, rep(0,i), after=index_0)
+    }
   }
   Z_hat_se <- matrix(Z_hat_se, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
   
   Z_hat_orig <- sdRep_test[rownames(sdRep_test)=="Z",1]
-  for(i in 1:(nfac-1)){
-    index_0 <- ny*i
-    Z_hat_orig <- append(Z_hat_orig, rep(0,i), after=index_0)
+  if(nfac>1){
+    for(i in 1:(nfac-1)){
+      index_0 <- ny*i
+      Z_hat_orig <- append(Z_hat_orig, rep(0,i), after=index_0)
+    }
   }
   Z_hat_orig <- matrix(Z_hat_orig, ncol=ncol(Z_hat), nrow=nrow(Z_hat))
   
@@ -491,21 +654,20 @@ make_dfa2 <- function(data_ts, # dataset of time series
   
   # Data for species loadings
   
-  #data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
-  #                                      Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
-  #                      se.value = NA)
-  data_loadings <- merge(melt(data.frame(code_sp=data_ts_save[,1],
-                                         Z_hat_orig), id.vars="code_sp"),
-                         melt(data.frame(code_sp=data_ts_save[,1],
-                                         Z_hat_se), id.vars="code_sp"),
-                         by=c("code_sp","variable"))
-  names(data_loadings)[3:4] <- c("value","se.value") 
+  cov_mat_Z <- sdRep_test_all$cov.fixed[which(rownames(sdRep_test)=="Z"),which(rownames(sdRep_test)=="Z")]
+  
+  data_loadings <- melt(data.frame(code_sp=data_ts_save[,1],Z_hat_orig),
+                        id.vars="code_sp")
   
   # Get groups from clustering
-  
-  group_dfa <- group_from_dfa2(data_loadings, species_sub, eco_reg, weight)
-  
-  Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
+  if(nfac>1){
+    group_dfa <- group_from_dfa_boot(data_loadings, cov_mat_Z, species_sub, nboot=nboot, eco_reg, weight, ny)
+    
+    Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
+    
+  }else{
+    Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
+  }
   
   # update z_pred with actual values
   
@@ -518,14 +680,6 @@ make_dfa2 <- function(data_ts, # dataset of time series
   nSingular = sum(diag(oh) < singularThreshold)
   diag(oh) <- pmax(diag(oh), singularThreshold)
   sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
-  
-  # Compute AIC
-  if(AIC){
-    aic <- AIC.tmb2(tmbObj, dontCount = 0) 
-    aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) # Not sure if this is ok, should be checked.
-    writeLines(paste('AIC: ', aic))
-    writeLines(paste('AIC not counting singular random effects: ', aic2))
-  } else {aic <- NA}
   
   # Prepare data to plot
   
@@ -560,45 +714,76 @@ make_dfa2 <- function(data_ts, # dataset of time series
   data_to_plot_tr <- data.frame(t(x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr_se <- data.frame(t(x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   
-  # Add rotated trends
   
-  data_to_plot_tr_rot <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
+  if(nfac>1){
+    # Add rotated trends
+    data_to_plot_tr_rot <- data.frame(t(solve(varimax(Z_hat)$rotmat) %*% x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
+    
+    data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
+                             se=melt(data_to_plot_tr_se, id.vars = "Year")[,3], # This SE is ok as it comes directly from TMB
+                             rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3])
+    
+    # Data for species loadings
+    
+    data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
+                                           Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
+                           se.value = NA)
+    
+    # Plots
+    
+    plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
+      geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
+      geom_line(aes(y=exp(pred.value))) +
+      geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
+      facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
+      theme_modern()
+    
+    plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
+      geom_line(aes(colour=variable))+
+      theme_modern()
+    
+    plot_ld <- ggplot(data_loadings) + 
+      geom_col(aes(value, code_sp, fill=variable)) +
+      geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
+      facet_wrap(variable ~ ., ncol=4) +
+      theme_modern() + theme(legend.position = "none")
+    
+    plot_sp_group <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
+                                     centroids = group_dfa[[2]],
+                                     kmeans_res = group_dfa[[1]],
+                                     hulls = group_dfa[[3]],
+                                     sdrep = sdRep, nT = nT)
+  }else{
+    data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
+                             se=melt(data_to_plot_tr_se, id.vars = "Year")[,3])
+    
+    # Data for species loadings
+    
+    data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
+                                           sdRep[rownames(sdRep)=="Z",1]), id.vars="code_sp"),
+                           se.value = NA)
+    
+    # Plots
+    
+    plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
+      geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
+      facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
+      theme_modern()
+    
+    plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=value)) + 
+      geom_line(aes(colour=variable))+
+      theme_modern()
+    
+    plot_ld <- ggplot(data_loadings) + 
+      geom_col(aes(value, code_sp, fill=variable)) +
+      geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
+      facet_wrap(variable ~ ., ncol=4) +
+      theme_modern() + theme(legend.position = "none")
+    
+    plot_sp_group <- plot_tr
+  }
   
-  data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
-                           se=melt(data_to_plot_tr_se, id.vars = "Year")[,3], # This SE is ok as it comes directly from TMB
-                           rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3])
-  
-  # Data for species loadings
-  
-  data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
-                                         Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
-                         se.value = NA)
-  
-  # Plots
-  
-  plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
-    geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
-    geom_line(aes(y=exp(pred.value))) +
-    geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
-    facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
-    theme_modern()
-  
-  plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
-    geom_line(aes(colour=variable))+
-    theme_modern()
-  
-  plot_ld <- ggplot(data_loadings) + 
-    geom_col(aes(value, code_sp, fill=variable)) +
-    geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
-    facet_wrap(variable ~ ., ncol=4) +
-    theme_modern() + theme(legend.position = "none")
-  
-  plot_sp_group <- plot_group2(nb_group = nrow(group_dfa[[1]][[2]]),
-                              centroids = group_dfa[[2]],
-                              kmeans_res = group_dfa[[1]],
-                              hulls = group_dfa[[3]],
-                              sdrep = sdRep)
-
   return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
               plot_sp, plot_tr, plot_ld, plot_sp_group, aic, sdRep))
 }
+
