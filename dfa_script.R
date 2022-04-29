@@ -189,7 +189,7 @@ species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), cod
 n_y <- 25 # number of year
 y <- data.frame(t(rep(NA,(n_y+1))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
-n_sp <- 20 # number of species
+n_sp <- 30 # number of species
 sd_rand <-0.01
 for(i in 1:n_sp){
   set.seed(i)
