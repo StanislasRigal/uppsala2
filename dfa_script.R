@@ -189,14 +189,21 @@ species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), cod
 n_y <- 25 # number of year
 y <- data.frame(t(rep(NA,(n_y+1))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
-n_sp <- 30 # number of species
+n_sp <- 20 # number of species
 sd_rand <-0.01
 for(i in 1:n_sp){
   set.seed(i)
   max_new <- runif(1, 1.2, 1.8)
   min_new <- runif(1, 0.2, 0.8)
   y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
-  y[i,2:(n_y+1)] <- scales::rescale(c(arima.sim(model = list(order = c(0, 1, 0)), n = (n_y-1))), to=c(min_new, max_new))
+  #y[i,2:(n_y+1)] <- scales::rescale(c(arima.sim(model = list(order = c(0, 1, 0)), n = (n_y-1))), to=c(min_new, max_new))
+  y_ts <- numeric(n_y)
+  y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+  for (t in 2:n_y) {
+    r.w <- rnorm(n = 1, mean = 0, sd = 1)
+    y_ts[t] <- y_ts[t - 1] + r.w
+  }
+  y[i,2:(n_y+1)] <- scales::rescale(y_ts, to=c(min_new, max_new))
   obs_se[i,2:(n_y+1)] <- runif(n_y,sd_rand,2*sd_rand)
 }
 
@@ -205,7 +212,45 @@ obs_se_rand <- data.table(obs_se)
 names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
 species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
 
+
 # Testing  influence of parameters
+# selection of different groups a posteriori
+n_y <- 25 # number of year
+y <- data.frame(t(rep(NA,(n_y+2))))
+obs_se <- data.frame(t(rep(NA,(n_y+1))))
+n_sp <- 200 # number of simulations before selection
+sd_rand <-0.01
+for(i in 1:n_sp){
+  set.seed(i)
+  y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+  #y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+  #for (t in 2:n_y) {
+  #  r.w <- rnorm(n = 1, mean = 0, sd = 1)
+  #  y_ts[t] <- y_ts[t - 1] + r.w
+  #}
+  y_ts <- c(arima.sim(model = list(order = c(0, 1, 0)), n = (n_y-1)))
+  y_ts <- y_ts+abs(min(y_ts))+1
+  y_ts <- exp(scale(log(y_ts)))
+  max_new <- max(y_ts)-mean(y_ts)/4
+  min_new <- min(y_ts)+mean(y_ts)/4
+  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+  y_ts_slope <- summary(lm(y_ts~c(1:n_y)))$coef[2,1]
+  y[i,2:(n_y+1)] <- y_ts
+  y[i,(n_y+2)] <- y_ts_slope
+  obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+}
+n_group <- 5# number of group
+y$group <- cut(y[,(n_y+2)], n_group, labels=LETTERS[1:n_group])
+n_sp <- 30 # number of species
+y_red <- Reduce(rbind, by(y,y["group"],head,n = round(n_sp/n_group)))
+obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
+y_red <- y_red[order(y_red$X1),]
+
+y_rand <- data.table(y_red[,1:(n_y+1)])
+obs_se_rand <- data.table(obs_se_red)
+names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
 
 
 

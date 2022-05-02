@@ -344,16 +344,17 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   
   nb_group <- as.numeric(names(which.max(table(nb_group_best))))
   
-  all_partition_nb_group <- all_partition[nb_group_best==nb_group,]
-  all_partition_nb_group_df <- as.data.frame(all_partition_nb_group)
-  all_partition_nb_group_df$part <- apply(all_partition_nb_group, 1, function(x){str_c(x, collapse = "-")})
+  #all_partition_nb_group <- all_partition[nb_group_best==nb_group,]
+  #all_partition_nb_group_df <- as.data.frame(all_partition_nb_group)
+  #all_partition_nb_group_df$part <- apply(all_partition_nb_group, 1, function(x){str_c(x, collapse = "-")})
   
-  all_partition2 <- all_partition_nb_group[all_partition_nb_group_df$part==names(which.max(table(all_partition_nb_group_df$part))),][1,]
-  group_num <- sort(unique(all_partition2))
-  for(t in 1:length(group_num)){
-    all_partition2[which(all_partition2==group_num[t])] <- t
-  }
+  #all_partition2 <- all_partition_nb_group[all_partition_nb_group_df$part==names(which.max(table(all_partition_nb_group_df$part))),][1,]
+  #group_num <- sort(unique(all_partition2))
+  #for(t in 1:length(group_num)){
+  #  all_partition2[which(all_partition2==group_num[t])] <- t
+  #}
   
+  all_partition2 <- kmeans(mat_loading, nb_group, iter.max = 100)$cluster
 
   # Bootstrap for cluster stability
   
@@ -712,7 +713,7 @@ make_dfa2 <- function(data_ts, # dataset of time series
                      nboot=100,
                      eco_reg=FALSE, weight=FALSE)  # option for group_from_dfa2
 {
-  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=0;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_farm;nboot=100;eco_reg=FALSE;weight=FALSE
+  #data_ts=y_rand;data_ts_se=obs_se_rand;nfac=0;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_rand;nboot=100;eco_reg=FALSE;weight=FALSE
   
   if(nfac==0){
     aic2_best <- aic_best <- c()
