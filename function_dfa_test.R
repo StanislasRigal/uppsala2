@@ -419,7 +419,9 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
                                        xmax <- as.numeric(names(which.max(table(x))))
                                        return(xmax)
                                      })
-  
+  if(length(unique(all_partition_group))<nb_group){
+    all_partition_group <- all_partition2[1,]
+  }
   # Compute PCA to get axes of the graph
   
   myPCA <- prcomp(mat_loading, scale. = F, center = F)
@@ -577,7 +579,8 @@ plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
       theme_modern() + theme_transparent()+
       theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
             axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
-  }), levels(as.factor(data_trend_group$group)))
+  
+    }), levels(as.factor(data_trend_group$group)))
   
   # Plot final output
   res_to_plot <- kmeans_res[[1]]

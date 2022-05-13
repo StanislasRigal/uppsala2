@@ -216,10 +216,11 @@ species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), cod
 # Testing  influence of parameters
 # selection of different groups a posteriori
 n_y <- 25 # number of year
-y <- data.frame(t(rep(NA,(n_y+2))))
+y <- data.frame(t(rep(NA,(n_y+3))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
-n_sp <- 200 # number of simulations before selection
-sd_rand <-0.01
+n_sp <- 1000 # number of simulations before selection
+sd_rand <- 0.01
+
 for(i in 1:n_sp){
   set.seed(i)
   y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
@@ -234,15 +235,35 @@ for(i in 1:n_sp){
   max_new <- max(y_ts)-mean(y_ts)/4
   min_new <- min(y_ts)+mean(y_ts)/4
   y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-  y_ts_slope <- summary(lm(y_ts~c(1:n_y)))$coef[2,1]
+  classification <- class.trajectory(c(y_ts), c(1:n_y))
+  if(i==1){
+    y_class <- classification$shape_class
+  }else{
+    y_class <- c(y_class,classification$shape_class)
+  }
   y[i,2:(n_y+1)] <- y_ts
-  y[i,(n_y+2)] <- y_ts_slope
+  y[i,(n_y+2)] <- classification$linear_slope
+  y[i,(n_y+3)] <- classification$linear_slope_pvalue
   obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
 }
-n_group <- 5# number of group
-y$group <- cut(y[,(n_y+2)], n_group, labels=LETTERS[1:n_group])
+#n_group <- 5# number of group
+#y$group <- cut(y[,(n_y+2)], n_group, labels=LETTERS[1:n_group])
 n_sp <- 30 # number of species
-y_red <- Reduce(rbind, by(y,y["group"],head,n = round(n_sp/n_group)))
+#y_red <- Reduce(rbind, by(y,y["group"],head,n = round(n_sp/n_group)))
+set.seed(1)
+y_num_red <- c(sample(which(y_class=="decrease_constant"),10),
+            sample(which(y_class=="increase_constant"),10),
+            sample(which(y_class=="stable_constant"),10))
+y_num_red <- c(sample(which(y_class=="decrease_constant"),3),
+               sample(which(y_class=="increase_constant"),3),
+               sample(which(y_class=="stable_constant"),3),
+               sample(which(y_class=="decrease_accelerated"),3),
+               sample(which(y_class=="increase_accelerated"),3),
+               sample(which(y_class=="stable_concave"),3),
+               sample(which(y_class=="decrease_decelerated"),3),
+               sample(which(y_class=="increase_decelerated"),3),
+               sample(which(y_class=="stable_convex"),3))
+y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
 obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
 y_red <- y_red[order(y_red$X1),]
 
@@ -273,3 +294,66 @@ forest_nfac4 <- make_dfa2(data_ts = y_forest, data_ts_se = obs_se_forest,
                           nfac = 4, species_sub = species_forest)
 all_nfac2 <- make_dfa2(data_ts = y_all, data_ts_se = obs_se_all,
                        nfac = 2, species_sub = species_all)
+
+#
+
+cum_perc <- expand.grid(c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100))
+cum_perc[,4] <- apply(cum_perc,1,sum)
+cum_perc <- cum_perc[cum_perc$V4==100,1:3]
+
+n_y <- 25 # number of year
+y <- data.frame(t(rep(NA,(n_y+3))))
+obs_se <- data.frame(t(rep(NA,(n_y+1))))
+n_sp <- 1000 # number of simulations before selection
+sd_rand <- 0.01
+
+for(i in 1:n_sp){
+  set.seed(i)
+  y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+  y_ts <- c(arima.sim(model = list(order = c(0, 1, 0)), n = (n_y-1)))
+  y_ts <- y_ts+abs(min(y_ts))+1
+  y_ts <- exp(scale(log(y_ts)))
+  max_new <- max(y_ts)-mean(y_ts)/4
+  min_new <- min(y_ts)+mean(y_ts)/4
+  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+  classification <- class.trajectory(c(y_ts), c(1:n_y))
+  if(i==1){
+    y_class <- classification$shape_class
+  }else{
+    y_class <- c(y_class,classification$shape_class)
+  }
+  y[i,2:(n_y+1)] <- y_ts
+  y[i,(n_y+2)] <- classification$linear_slope
+  y[i,(n_y+3)] <- classification$linear_slope_pvalue
+  obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+}
+
+n_sp <- 30
+
+for(a in 1:nrow(cum_perc)){
+  ud <- round(cum_perc[a,1]*n_sp/100)
+  ui <- round(cum_perc[a,2]*n_sp/100)
+  uc <- round(cum_perc[a,3]*n_sp/100)
+  
+  set.seed(a)
+  
+  y_num_red <- c(sample(which(y_class=="decrease_constant"),ud),
+                 sample(which(y_class=="increase_constant"),ui),
+                 sample(which(y_class=="stable_constant"),uc))
+  y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
+  obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
+  y_red <- y_red[order(y_red$X1),]
+  
+  y_rand <- data.table(y_red[,1:(n_y+1)])
+  obs_se_rand <- data.table(obs_se_red)
+  names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+  y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+  species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
+  
+  # DFA
+  
+  rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+                         species_sub = species_rand)
+}
