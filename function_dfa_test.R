@@ -319,7 +319,11 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
         all_partition[(i+1),][which(nb$Best.partition==l)] <- k
       }
       extra_clus <- sort(unique(nb$Best.partition))[which(!(sort(unique(nb$Best.partition)) %in% l_data))]
-      all_partition[(i+1),][which(nb$Best.partition==extra_clus)] <- k +1
+      for(g_sup in 1:length(extra_clus)){
+        k <- k +1
+        all_partition[(i+1),][which(nb$Best.partition==extra_clus[g_sup])] <- k
+      }
+      
     }
     
     # If less clusters in the bootstrap clustering
@@ -796,6 +800,8 @@ make_dfa2 <- function(data_ts, # dataset of time series
     Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
     
   }else{
+    group_dfa <- NA
+    
     Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
   }
   
@@ -914,6 +920,6 @@ make_dfa2 <- function(data_ts, # dataset of time series
   }
   
   return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
-              plot_sp, plot_tr, plot_ld, plot_sp_group, aic, sdRep))
+              plot_sp, plot_tr, plot_ld, plot_sp_group, aic, sdRep, group_dfa))
 }
 

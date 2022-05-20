@@ -295,7 +295,7 @@ forest_nfac4 <- make_dfa2(data_ts = y_forest, data_ts_se = obs_se_forest,
 all_nfac2 <- make_dfa2(data_ts = y_all, data_ts_se = obs_se_all,
                        nfac = 2, species_sub = species_all)
 
-#
+# random simulation then classification
 
 cum_perc <- expand.grid(c(0,20,40,60,80,100),
                         c(0,20,40,60,80,100),
@@ -332,6 +332,7 @@ for(i in 1:n_sp){
 
 n_sp <- 30
 
+rand_nfac_list <- list()
 for(a in 1:nrow(cum_perc)){
   ud <- round(cum_perc[a,1]*n_sp/100)
   ui <- round(cum_perc[a,2]*n_sp/100)
@@ -356,4 +357,232 @@ for(a in 1:nrow(cum_perc)){
   
   rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
                          species_sub = species_rand)
+  
+  rand_nfac_list[[a]] <- rand_nfac
+}
+
+
+# do it many time (but output to big)
+
+n_y <- 25 # number of year
+y <- data.frame(t(rep(NA,(n_y+3))))
+obs_se <- data.frame(t(rep(NA,(n_y+1))))
+n_sp <- 10000 # number of simulations before selection
+sd_rand <- 0.01
+
+for(i in 1:n_sp){
+  set.seed(i)
+  y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+  y_ts <- c(arima.sim(model = list(order = c(0, 1, 0)), n = (n_y-1)))
+  y_ts <- y_ts+abs(min(y_ts))+1
+  y_ts <- exp(scale(log(y_ts)))
+  max_new <- max(y_ts)-mean(y_ts)/4
+  min_new <- min(y_ts)+mean(y_ts)/4
+  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+  classification <- class.trajectory(c(y_ts), c(1:n_y))
+  if(i==1){
+    y_class <- classification$shape_class
+  }else{
+    y_class <- c(y_class,classification$shape_class)
+  }
+  y[i,2:(n_y+1)] <- y_ts
+  y[i,(n_y+2)] <- classification$linear_slope
+  y[i,(n_y+3)] <- classification$linear_slope_pvalue
+  obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+}
+
+n_sp <- 30
+n_simul <- 100
+rand_nfac_list_all <- list()
+for(g in 1:n_simul){
+  print(g)
+  rand_nfac_list <- list()
+  for(a in 1:nrow(cum_perc)){
+    ud <- round(cum_perc[a,1]*n_sp/100)
+    ui <- round(cum_perc[a,2]*n_sp/100)
+    uc <- round(cum_perc[a,3]*n_sp/100)
+    
+    #set.seed(a)
+    
+    y_num_red <- c(sample(which(y_class=="decrease_constant"),ud),
+                   sample(which(y_class=="increase_constant"),ui),
+                   sample(which(y_class=="stable_constant"),uc))
+    y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
+    obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
+    y_red <- y_red[order(y_red$X1),]
+    
+    y_rand <- data.table(y_red[,1:(n_y+1)])
+    obs_se_rand <- data.table(obs_se_red)
+    names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+    y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+    species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
+    
+    # DFA
+    
+    rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+                           species_sub = species_rand)
+    
+    rand_nfac_list[[a]] <- rand_nfac
+  }
+  rand_nfac_list_all[[g]] <- rand_nfac_list
+}
+
+# random simulation with classification a priori
+
+n_y <- 25 # number of year
+y_init <- data.frame(t(rep(NA,(n_y))))
+n_sp_init <- 5 # number of classes of different ts
+sd_rand <- 0.01
+mu_vec <- seq(-0.2,0.2,length.out=n_sp_init)
+
+for(i in 1:n_sp_init){
+  set.seed(i+10)
+  y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+  for (t in 2:n_y) {
+    r.w <- rnorm(n = 1, mean = mu_vec[i], sd = 1)
+    y_ts[t] <- y_ts[t - 1] + r.w
+  }
+  y_ts <- y_ts+abs(min(y_ts))+1
+  y_ts <- exp(scale(log(y_ts)))
+  max_new <- max(y_ts)-mean(y_ts)/4
+  min_new <- min(y_ts)+mean(y_ts)/4
+  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+  y_init[i,] <- y_ts
+}
+
+# from these n_sp_init classes, add noise to simulate N ts rw
+
+n_y <- 25 # number of year
+y <- data.frame(t(rep(NA,(n_y+2))))
+obs_se <- data.frame(t(rep(NA,(n_y+1))))
+n_sp <- 1000 # number of simulation
+sd_rand <- 0.01
+sd_rand2 <- 0.1
+id_vec <- sort(rep(1:nrow(y_init),n_sp/nrow(y_init)))
+
+for(i in 1:n_sp){
+  set.seed(i)
+  y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+  y_ts <- c(t(y_init[id_vec[i],]))
+  for (t in 1:n_y) {
+    noise <- rnorm(n = 1, mean = 0, sd = sd_rand2)
+    y_ts[t] <- y_ts[t] + noise
+  }
+  y_ts <- y_ts+abs(min(y_ts))+1
+  y_ts <- exp(scale(log(y_ts)))
+  max_new <- max(y_ts)-mean(y_ts)/4
+  min_new <- min(y_ts)+mean(y_ts)/4
+  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+  y[i,2:(n_y+1)] <- y_ts
+  y[i,(n_y+2)] <- id_vec[i]
+  obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+}
+
+cum_perc <- expand.grid(c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100),
+                        c(0,20,40,60,80,100))
+cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
+cum_perc <- cum_perc[cum_perc$V6==100,1:n_sp_init]
+
+n_sp <- 30
+
+rand_nfac_list <- list()
+for(a in 1:nrow(cum_perc)){
+  u1 <- round(cum_perc[a,1]*n_sp/100)
+  u2 <- round(cum_perc[a,2]*n_sp/100)
+  u3 <- round(cum_perc[a,3]*n_sp/100)
+  u4 <- round(cum_perc[a,4]*n_sp/100)
+  u5 <- round(cum_perc[a,5]*n_sp/100)
+  
+  set.seed(a)
+  
+  y_num_red <- c(sample(which(y[,ncol(y)]==1),u1),
+                 sample(which(y[,ncol(y)]==2),u2),
+                 sample(which(y[,ncol(y)]==3),u3),
+                 sample(which(y[,ncol(y)]==4),u4),
+                 sample(which(y[,ncol(y)]==5),u5))
+  y_red <- data.frame(y[y_num_red,])
+  obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
+  y_red <- y_red[order(y_red$X1),]
+  
+  y_rand <- data.table(y_red[,1:(n_y+1)])
+  obs_se_rand <- data.table(obs_se_red)
+  names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+  y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+  species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
+  
+  # DFA
+  
+  rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+                         species_sub = species_rand)
+  
+  # compare DFA results to expected
+  
+  obs_group <- rand_nfac[[10]][[1]][[1]]
+  
+  if(length(obs_group)==1){
+    obs_group_new <- rep(1,nrow(y_rand))
+  }else{
+    jac_sim_res <- matrix(NA, ncol=length(unique(y_red[,ncol(y_red)])),
+                          nrow=length(unique(obs_group$group)))
+    for(k in sort(unique(y_red[,ncol(y_red)]))){
+      for(l in sort(unique(obs_group$group))){
+        jac_sim_mat <- rbind(y_red[,ncol(y_red)],obs_group$group)
+        jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+        jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+        jac_sim_mat[jac_sim_mat>0] <- 1
+        jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+        jac_sim_res[l,k] <- jac_sim
+      }
+    }
+    
+    obs_group_new <- rep(NA,length(obs_group$group))
+    
+    # If same number of clusters
+
+    if(length(unique(y_red[,ncol(y_red)]))==length(unique(obs_group$group))){
+      for(l in sort(unique(obs_group$group))){
+        obs_group_new[which(obs_group$group==l)] <- which.max(jac_sim_res[l,])
+      }
+    }
+    
+    # If more clusters in the observed clustering
+    
+    if(length(unique(y_red[,ncol(y_red)]))<length(unique(obs_group$group))){
+      l_data <- c()
+      for(k in sort(unique(y_red[,ncol(y_red)]))){
+        l_data <- c(l_data,which.max(jac_sim_res[,k]))
+      }
+      k <- 0
+      for(l in l_data){
+        k <- k+1
+        obs_group_new[which(obs_group$group==l)] <- k
+      }
+      extra_clus <- sort(unique(obs_group$group))[which(!(sort(unique(obs_group$group)) %in% l_data))]
+      for(g_sup in 1:length(extra_clus)){
+        k <- k +1
+        obs_group_new[which(obs_group$group==extra_clus[g_sup])] <- k
+      }
+    }
+    
+    # If less clusters in the bootstrap clustering
+    
+    if(length(unique(y_red[,ncol(y_red)]))>length(unique(obs_group$group))){
+      k_data <- c()
+      for(l in sort(unique(obs_group$group))){
+        k_data <- c(k_data,which.max(jac_sim_res[l,]))
+      }
+      l <- 0
+      for(k in k_data){
+        l <- l+1
+        obs_group_new[which(obs_group$group==l)] <- k
+      }
+    }
+  }
+  
+  res_rand <- c(1 - vegdist(rbind(y_red[,ncol(y_red)],obs_group_new), method="jaccard"))
+  
+  rand_nfac_list[[a]] <- res_rand
 }
