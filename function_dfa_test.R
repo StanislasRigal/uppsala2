@@ -717,7 +717,7 @@ make_dfa2 <- function(data_ts, # dataset of time series
                      rand_seed=1, # initial values for the sd of the random effect
                      AIC=TRUE, # display AIC
                      species_sub,  # list of species
-                     nboot=100,
+                     nboot=100, # number of bootstrap for clustering
                      eco_reg=FALSE, weight=FALSE)  # option for group_from_dfa2
 {
   #data_ts=y_rand;data_ts_se=obs_se_rand;nfac=0;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_rand;nboot=100;eco_reg=FALSE;weight=FALSE

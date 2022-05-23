@@ -452,137 +452,207 @@ for(i in 1:n_sp_init){
 
 # from these n_sp_init classes, add noise to simulate N ts rw
 
-n_y <- 25 # number of year
-y <- data.frame(t(rep(NA,(n_y+2))))
-obs_se <- data.frame(t(rep(NA,(n_y+1))))
-n_sp <- 1000 # number of simulation
-sd_rand <- 0.01
-sd_rand2 <- 0.1
-id_vec <- sort(rep(1:nrow(y_init),n_sp/nrow(y_init)))
-
-for(i in 1:n_sp){
-  set.seed(i)
-  y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
-  y_ts <- c(t(y_init[id_vec[i],]))
-  for (t in 1:n_y) {
-    noise <- rnorm(n = 1, mean = 0, sd = sd_rand2)
-    y_ts[t] <- y_ts[t] + noise
+simul_rand_dfa <- function(n_y = 25, # number of year
+                           n_sp = 1000, # number of simulation
+                           sd_rand = 0.01, # observation error on data
+                           sd_rand2 = 0.1, # random noise on ts
+                           y_init, # initial ts classes from which derive simulation
+                           is_test = FALSE, # test
+                           amin = 27, # value min for a if is_test = T
+                           amax = 28, # value max for a if is_test = T
+                           nboot=100 # number of bootstrap for clustering
+                           ){
+  y <- data.frame(t(rep(NA,(n_y+2))))
+  obs_se <- data.frame(t(rep(NA,(n_y+1))))
+  id_vec <- sort(rep(1:nrow(y_init),n_sp/nrow(y_init)))
+  
+  for(i in 1:n_sp){
+    set.seed(i)
+    y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+    y_ts <- c(t(y_init[id_vec[i],]))
+    for (t in 1:n_y) {
+      noise <- rnorm(n = 1, mean = 0, sd = sd_rand2)
+      y_ts[t] <- y_ts[t] + noise
+    }
+    y_ts <- y_ts+abs(min(y_ts))+1
+    y_ts <- exp(scale(log(y_ts)))
+    max_new <- max(y_ts)-mean(y_ts)/4
+    min_new <- min(y_ts)+mean(y_ts)/4
+    y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+    y[i,2:(n_y+1)] <- y_ts
+    y[i,(n_y+2)] <- id_vec[i]
+    obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
   }
-  y_ts <- y_ts+abs(min(y_ts))+1
-  y_ts <- exp(scale(log(y_ts)))
-  max_new <- max(y_ts)-mean(y_ts)/4
-  min_new <- min(y_ts)+mean(y_ts)/4
-  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-  y[i,2:(n_y+1)] <- y_ts
-  y[i,(n_y+2)] <- id_vec[i]
-  obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+  
+  cum_perc <- expand.grid(c(0,20,40,60,80,100),
+                          c(0,20,40,60,80,100),
+                          c(0,20,40,60,80,100),
+                          c(0,20,40,60,80,100),
+                          c(0,20,40,60,80,100))
+  cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
+  cum_perc <- cum_perc[cum_perc$V6==100,1:n_sp_init]
+  
+  n_sp <- 30
+  
+  if(is_test==FALSE){
+    amin <- 1
+    amax <- nrow(cum_perc)
+  }
+
+  rand_nfac_list <- list()
+  for(a in amin:amax){
+    u1 <- round(cum_perc[a,1]*n_sp/100)
+    u2 <- round(cum_perc[a,2]*n_sp/100)
+    u3 <- round(cum_perc[a,3]*n_sp/100)
+    u4 <- round(cum_perc[a,4]*n_sp/100)
+    u5 <- round(cum_perc[a,5]*n_sp/100)
+    
+    # set.seed(a)
+    
+    y_num_red <- c(sample(which(y[,ncol(y)]==1),u1),
+                   sample(which(y[,ncol(y)]==2),u2),
+                   sample(which(y[,ncol(y)]==3),u3),
+                   sample(which(y[,ncol(y)]==4),u4),
+                   sample(which(y[,ncol(y)]==5),u5))
+    y_red <- data.frame(y[y_num_red,])
+    obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
+    y_red <- y_red[order(y_red$X1),]
+    
+    y_rand <- data.table(y_red[,1:(n_y+1)])
+    obs_se_rand <- data.table(obs_se_red)
+    names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+    y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+    species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
+    
+    # DFA
+    
+    rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+                           species_sub = species_rand, nboot=nboot)
+    
+    # compare DFA results to expected
+    
+    obs_group <- rand_nfac[[10]][[1]][[1]]
+    y_red[,ncol(y_red)] <- as.numeric(as.factor(y_red[,ncol(y_red)]))
+    
+    if(length(obs_group)==1){
+      obs_group_new <- rep(1,nrow(y_rand))
+    }else{
+      jac_sim_res <- matrix(NA, ncol=length(unique(y_red[,ncol(y_red)])),
+                            nrow=length(unique(obs_group$group)))
+      for(k in sort(unique(y_red[,ncol(y_red)]))){
+        for(l in sort(unique(obs_group$group))){
+          jac_sim_mat <- rbind(y_red[,ncol(y_red)],obs_group$group)
+          jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+          jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+          jac_sim_mat[jac_sim_mat>0] <- 1
+          jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+          jac_sim_res[l,k] <- jac_sim
+        }
+      }
+      
+      obs_group_new <- rep(NA,length(obs_group$group))
+      
+      # If same number of clusters
+      
+      if(length(unique(y_red[,ncol(y_red)]))==length(unique(obs_group$group))){
+        for(l in sort(unique(obs_group$group))){
+          obs_group_new[which(obs_group$group==l)] <- which.max(jac_sim_res[l,])
+        }
+      }
+      
+      # If more clusters in the observed clustering
+      
+      if(length(unique(y_red[,ncol(y_red)]))<length(unique(obs_group$group))){
+        l_data <- c()
+        for(k in sort(unique(y_red[,ncol(y_red)]))){
+          l_data <- c(l_data,which.max(jac_sim_res[,k]))
+        }
+        k <- 0
+        for(l in l_data){
+          k <- k+1
+          obs_group_new[which(obs_group$group==l)] <- k
+        }
+        extra_clus <- sort(unique(obs_group$group))[which(!(sort(unique(obs_group$group)) %in% l_data))]
+        for(g_sup in 1:length(extra_clus)){
+          k <- k +1
+          obs_group_new[which(obs_group$group==extra_clus[g_sup])] <- k
+        }
+      }
+      
+      # If less clusters in the bootstrap clustering
+      
+      if(length(unique(y_red[,ncol(y_red)]))>length(unique(obs_group$group))){
+        k_data <- c()
+        for(l in sort(unique(obs_group$group))){
+          k_data <- c(k_data,which.max(jac_sim_res[l,]))
+        }
+        l <- 0
+        for(k in k_data){
+          l <- l+1
+          obs_group_new[which(obs_group$group==l)] <- k
+        }
+      }
+    }
+    
+    res_rand <- c(1 - vegdist(rbind(y_red[,ncol(y_red)],obs_group_new), method="jaccard"))
+    
+    rand_nfac_list[[a]] <- res_rand
+  }
+  return(rand_nfac_list)
 }
 
-cum_perc <- expand.grid(c(0,20,40,60,80,100),
-                        c(0,20,40,60,80,100),
-                        c(0,20,40,60,80,100),
-                        c(0,20,40,60,80,100),
-                        c(0,20,40,60,80,100))
-cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
-cum_perc <- cum_perc[cum_perc$V6==100,1:n_sp_init]
+# prevent error from stopping simulation
+simul_rand_dfa2 <- function(n_y = 25,n_sp = 1000,sd_rand = 0.01,
+                            sd_rand2 = 0.1,y_init,is_test = FALSE,
+                            amin = 27,amax = 28,nboot=100){
+  tryCatch(simul_rand_dfa(n_y = 25,n_sp = 1000,sd_rand = 0.01,
+                   sd_rand2 = 0.1,y_init,is_test = FALSE,
+                   amin = 27,amax = 28,nboot=100),
+           error=function(e) NA)}
 
-n_sp <- 30
+# test function before simulation
+rand_nfac_test <- simul_rand_dfa2(y_init = y_init, is_test = TRUE)
+rand_nfac_test2 <- sapply(c(0.1,0.25,0.5,0.75,1),
+                          FUN=function(x){unlist(simul_rand_dfa2(y_init = y_init,
+                                                                is_test = TRUE,
+                                                                sd_rand = 0.01,
+                                                                nboot=10,
+                                                                sd_rand2 = x))})
+library(parallel)
 
-rand_nfac_list <- list()
-for(a in 1:nrow(cum_perc)){
-  u1 <- round(cum_perc[a,1]*n_sp/100)
-  u2 <- round(cum_perc[a,2]*n_sp/100)
-  u3 <- round(cum_perc[a,3]*n_sp/100)
-  u4 <- round(cum_perc[a,4]*n_sp/100)
-  u5 <- round(cum_perc[a,5]*n_sp/100)
-  
-  set.seed(a)
-  
-  y_num_red <- c(sample(which(y[,ncol(y)]==1),u1),
-                 sample(which(y[,ncol(y)]==2),u2),
-                 sample(which(y[,ncol(y)]==3),u3),
-                 sample(which(y[,ncol(y)]==4),u4),
-                 sample(which(y[,ncol(y)]==5),u5))
-  y_red <- data.frame(y[y_num_red,])
-  obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
-  y_red <- y_red[order(y_red$X1),]
-  
-  y_rand <- data.table(y_red[,1:(n_y+1)])
-  obs_se_rand <- data.table(obs_se_red)
-  names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
-  y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
-  species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
-  
-  # DFA
-  
-  rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
-                         species_sub = species_rand)
-  
-  # compare DFA results to expected
-  
-  obs_group <- rand_nfac[[10]][[1]][[1]]
-  
-  if(length(obs_group)==1){
-    obs_group_new <- rep(1,nrow(y_rand))
-  }else{
-    jac_sim_res <- matrix(NA, ncol=length(unique(y_red[,ncol(y_red)])),
-                          nrow=length(unique(obs_group$group)))
-    for(k in sort(unique(y_red[,ncol(y_red)]))){
-      for(l in sort(unique(obs_group$group))){
-        jac_sim_mat <- rbind(y_red[,ncol(y_red)],obs_group$group)
-        jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
-        jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
-        jac_sim_mat[jac_sim_mat>0] <- 1
-        jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
-        jac_sim_res[l,k] <- jac_sim
-      }
-    }
-    
-    obs_group_new <- rep(NA,length(obs_group$group))
-    
-    # If same number of clusters
+# Calculate the number of cores
+no_cores <- detectCores() - 1
 
-    if(length(unique(y_red[,ncol(y_red)]))==length(unique(obs_group$group))){
-      for(l in sort(unique(obs_group$group))){
-        obs_group_new[which(obs_group$group==l)] <- which.max(jac_sim_res[l,])
-      }
-    }
-    
-    # If more clusters in the observed clustering
-    
-    if(length(unique(y_red[,ncol(y_red)]))<length(unique(obs_group$group))){
-      l_data <- c()
-      for(k in sort(unique(y_red[,ncol(y_red)]))){
-        l_data <- c(l_data,which.max(jac_sim_res[,k]))
-      }
-      k <- 0
-      for(l in l_data){
-        k <- k+1
-        obs_group_new[which(obs_group$group==l)] <- k
-      }
-      extra_clus <- sort(unique(obs_group$group))[which(!(sort(unique(obs_group$group)) %in% l_data))]
-      for(g_sup in 1:length(extra_clus)){
-        k <- k +1
-        obs_group_new[which(obs_group$group==extra_clus[g_sup])] <- k
-      }
-    }
-    
-    # If less clusters in the bootstrap clustering
-    
-    if(length(unique(y_red[,ncol(y_red)]))>length(unique(obs_group$group))){
-      k_data <- c()
-      for(l in sort(unique(obs_group$group))){
-        k_data <- c(k_data,which.max(jac_sim_res[l,]))
-      }
-      l <- 0
-      for(k in k_data){
-        l <- l+1
-        obs_group_new[which(obs_group$group==l)] <- k
-      }
-    }
-  }
-  
-  res_rand <- c(1 - vegdist(rbind(y_red[,ncol(y_red)],obs_group_new), method="jaccard"))
-  
-  rand_nfac_list[[a]] <- res_rand
+# Initiate cluster
+cl <- makeCluster(no_cores, type="FORK")
+
+rand_nfac_test2 <- parSapply(cl, c(0.1,0.2,0.3,0.4,0.5),
+                             FUN=function(x){unlist(simul_rand_dfa(y_init = y_init,
+                                                              is_test = TRUE,
+                                                              sd_rand = x,
+                                                              sd_rand2 = 0.25))})
+stopCluster(cl)
+
+
+# full simulations
+rep_sim <- 10
+rand_nfac_sim_list1 <- list()
+rand_nfac_sim_list2 <- list()
+for(ii in 1:rep_sim){
+  print(ii)
+  print(Sys.time())
+  cl <- makeCluster(no_cores, type="FORK")
+  rand_nfac_sim1 <- parSapply(cl, c(0.1,0.25,0.5,0.75,1),
+                              function(x){unlist(simul_rand_dfa(y_init = y_init,
+                                                                sd_rand = 0.01,
+                                                                sd_rand2 = x))})
+  stopCluster(cl)
+  cl <- makeCluster(no_cores, type="FORK")
+  rand_nfac_sim2 <- parSapply(cl, c(0.1,0.2,0.3,0.4,0.5),
+                              function(x){unlist(simul_rand_dfa(y_init = y_init,
+                                                                sd_rand = x,
+                                                                sd_rand2 = 0.25))})
+  stopCluster(cl)
+  rand_nfac_sim_list1[[ii]] <- rand_nfac_sim1
+  rand_nfac_sim_list2[[ii]] <- rand_nfac_sim2
 }
