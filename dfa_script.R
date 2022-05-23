@@ -249,7 +249,7 @@ for(i in 1:n_sp){
 #n_group <- 5# number of group
 #y$group <- cut(y[,(n_y+2)], n_group, labels=LETTERS[1:n_group])
 n_sp <- 30 # number of species
-#y_red <- Reduce(rbind, by(y,y["group"],head,n = round(n_sp/n_group)))
+#y <- Reduce(rbind, by(y,y["group"],head,n = round(n_sp/n_group)))
 set.seed(1)
 y_num_red <- c(sample(which(y_class=="decrease_constant"),10),
             sample(which(y_class=="increase_constant"),10),
@@ -263,11 +263,11 @@ y_num_red <- c(sample(which(y_class=="decrease_constant"),3),
                sample(which(y_class=="decrease_decelerated"),3),
                sample(which(y_class=="increase_decelerated"),3),
                sample(which(y_class=="stable_convex"),3))
-y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
-obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
-y_red <- y_red[order(y_red$X1),]
+y <- data.frame(y[y_num_red,], class=y_class[y_num_red])
+obs_se_red <- obs_se[obs_se$X1 %in% y$X1,]
+y <- y[order(y$X1),]
 
-y_rand <- data.table(y_red[,1:(n_y+1)])
+y_rand <- data.table(y[,1:(n_y+1)])
 obs_se_rand <- data.table(obs_se_red)
 names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
 y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
@@ -343,11 +343,11 @@ for(a in 1:nrow(cum_perc)){
   y_num_red <- c(sample(which(y_class=="decrease_constant"),ud),
                  sample(which(y_class=="increase_constant"),ui),
                  sample(which(y_class=="stable_constant"),uc))
-  y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
-  obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
-  y_red <- y_red[order(y_red$X1),]
+  y <- data.frame(y[y_num_red,], class=y_class[y_num_red])
+  obs_se_red <- obs_se[obs_se$X1 %in% y$X1,]
+  y <- y[order(y$X1),]
   
-  y_rand <- data.table(y_red[,1:(n_y+1)])
+  y_rand <- data.table(y[,1:(n_y+1)])
   obs_se_rand <- data.table(obs_se_red)
   names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
   y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
@@ -407,11 +407,11 @@ for(g in 1:n_simul){
     y_num_red <- c(sample(which(y_class=="decrease_constant"),ud),
                    sample(which(y_class=="increase_constant"),ui),
                    sample(which(y_class=="stable_constant"),uc))
-    y_red <- data.frame(y[y_num_red,], class=y_class[y_num_red])
-    obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
-    y_red <- y_red[order(y_red$X1),]
+    y <- data.frame(y[y_num_red,], class=y_class[y_num_red])
+    obs_se_red <- obs_se[obs_se$X1 %in% y$X1,]
+    y <- y[order(y$X1),]
     
-    y_rand <- data.table(y_red[,1:(n_y+1)])
+    y_rand <- data.table(y[,1:(n_y+1)])
     obs_se_rand <- data.table(obs_se_red)
     names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
     y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
@@ -429,97 +429,92 @@ for(g in 1:n_simul){
 
 # random simulation with classification a priori
 
-n_y <- 25 # number of year
-y_init <- data.frame(t(rep(NA,(n_y))))
-n_sp_init <- 5 # number of classes of different ts
-sd_rand <- 0.01
-mu_vec <- seq(-0.2,0.2,length.out=n_sp_init)
 
-for(i in 1:n_sp_init){
-  set.seed(i+10)
-  y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
-  for (t in 2:n_y) {
-    r.w <- rnorm(n = 1, mean = mu_vec[i], sd = 1)
-    y_ts[t] <- y_ts[t - 1] + r.w
-  }
-  y_ts <- y_ts+abs(min(y_ts))+1
-  y_ts <- exp(scale(log(y_ts)))
-  max_new <- max(y_ts)-mean(y_ts)/4
-  min_new <- min(y_ts)+mean(y_ts)/4
-  y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-  y_init[i,] <- y_ts
-}
 
-# from these n_sp_init classes, add noise to simulate N ts rw
 
 simul_rand_dfa <- function(n_y = 25, # number of year
-                           n_sp = 1000, # number of simulation
+                           n_sp = 30, # number of species ts
+                           n_sp_init = 2, # number of latent trends
+                           nb_group_exp = 2, # number of expected clusters
+                           thres = 1, # min distance between barycenters of clusters (1 and 2)
                            sd_rand = 0.01, # observation error on data
                            sd_rand2 = 0.1, # random noise on ts
-                           y_init, # initial ts classes from which derive simulation
                            is_test = FALSE, # test
-                           amin = 27, # value min for a if is_test = T
-                           amax = 28, # value max for a if is_test = T
                            nboot=100 # number of bootstrap for clustering
                            ){
+  ## Simulate latent trends
+  
+  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
+  
+  for(i in 1:n_sp_init){
+    set.seed(i+10)
+    y_ts <- c()
+    y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+    for (t in 2:n_y) {
+      r.w <- rnorm(n = 1, mean = 0, sd = 1)
+      y_ts[t] <- y_ts[t - 1] + r.w
+    }
+    y_ts <- y_ts + abs(min(y_ts))+1
+    y_ts <- exp(scale(log(y_ts)))
+    #max_new <- max(y_ts) - mean(y_ts)/4
+    #min_new <- min(y_ts) + mean(y_ts)/4
+    #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+    y_init[i,] <- y_ts
+  }
+  
+  ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
+
+  cum_perc <- expand.grid(c(0,20,40,60,80,100),#ici
+                          c(0,20,40,60,80,100))
+  cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
+  cum_perc <- cum_perc[cum_perc$V3==100,1:n_sp_init]
+
+  seed_id <- 0
+  id_vec <- c()
+  dist_bary <- 0
+  while(dist_bary<thres){ # check if enough distance between the groups
+    for(g in 1:nb_group_exp){
+      nb_sp_g <- round(cum_perc[3,g]*n_sp/100)
+      assign(paste0("nb_sp_g",g),nb_sp_g)
+      id_vec <- c(id_vec,rep(g,nb_sp_g))
+      for(lt in 1:n_sp_init){
+        seed_id <- seed_id + 1
+        set.seed(seed_id)
+        mean_u_g <- runif(1, -1, 1)
+        lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.2)
+        assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+        assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+      }
+    }
+    id_vec <- id_vec[1:n_sp]
+    dist_bary <- dist(matrix(c(mean_u1_g1,mean_u2_g1,mean_u1_g2,mean_u2_g2),ncol=2))
+  }
+  
   y <- data.frame(t(rep(NA,(n_y+2))))
   obs_se <- data.frame(t(rep(NA,(n_y+1))))
-  id_vec <- sort(rep(1:nrow(y_init),n_sp/nrow(y_init)))
   
-  for(i in 1:n_sp){
+  for(i in 1:n_sp){ # get simulated ts from loadings
     set.seed(i)
+    noise <- rnorm(n_y)
     y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
-    y_ts <- c(t(y_init[id_vec[i],]))
-    for (t in 1:n_y) {
-      noise <- rnorm(n = 1, mean = 0, sd = sd_rand2)
-      y_ts[t] <- y_ts[t] + noise
+    y_ts <- rep(0,n_y)
+    g <- id_vec[i]
+    i_g <- which(which(id_vec==g)==i) # new index for i in group g
+    for(lt in 1:n_sp_init){
+      lf_u_g <- get(paste0("lf_u",lt,"_g",g))
+      y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
     }
-    y_ts <- y_ts+abs(min(y_ts))+1
+    y_ts <- y_ts + noise
+    y_ts <- y_ts + abs(min(y_ts)) + 1
     y_ts <- exp(scale(log(y_ts)))
-    max_new <- max(y_ts)-mean(y_ts)/4
-    min_new <- min(y_ts)+mean(y_ts)/4
-    y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
     y[i,2:(n_y+1)] <- y_ts
     y[i,(n_y+2)] <- id_vec[i]
     obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
-  }
+  }  
   
-  cum_perc <- expand.grid(c(0,20,40,60,80,100),
-                          c(0,20,40,60,80,100),
-                          c(0,20,40,60,80,100),
-                          c(0,20,40,60,80,100),
-                          c(0,20,40,60,80,100))
-  cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
-  cum_perc <- cum_perc[cum_perc$V6==100,1:n_sp_init]
   
-  n_sp <- 30
-  
-  if(is_test==FALSE){
-    amin <- 1
-    amax <- nrow(cum_perc)
-  }
-
-  rand_nfac_list <- list()
-  for(a in amin:amax){
-    u1 <- round(cum_perc[a,1]*n_sp/100)
-    u2 <- round(cum_perc[a,2]*n_sp/100)
-    u3 <- round(cum_perc[a,3]*n_sp/100)
-    u4 <- round(cum_perc[a,4]*n_sp/100)
-    u5 <- round(cum_perc[a,5]*n_sp/100)
-    
-    # set.seed(a)
-    
-    y_num_red <- c(sample(which(y[,ncol(y)]==1),u1),
-                   sample(which(y[,ncol(y)]==2),u2),
-                   sample(which(y[,ncol(y)]==3),u3),
-                   sample(which(y[,ncol(y)]==4),u4),
-                   sample(which(y[,ncol(y)]==5),u5))
-    y_red <- data.frame(y[y_num_red,])
-    obs_se_red <- obs_se[obs_se$X1 %in% y_red$X1,]
-    y_red <- y_red[order(y_red$X1),]
-    
-    y_rand <- data.table(y_red[,1:(n_y+1)])
-    obs_se_rand <- data.table(obs_se_red)
+    y_rand <- data.table(y[,1:(n_y+1)])
+    obs_se_rand <- data.table(obs_se)
     names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
     y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
     species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
@@ -532,16 +527,16 @@ simul_rand_dfa <- function(n_y = 25, # number of year
     # compare DFA results to expected
     
     obs_group <- rand_nfac[[10]][[1]][[1]]
-    y_red[,ncol(y_red)] <- as.numeric(as.factor(y_red[,ncol(y_red)]))
+    y[,ncol(y)] <- as.numeric(as.factor(y[,ncol(y)]))
     
     if(length(obs_group)==1){
       obs_group_new <- rep(1,nrow(y_rand))
     }else{
-      jac_sim_res <- matrix(NA, ncol=length(unique(y_red[,ncol(y_red)])),
+      jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
                             nrow=length(unique(obs_group$group)))
-      for(k in sort(unique(y_red[,ncol(y_red)]))){
+      for(k in sort(unique(y[,ncol(y)]))){
         for(l in sort(unique(obs_group$group))){
-          jac_sim_mat <- rbind(y_red[,ncol(y_red)],obs_group$group)
+          jac_sim_mat <- rbind(y[,ncol(y)],obs_group$group)
           jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
           jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
           jac_sim_mat[jac_sim_mat>0] <- 1
@@ -554,7 +549,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
       
       # If same number of clusters
       
-      if(length(unique(y_red[,ncol(y_red)]))==length(unique(obs_group$group))){
+      if(length(unique(y[,ncol(y)]))==length(unique(obs_group$group))){
         for(l in sort(unique(obs_group$group))){
           obs_group_new[which(obs_group$group==l)] <- which.max(jac_sim_res[l,])
         }
@@ -562,9 +557,9 @@ simul_rand_dfa <- function(n_y = 25, # number of year
       
       # If more clusters in the observed clustering
       
-      if(length(unique(y_red[,ncol(y_red)]))<length(unique(obs_group$group))){
+      if(length(unique(y[,ncol(y)]))<length(unique(obs_group$group))){
         l_data <- c()
-        for(k in sort(unique(y_red[,ncol(y_red)]))){
+        for(k in sort(unique(y[,ncol(y)]))){
           l_data <- c(l_data,which.max(jac_sim_res[,k]))
         }
         k <- 0
@@ -581,7 +576,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
       
       # If less clusters in the bootstrap clustering
       
-      if(length(unique(y_red[,ncol(y_red)]))>length(unique(obs_group$group))){
+      if(length(unique(y[,ncol(y)]))>length(unique(obs_group$group))){
         k_data <- c()
         for(l in sort(unique(obs_group$group))){
           k_data <- c(k_data,which.max(jac_sim_res[l,]))
@@ -592,9 +587,8 @@ simul_rand_dfa <- function(n_y = 25, # number of year
           obs_group_new[which(obs_group$group==l)] <- k
         }
       }
-    }
     
-    res_rand <- c(1 - vegdist(rbind(y_red[,ncol(y_red)],obs_group_new), method="jaccard"))
+    res_rand <- c(1 - vegdist(rbind(y[,ncol(y)],obs_group_new), method="jaccard"))
     
     rand_nfac_list[[a]] <- res_rand
   }
