@@ -429,103 +429,65 @@ for(g in 1:n_simul){
 
 # random simulation with classification a priori
 
-
-
-
-simul_rand_dfa <- function(n_y = 25, # number of year
-                           n_sp = 30, # number of species ts
-                           n_sp_init = 2, # number of latent trends
-                           nb_group_exp = 2, # number of expected clusters
-                           thres = 1, # min distance between barycenters of clusters (1 and 2)
-                           sd_rand = 0.01, # observation error on data
-                           sd_rand2 = 0.1, # random noise on ts
-                           is_test = FALSE, # test
-                           nboot=100 # number of bootstrap for clustering
-                           ){
-  ## Simulate latent trends
+simul_rand_dfa_intern <- function(a,
+                                  cum_perc,
+                                  n_sp_init,
+                                  nb_group_exp,
+                                  thres,
+                                  n_y,
+                                  n_sp,
+                                  y_init,
+                                  sd_rand,
+                                  sd_rand2,
+                                  nboot){
   
-  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
-  test_cor <- 1
-  while(abs(test_cor)>0.5){
-    for(i in 1:n_sp_init){
-      #set.seed(i+10)
-      y_ts <- c()
-      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
-      for (t in 2:n_y) {
-        r.w <- rnorm(n = 1, mean = 0, sd = 1)
-        y_ts[t] <- y_ts[t - 1] + r.w
+    seed_id <- 0
+    id_vec <- c()
+    dist_bary <- 0
+    mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
+    while(dist_bary<thres){ # check if enough distance between the groups
+      for(g in 1:nb_group_exp){
+        nb_sp_g <- round(cum_perc[a,g]*n_sp/100)
+        assign(paste0("nb_sp_g",g),nb_sp_g)
+        id_vec <- c(id_vec,rep(g,nb_sp_g))
+        for(lt in 1:n_sp_init){
+          seed_id <- seed_id + 1
+          set.seed(seed_id)
+          mean_u_g <- runif(1, -1, 1)
+          lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.1)
+          assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+          assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+          mat_dist[g,lt] <- mean_u_g
+        }
       }
-      y_ts <- y_ts + abs(min(y_ts))+1
-      y_ts <- exp(scale(log(y_ts)))
-      #max_new <- max(y_ts) - mean(y_ts)/4
-      #min_new <- min(y_ts) + mean(y_ts)/4
-      #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-      y_init[i,] <- y_ts
+      id_vec <- id_vec[1:n_sp]
+      dist_bary <- min(dist(mat_dist))
     }
-    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
-  }
-  
-  
-  ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
-
-  list_to_expend <- list()
-  for(g in 1:nb_group_exp){
-    list_to_expend[[g]] <- c(0,20,40,60,80,100)
-  }
-  cum_perc <- expand.grid(list_to_expend)
-  cum_perc[,(nb_group_exp+1)] <- apply(cum_perc,1,sum)
-  cum_perc <- cum_perc[which(cum_perc[,ncol(cum_perc)]==100),1:nb_group_exp]
-  
-  rand_nfac_list <- list()
-  
-  for (a in 1:nrow(cum_perc)){
-  seed_id <- 0
-  id_vec <- c()
-  dist_bary <- 0
-  mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
-  while(dist_bary<thres){ # check if enough distance between the groups
-    for(g in 1:nb_group_exp){
-      nb_sp_g <- round(cum_perc[a,g]*n_sp/100)
-      assign(paste0("nb_sp_g",g),nb_sp_g)
-      id_vec <- c(id_vec,rep(g,nb_sp_g))
+    
+    y <- data.frame(t(rep(NA,(n_y+2))))
+    obs_se <- data.frame(t(rep(NA,(n_y+1))))
+    
+    for(i in 1:n_sp){ # get simulated ts from loadings
+      #set.seed(i)
+      noise <- rnorm(n_y,0,sd_rand2)
+      y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+      y_ts <- rep(0,n_y)
+      g <- id_vec[i]
+      i_g <- which(which(id_vec==g)==i) # new index for i in group g
       for(lt in 1:n_sp_init){
-        seed_id <- seed_id + 1
-        set.seed(seed_id)
-        mean_u_g <- runif(1, -1, 1)
-        lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.2)
-        assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
-        assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
-        mat_dist[g,lt] <- mean_u_g
+        lf_u_g <- get(paste0("lf_u",lt,"_g",g))
+        y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
       }
-    }
-    id_vec <- id_vec[1:n_sp]
-    dist_bary <- min(dist(mat_dist))
-  }
-  
-  y <- data.frame(t(rep(NA,(n_y+2))))
-  obs_se <- data.frame(t(rep(NA,(n_y+1))))
-  
-  for(i in 1:n_sp){ # get simulated ts from loadings
-    #set.seed(i)
-    noise <- rnorm(n_y,0,0.5)
-    y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
-    y_ts <- rep(0,n_y)
-    g <- id_vec[i]
-    i_g <- which(which(id_vec==g)==i) # new index for i in group g
-    for(lt in 1:n_sp_init){
-      lf_u_g <- get(paste0("lf_u",lt,"_g",g))
-      y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
-    }
-    y_ts <- y_ts + noise
-    y_ts <- y_ts + abs(min(y_ts)) + 1
-    y_ts <- exp(scale(log(y_ts)))
-    y[i,2:(n_y+1)] <- y_ts
-    y[i,(n_y+2)] <- id_vec[i]
-    obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
-    obs_se[obs_se>1] <- 1
-  }  
-  
-  
+      y_ts <- y_ts + noise
+      y_ts <- y_ts + abs(min(y_ts)) + 1
+      y_ts <- exp(scale(log(y_ts)))
+      y[i,2:(n_y+1)] <- y_ts
+      y[i,(n_y+2)] <- id_vec[i]
+      obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+      obs_se[obs_se>1] <- 1
+    }  
+    
+    
     y_rand <- data.table(y[,1:(n_y+1)])
     obs_se_rand <- data.table(obs_se)
     names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
@@ -536,15 +498,18 @@ simul_rand_dfa <- function(n_y = 25, # number of year
     
     rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
                            species_sub = species_rand, nboot=nboot)
+    clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[4]],2))))
     
     # compare DFA results to expected
     
     obs_group <- rand_nfac[[10]][[1]][[1]]
     y[,ncol(y)] <- as.numeric(as.factor(y[,ncol(y)]))
-
+    
     if(length(obs_group)==1){
       obs_group_new <- rep(1,nrow(y_rand))
+      clust_nb <- 1
     }else{
+      clust_nb <- length(unique(obs_group$group))
       jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
                             nrow=length(unique(obs_group$group)))
       for(k in sort(unique(y[,ncol(y)]))){
@@ -603,47 +568,106 @@ simul_rand_dfa <- function(n_y = 25, # number of year
     }
     
     res_rand <- c(1 - vegdist(rbind(y[,ncol(y)],obs_group_new), method="jaccard"))
-    
-    rand_nfac_list[[a]] <- res_rand
-  }
-  return(rand_nfac_list)
+    return(list(res_rand, clust_nb, clust_stab))
 }
 
-# prevent error from stopping simulation
-simul_rand_dfa2 <- function(n_y = 25,n_sp = 1000,sd_rand = 0.01,
-                            sd_rand2 = 0.1,y_init,is_test = FALSE,
-                            amin = 27,amax = 28,nboot=100){
-  tryCatch(simul_rand_dfa(n_y = 25,n_sp = 1000,sd_rand = 0.01,
-                   sd_rand2 = 0.1,y_init,is_test = FALSE,
-                   amin = 27,amax = 28,nboot=100),
-           error=function(e) NA)}
+simul_rand_dfa_intern2 <- function(a,cum_perc,n_sp_init,
+                     nb_group_exp,thres,n_y,
+                     n_sp,y_init,sd_rand,
+                     sd_rand2,nboot){
+  tryCatch(simul_rand_dfa_intern(a,cum_perc,n_sp_init,
+                                 nb_group_exp,thres,n_y,
+                                 n_sp,y_init,sd_rand,
+                                 sd_rand2,nboot),
+           error=function(e) list(NA,NA,NA))}
+
+simul_rand_dfa <- function(n_y = 25, # number of year
+                           n_sp = 30, # number of species ts
+                           n_sp_init = 2, # number of latent trends
+                           nb_group_exp = 2, # number of expected clusters
+                           thres = 1, # min distance between barycenters of clusters (1 and 2)
+                           sd_rand = 0.01, # observation error on data
+                           sd_rand2 = 0.5, # random noise on ts
+                           nboot=100 # number of bootstrap for clustering
+                           ){
+  ## Simulate latent trends
+  
+  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
+  test_cor <- 1
+  while(abs(test_cor)>0.5){
+    for(i in 1:n_sp_init){
+      #set.seed(i+10)
+      y_ts <- c()
+      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+      for (t in 2:n_y) {
+        r.w <- rnorm(n = 1, mean = 0, sd = 1)
+        y_ts[t] <- y_ts[t - 1] + r.w
+      }
+      y_ts <- y_ts + abs(min(y_ts))+1
+      y_ts <- exp(scale(log(y_ts)))
+      #max_new <- max(y_ts) - mean(y_ts)/4
+      #min_new <- min(y_ts) + mean(y_ts)/4
+      #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+      y_init[i,] <- y_ts
+    }
+    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
+  }
+  
+  
+  ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
+
+  list_to_expend <- list()
+  for(g in 1:nb_group_exp){
+    list_to_expend[[g]] <- c(0,20,40,60,80,100)
+  }
+  cum_perc <- expand.grid(list_to_expend)
+  cum_perc[,(nb_group_exp+1)] <- apply(cum_perc,1,sum)
+  cum_perc <- cum_perc[which(cum_perc[,ncol(cum_perc)]==100),1:nb_group_exp]
+  
+  library(parallel)
+  
+  # Calculate the number of cores
+  no_cores <- detectCores() - 1
+  
+  # Initiate cluster
+  cl <- makeCluster(no_cores, type="FORK")
+  
+  rand_nfac_list <- parSapply(cl, c(1:nrow(cum_perc)),
+                               FUN=function(x){unlist(simul_rand_dfa_intern2(a=x,
+                                                                     cum_perc,
+                                                                     n_sp_init,
+                                                                     nb_group_exp,
+                                                                     thres,
+                                                                     n_y,
+                                                                     n_sp,
+                                                                     y_init,
+                                                                     sd_rand,
+                                                                     sd_rand2,
+                                                                     nboot))})
+  stopCluster(cl)
+  
+  res_sim <- data.frame(perc_group=NA, value=as.numeric(rand_nfac_list[1,]),
+                        nb_group=rand_nfac_list[2,], clust_stab=rand_nfac_list[3,])
+  for(a in 1:nrow(cum_perc)){
+    res_sim[a,1] <- gsub(", ","-",toString(paste0(cum_perc[a,])))
+  }
+  
+  return(res_sim)
+}
 
 # test function before simulation
-rand_nfac_test <- simul_rand_dfa2(y_init = y_init, is_test = TRUE)
-rand_nfac_test2 <- sapply(c(0.1,0.25,0.5,0.75,1),
-                          FUN=function(x){unlist(simul_rand_dfa2(y_init = y_init,
-                                                                is_test = TRUE,
-                                                                sd_rand = 0.01,
-                                                                nboot=10,
-                                                                sd_rand2 = x))})
-library(parallel)
-
-# Calculate the number of cores
-no_cores <- detectCores() - 1
-
-# Initiate cluster
-cl <- makeCluster(no_cores, type="FORK")
-
-rand_nfac_test2 <- parSapply(cl, c(0.1,0.2,0.3,0.4,0.5),
-                             FUN=function(x){unlist(simul_rand_dfa(y_init = y_init,
-                                                              is_test = TRUE,
-                                                              sd_rand = x,
-                                                              sd_rand2 = 0.25))})
-stopCluster(cl)
-
-
+rand_nfac_test <- simul_rand_dfa(nb_group_exp = 2, thres = 1)
+rand_nfac_test2 <- sapply(c(2,3,4),
+                          FUN=function(x){unlist(simul_rand_dfa(nb_group_exp = x,
+                                                                thres = 1))})
 # full simulations
-rep_sim <- 10
+rep_sim <- 50
+rand_nfac_test_g <- sapply(sort(rep(c(2,3,4),rep_sim)),
+                          FUN=function(x){unlist(simul_rand_dfa(nb_group_exp = x,
+                                                                thres = 1))})
+
+
+
 rand_nfac_sim_list1 <- list()
 rand_nfac_sim_list2 <- list()
 for(ii in 1:rep_sim){

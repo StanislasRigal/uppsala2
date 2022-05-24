@@ -413,6 +413,8 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   
   stability_cluster_final <- apply(stability_cluster,2, mean)
   
+  ######### add clause dilution cluster if stability < 0.5
+  
   all_partition_uncertainty <- apply(all_partition2, 2,
                                      FUN = function(x){
                                        y <- max(table(x))/length(x)
