@@ -445,36 +445,47 @@ simul_rand_dfa <- function(n_y = 25, # number of year
   ## Simulate latent trends
   
   y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
-  
-  for(i in 1:n_sp_init){
-    set.seed(i+10)
-    y_ts <- c()
-    y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
-    for (t in 2:n_y) {
-      r.w <- rnorm(n = 1, mean = 0, sd = 1)
-      y_ts[t] <- y_ts[t - 1] + r.w
+  test_cor <- 1
+  while(abs(test_cor)>0.5){
+    for(i in 1:n_sp_init){
+      #set.seed(i+10)
+      y_ts <- c()
+      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+      for (t in 2:n_y) {
+        r.w <- rnorm(n = 1, mean = 0, sd = 1)
+        y_ts[t] <- y_ts[t - 1] + r.w
+      }
+      y_ts <- y_ts + abs(min(y_ts))+1
+      y_ts <- exp(scale(log(y_ts)))
+      #max_new <- max(y_ts) - mean(y_ts)/4
+      #min_new <- min(y_ts) + mean(y_ts)/4
+      #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+      y_init[i,] <- y_ts
     }
-    y_ts <- y_ts + abs(min(y_ts))+1
-    y_ts <- exp(scale(log(y_ts)))
-    #max_new <- max(y_ts) - mean(y_ts)/4
-    #min_new <- min(y_ts) + mean(y_ts)/4
-    #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-    y_init[i,] <- y_ts
+    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
   }
+  
   
   ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
 
-  cum_perc <- expand.grid(c(0,20,40,60,80,100),#ici
-                          c(0,20,40,60,80,100))
-  cum_perc[,(n_sp_init+1)] <- apply(cum_perc,1,sum)
-  cum_perc <- cum_perc[cum_perc$V3==100,1:n_sp_init]
-
+  list_to_expend <- list()
+  for(g in 1:nb_group_exp){
+    list_to_expend[[g]] <- c(0,20,40,60,80,100)
+  }
+  cum_perc <- expand.grid(list_to_expend)
+  cum_perc[,(nb_group_exp+1)] <- apply(cum_perc,1,sum)
+  cum_perc <- cum_perc[which(cum_perc[,ncol(cum_perc)]==100),1:nb_group_exp]
+  
+  rand_nfac_list <- list()
+  
+  for (a in 1:nrow(cum_perc)){
   seed_id <- 0
   id_vec <- c()
   dist_bary <- 0
+  mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
   while(dist_bary<thres){ # check if enough distance between the groups
     for(g in 1:nb_group_exp){
-      nb_sp_g <- round(cum_perc[3,g]*n_sp/100)
+      nb_sp_g <- round(cum_perc[a,g]*n_sp/100)
       assign(paste0("nb_sp_g",g),nb_sp_g)
       id_vec <- c(id_vec,rep(g,nb_sp_g))
       for(lt in 1:n_sp_init){
@@ -484,18 +495,19 @@ simul_rand_dfa <- function(n_y = 25, # number of year
         lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.2)
         assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
         assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+        mat_dist[g,lt] <- mean_u_g
       }
     }
     id_vec <- id_vec[1:n_sp]
-    dist_bary <- dist(matrix(c(mean_u1_g1,mean_u2_g1,mean_u1_g2,mean_u2_g2),ncol=2))
+    dist_bary <- min(dist(mat_dist))
   }
   
   y <- data.frame(t(rep(NA,(n_y+2))))
   obs_se <- data.frame(t(rep(NA,(n_y+1))))
   
   for(i in 1:n_sp){ # get simulated ts from loadings
-    set.seed(i)
-    noise <- rnorm(n_y)
+    #set.seed(i)
+    noise <- rnorm(n_y,0,0.5)
     y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
     y_ts <- rep(0,n_y)
     g <- id_vec[i]
@@ -510,6 +522,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
     y[i,2:(n_y+1)] <- y_ts
     y[i,(n_y+2)] <- id_vec[i]
     obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+    obs_se[obs_se>1] <- 1
   }  
   
   
@@ -528,7 +541,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
     
     obs_group <- rand_nfac[[10]][[1]][[1]]
     y[,ncol(y)] <- as.numeric(as.factor(y[,ncol(y)]))
-    
+
     if(length(obs_group)==1){
       obs_group_new <- rep(1,nrow(y_rand))
     }else{
@@ -587,6 +600,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
           obs_group_new[which(obs_group$group==l)] <- k
         }
       }
+    }
     
     res_rand <- c(1 - vegdist(rbind(y[,ncol(y)],obs_group_new), method="jaccard"))
     
