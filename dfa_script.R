@@ -623,6 +623,14 @@ simul_rand_dfa <- function(n_y = 25, # number of year
   cum_perc <- expand.grid(list_to_expend)
   cum_perc[,(nb_group_exp+1)] <- apply(cum_perc,1,sum)
   cum_perc <- cum_perc[which(cum_perc[,ncol(cum_perc)]==100),1:nb_group_exp]
+  cum_perc$nb_sup_0 <- apply(cum_perc, 1, function(x){sum(sign(x))})
+  
+  if(nb_group_exp>2){
+    cum_perc <- cum_perc[which(cum_perc[,ncol(cum_perc)]==nb_group_exp),1:nb_group_exp]
+  }else{
+    cum_perc <- cum_perc[,1:nb_group_exp]
+  }
+  
   
   library(parallel)
   

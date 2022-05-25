@@ -358,62 +358,68 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   #  all_partition2[which(all_partition2==group_num[t])] <- t
   #}
   
-  all_partition2 <- kmeans(mat_loading, nb_group, iter.max = 100)$cluster
+  nb_group <- nb_group + 1
+  stability_cluster_final <- c(0,0)
+  
+  while(min(stability_cluster_final)<0.6){  # dilution cluster if stability < 0.5
 
-  # Bootstrap for cluster stability
-  
-  for(i in 1:nboot){
+    nb_group <- nb_group - 1
     
-    # Draw factor loadings using covariance matrix
-    set.seed(i)
-    rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+    all_partition2 <- kmeans(mat_loading, nb_group, iter.max = 100)$cluster
     
-    # Complete loading vector with fixed values
-    for(j in 1:(nfac-1)){
-      index_0 <- ny*j
-      rand_load <- append(rand_load, rep(0,j), after=index_0)
-    }
+    # Bootstrap for cluster stability
     
-    rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
-    
-    # Find the best number of clusters in the bootstrap loadings
-    
-    nb <- kmeans(rand_load, nb_group, iter.max = 100)
-    
-    all_partition2 <- rbind(all_partition2,nb$cluster)
-    
-    # Compute Jaccard similarity to relabel clusters as in the original clustering
-    
-    jac_sim_res <- matrix(NA, ncol=length(unique(all_partition2[1,])),
-                          nrow=length(unique(nb$cluster)))
-    for(k in sort(unique(all_partition2[1,]))){
-      for(l in sort(unique(nb$cluster))){
-        jac_sim_mat <- all_partition2[c(1,(i+1)),]
-        jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
-        jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
-        jac_sim_mat[jac_sim_mat>0] <- 1
-        jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
-        jac_sim_res[l,k] <- jac_sim
+    for(i in 1:nboot){
+      
+      # Draw factor loadings using covariance matrix
+      set.seed(i)
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      
+      # Complete loading vector with fixed values
+      for(j in 1:(nfac-1)){
+        index_0 <- ny*j
+        rand_load <- append(rand_load, rep(0,j), after=index_0)
       }
-    }
-    
-    if(i == 1){
-      stability_cluster <- apply(jac_sim_res,2,max)
-    }else{
-      stability_cluster <- rbind(stability_cluster,apply(jac_sim_res,2,max))
-    }
-    
-    if(length(unique(all_partition2[1,]))==length(unique(nb$cluster))){
-      for(l in sort(unique(nb$cluster))){
-        all_partition2[(i+1),][which(nb$cluster==l)] <- which.max(jac_sim_res[l,])
+      
+      rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+      
+      # Find the best number of clusters in the bootstrap loadings
+      
+      nb <- kmeans(rand_load, nb_group, iter.max = 100)
+      
+      all_partition2 <- rbind(all_partition2,nb$cluster)
+      
+      # Compute Jaccard similarity to relabel clusters as in the original clustering
+      
+      jac_sim_res <- matrix(NA, ncol=length(unique(all_partition2[1,])),
+                            nrow=length(unique(nb$cluster)))
+      for(k in sort(unique(all_partition2[1,]))){
+        for(l in sort(unique(nb$cluster))){
+          jac_sim_mat <- all_partition2[c(1,(i+1)),]
+          jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+          jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+          jac_sim_mat[jac_sim_mat>0] <- 1
+          jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+          jac_sim_res[l,k] <- jac_sim
+        }
       }
+      
+      if(i == 1){
+        stability_cluster <- apply(jac_sim_res,2,max)
+      }else{
+        stability_cluster <- rbind(stability_cluster,apply(jac_sim_res,2,max))
+      }
+      
+      if(length(unique(all_partition2[1,]))==length(unique(nb$cluster))){
+        for(l in sort(unique(nb$cluster))){
+          all_partition2[(i+1),][which(nb$cluster==l)] <- which.max(jac_sim_res[l,])
+        }
+      }
+      
     }
     
+    stability_cluster_final <- apply(stability_cluster,2, mean)
   }
-  
-  stability_cluster_final <- apply(stability_cluster,2, mean)
-  
-  ######### add clause dilution cluster if stability < 0.5
   
   all_partition_uncertainty <- apply(all_partition2, 2,
                                      FUN = function(x){
