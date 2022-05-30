@@ -361,7 +361,7 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   nb_group <- nb_group + 1
   stability_cluster_final <- c(0,0)
   
-  while(min(stability_cluster_final)<0.6){  # dilution cluster if stability < 0.5
+  while(min(stability_cluster_final)<0.5){  # dilution cluster if stability < 0.5
 
     nb_group <- nb_group - 1
     
@@ -808,7 +808,7 @@ make_dfa2 <- function(data_ts, # dataset of time series
     Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
     
   }else{
-    group_dfa <- NA
+    group_dfa <- 1
     
     Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
   }

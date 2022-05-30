@@ -452,7 +452,7 @@ simul_rand_dfa_intern <- function(a,
         id_vec <- c(id_vec,rep(g,nb_sp_g))
         for(lt in 1:n_sp_init){
           seed_id <- seed_id + 1
-          set.seed(seed_id)
+          #set.seed(seed_id)
           mean_u_g <- runif(1, -1, 1)
           lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.1)
           assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
@@ -498,7 +498,6 @@ simul_rand_dfa_intern <- function(a,
     
     rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
                            species_sub = species_rand, nboot=nboot)
-    clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[4]],2))))
     
     # compare DFA results to expected
     
@@ -508,7 +507,10 @@ simul_rand_dfa_intern <- function(a,
     if(length(obs_group)==1){
       obs_group_new <- rep(1,nrow(y_rand))
       clust_nb <- 1
+      clust_stab <- 1
     }else{
+      clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[4]],2))))
+      
       clust_nb <- length(unique(obs_group$group))
       jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
                             nrow=length(unique(obs_group$group)))
@@ -665,34 +667,142 @@ simul_rand_dfa <- function(n_y = 25, # number of year
 
 # test function before simulation
 rand_nfac_test <- simul_rand_dfa(nb_group_exp = 2, thres = 1)
-rand_nfac_test2 <- sapply(c(2,3,4),
-                          FUN=function(x){unlist(simul_rand_dfa(nb_group_exp = x,
-                                                                thres = 1))})
+rand_nfac_test2 <- lapply(c(2,3,4),
+                          FUN=function(x){simul_rand_dfa(nb_group_exp = x,
+                                                                thres = 1)})
+rand_nfac_test3 <- lapply(c(0.25,0.5,0.75),
+                          FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+                                                                thres = x)})
+
 # full simulations
 rep_sim <- 50
-rand_nfac_test_g <- sapply(sort(rep(c(2,3,4),rep_sim)),
-                          FUN=function(x){unlist(simul_rand_dfa(nb_group_exp = x,
-                                                                thres = 1))})
+rand_nfac_test_g <- lapply(sort(rep(c(2,3,4),rep_sim)),
+                          FUN=function(x){simul_rand_dfa(nb_group_exp = x,
+                                                                thres = 1)})
 
+rand_nfac_test_d <- lapply(sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)),
+                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+                                                                 thres = x)})
 
-
-rand_nfac_sim_list1 <- list()
-rand_nfac_sim_list2 <- list()
-for(ii in 1:rep_sim){
-  print(ii)
-  print(Sys.time())
-  cl <- makeCluster(no_cores, type="FORK")
-  rand_nfac_sim1 <- parSapply(cl, c(0.1,0.25,0.5,0.75,1),
-                              function(x){unlist(simul_rand_dfa(y_init = y_init,
-                                                                sd_rand = 0.01,
-                                                                sd_rand2 = x))})
-  stopCluster(cl)
-  cl <- makeCluster(no_cores, type="FORK")
-  rand_nfac_sim2 <- parSapply(cl, c(0.1,0.2,0.3,0.4,0.5),
-                              function(x){unlist(simul_rand_dfa(y_init = y_init,
-                                                                sd_rand = x,
-                                                                sd_rand2 = 0.25))})
-  stopCluster(cl)
-  rand_nfac_sim_list1[[ii]] <- rand_nfac_sim1
-  rand_nfac_sim_list2[[ii]] <- rand_nfac_sim2
+# result simulation for number of groups
+res_tot_g <- array(NA,dim=c(6,4,length(sort(rep(c(2,3,4),rep_sim)))))
+for(i in 1:length(sort(rep(c(2,3,4),rep_sim)))){
+  exp_group <- sort(rep(c(2,3,4),rep_sim))[i]
+  
+  res_i <- rand_nfac_test_g[[i]]
+  res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
+  res_i$nb_group <- as.numeric(res_i$nb_group)
+  res_i2 <- as.matrix(res_i[,2:4])
+  res_tot_g[1:nrow(res_i2),1:ncol(res_i2),i] <- res_i2
+  res_tot_g[,4,i] <- exp_group
 }
+
+for(j in 2:4){
+  res_mean_g <- apply(res_tot_g[1:nrow(rand_nfac_test_g[[((j-1)*rep_sim)]]),,(((j-2)*rep_sim+1):((j-1)*rep_sim))], c(1,2), function(x){mean(x, na.rm=T)})
+  res_sd_g <- apply(res_tot_g[1:nrow(rand_nfac_test_g[[((j-1)*rep_sim)]]),,(((j-2)*rep_sim+1):((j-1)*rep_sim))], c(1,2), function(x){sd(x, na.rm=T)})
+  res_mean_g <- data.frame(perc_group=rand_nfac_test_g[[((j-1)*rep_sim)]]$perc_group,
+                            nb_group_exp=j,
+                            simil=res_mean_g[,1],
+                            nb_group_obs=res_mean_g[,2],
+                            clust_stab=res_mean_g[,3])
+  res_sd_g <- data.frame(perc_group=rand_nfac_test_g[[((j-1)*rep_sim)]]$perc_group,
+                          nb_group_exp=j,
+                          simil=res_sd_g[,1],
+                          nb_group_obs=res_sd_g[,2],
+                          clust_stab=res_sd_g[,3])
+  assign(paste0("res_mean_g",j),res_mean_g)
+  assign(paste0("res_sd_g",j),res_sd_g)
+}
+
+res_mean_g <- rbind(res_mean_g2,res_mean_g3,res_mean_g4)
+res_mean_g <- melt(res_mean_g,id.vars = c("perc_group", "nb_group_exp"))
+
+res_sd_g <- rbind(res_sd_g2,res_sd_g3,res_sd_g4)
+res_sd_g <- melt(res_sd_g,id.vars = c("perc_group", "nb_group_exp"))
+names(res_sd_g)[4] <- "sd"
+
+# global results
+res_g <- merge(res_mean_g, res_sd_g, by=c("perc_group", "nb_group_exp", "variable"))
+
+ggplot(res_g, aes(nb_group_exp, value)) +
+  geom_point(aes(col=variable))
+
+# detailed results
+res_det_g <- data.frame(perc_group=rand_nfac_test_g[[1]]$perc_group,res_tot_g[,,1])
+for(i in 2:dim(res_tot_g)[3]){
+  res_det_g <- rbind(res_det_g, data.frame(perc_group=rand_nfac_test_g[[i]]$perc_group,res_tot_g[1:nrow(rand_nfac_test_g[[i]]),,i]))
+}
+names(res_det_g) <- c("perc_group","simil","nb_group_obs","clust_stab","nb_group_exp")
+
+res_det_g$nb_group_exp[res_det_g$perc_group=="100-0" | res_det_g$perc_group=="0-100"] <- 1
+
+ggplot(res_det_g, aes(nb_group_exp, simil)) +
+  geom_boxplot(aes(group=nb_group_exp))
+ggplot(res_det_g, aes(nb_group_exp, clust_stab)) +
+  geom_boxplot(aes(group=nb_group_exp))
+ggplot(res_det_g, aes(nb_group_exp, nb_group_obs)) +
+  geom_point(aes(group=nb_group_exp),position="jitter")
+
+
+# result simulation for distance between group
+res_tot_d <- array(NA,dim=c(6,4,length(sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)))))
+for(i in 1:length(sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)))){
+  exp_dist_group <- sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim))[i]
+  
+  res_i <- rand_nfac_test_d[[i]]
+  res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
+  res_i$nb_group <- as.numeric(res_i$nb_group)
+  res_i2 <- as.matrix(res_i[,2:4])
+  res_tot_d[1:nrow(res_i2),1:ncol(res_i2),i] <- res_i2
+  res_tot_d[,4,i] <- exp_dist_group
+}
+
+for(j in 1:5){
+  seq_dist_group <- c(0.25,0.5,0.75,1.5,2)
+  res_mean_d <- apply(res_tot_d[1:nrow(rand_nfac_test_d[[(j*rep_sim)]]),,(((j-1)*rep_sim+1):(j*rep_sim))], c(1,2), function(x){mean(x, na.rm=T)})
+  res_sd_d <- apply(res_tot_d[1:nrow(rand_nfac_test_d[[(j*rep_sim)]]),,(((j-1)*rep_sim+1):(j*rep_sim))], c(1,2), function(x){sd(x, na.rm=T)})
+  res_mean_d <- data.frame(perc_group=rand_nfac_test_d[[(j*rep_sim)]]$perc_group,
+                           dist_group_exp=seq_dist_group[j],
+                           simil=res_mean_d[,1],
+                           nb_group_obs=res_mean_d[,2],
+                           clust_stab=res_mean_d[,3])
+  res_sd_d <- data.frame(perc_group=rand_nfac_test_d[[(j*rep_sim)]]$perc_group,
+                         dist_group_exp=seq_dist_group[j],
+                         simil=res_sd_d[,1],
+                         nb_group_obs=res_sd_d[,2],
+                         clust_stab=res_sd_d[,3])
+  assign(paste0("res_mean_d",j),res_mean_d)
+  assign(paste0("res_sd_d",j),res_sd_d)
+}
+
+res_mean_d <- rbind(res_mean_d1,res_mean_d2,res_mean_d3,res_mean_d4,res_mean_d5)
+res_mean_d <- melt(res_mean_d,id.vars = c("perc_group", "dist_group_exp"))
+
+res_sd_d <- rbind(res_sd_d1,res_sd_d2,res_sd_d3,res_sd_d4,res_sd_d5)
+res_sd_d <- melt(res_sd_d,id.vars = c("perc_group", "dist_group_exp"))
+names(res_sd_d)[4] <- "sd"
+
+# global results
+res_d <- merge(res_mean_d, res_sd_d, by=c("perc_group", "dist_group_exp", "variable"))
+
+ggplot(res_d, aes(dist_group_exp, value)) +
+  geom_point(aes(col=variable))
+
+# detailed results
+res_det_d <- data.frame(perc_group=rand_nfac_test_d[[1]]$perc_group,res_tot_d[,,1])
+for(i in 2:dim(res_tot_d)[3]){
+  res_det_d <- rbind(res_det_d, data.frame(perc_group=rand_nfac_test_d[[i]]$perc_group,res_tot_d[1:nrow(rand_nfac_test_d[[i]]),,i]))
+}
+for(i in 1:rep_sim){
+  to_add <- data.frame(perc_group=rand_nfac_test_g[[i]]$perc_group,res_tot_g[1:nrow(rand_nfac_test_g[[i]]),,i])
+  to_add[,5] <- 1
+  res_det_d <- rbind(res_det_d, to_add)
+}
+names(res_det_d) <- c("perc_group","simil","nb_group_obs","clust_stab","dist_group")
+
+res_det_d2 <- res_det_d[res_det_d$perc_group!="100-0" & res_det_d$perc_group!="0-100",]
+
+ggplot(res_det_d2, aes(dist_group, simil)) +
+  geom_boxplot(aes(group=dist_group))
+ggplot(res_det_d2, aes(dist_group, clust_stab)) +
+  geom_boxplot(aes(group=dist_group))
