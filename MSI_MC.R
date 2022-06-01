@@ -32,10 +32,37 @@ RES_forest <- MSI_MC_func(ts_forest,SEbaseyear=1998, plotbaseyear=1998)
 
 ggplot(RES_farmland, aes(x=year, y=MSI))+
   geom_point(colour = "dark green",size=3)+
-  ylim(50, NA)+ ylab("MSI (1998 = 100 )")+
+  ylim(70, NA)+ ylab("MSI (1998 = 100 )")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend), colour="dark green", size=1)+ theme_modern() +
   geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI), colour="dark green")
+
+
+ggplot(RES_farmland, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(70, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+
+ggsave("output/farm_msi.png",
+       dpi=300,
+       width = 6,
+       height = 4
+)
+
+ggplot(RES_forest, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+
+ggsave("output/forest_msi.png",
+       dpi=300,
+       width = 6,
+       height = 4
+)
 
 # MSI with DFA results
 farm_nfac3 <- readRDS("output/farm_nfac3.rds")

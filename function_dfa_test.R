@@ -459,7 +459,10 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
     kmeans_center <- kmeans_center[-1,]
     kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
                            kmeans_center %*% myPCA$rotation[,1:2])
-    kmeans_res <- list(kmeans_1,kmeans_2)
+    
+    kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
+    
+    kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
   }else{
     kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
                                  myPCA$x[,1:2],
@@ -479,7 +482,10 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
     kmeans_center <- kmeans_center[-1,]
     kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
                            kmeans_center %*% myPCA$rotation[,1:2])
-    kmeans_res <- list(kmeans_1,kmeans_2)
+    
+    kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
+    
+    kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
   }
   
   
@@ -578,19 +584,23 @@ plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
                                  year=sort(rep(c(1998:(nT+1997)), nb_group)),
                                  sdrep[grepl("x_pred",row.names(sdrep)),])
   
+  n1 <- length(unique(data_trend_group$group))                                    
+  hex_codes1 <- hue_pal()(n1)                          
   
   graph <- setNames(lapply(1:nb_group, function(i){
     test <- data_trend_group[data_trend_group$group==paste0("g",i),]
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
     ggplot(test, aes(x=year, y=Index)) +
-      geom_line() +
-      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+      geom_line(col=hex_codes1[i], size=2) +
+      #geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
+      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes1[i])+
       xlab(NULL) + 
       ylab(NULL) + 
-      theme_modern() + theme_transparent()+
-      theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
-            axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+      theme_modern() + #theme_transparent()+
+      theme(plot.margin=unit(c(0,0,0,0),"mm"),#axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+            #axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),
+            aspect.ratio = 2/3)
   
     }), levels(as.factor(data_trend_group$group)))
   
@@ -608,14 +618,18 @@ plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
   
   width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
   
+  res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
+  
   final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
     geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
-    geom_text(label=res_to_plot$name_long, nudge_x = width_nudge, nudge_y = width_nudge, check_overlap = F) +
-    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
-    theme_modern() +
+    geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+    #geom_text(label=res_to_plot$name_long, nudge_x = width_nudge, nudge_y = width_nudge, check_overlap = F) +
+    #geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
+    theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
+    ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
     theme(legend.position='none')
   
-  return(final_plot)
+  return(list(final_plot,graph,data_trend_group))
 }
 
 # Generalise DFA
@@ -853,6 +867,9 @@ make_dfa2 <- function(data_ts, # dataset of time series
                            pred=melt(sp_ts, id.vars=names(data_ts_se_save)[1])[,3],
                            pred_se=melt(sp_se_ts, id.vars=names(data_ts_se_save)[1])[,3])
   
+  data_to_plot_sp <- merge(data_to_plot_sp, species_sub[,c("name_long","code_sp")],by="code_sp")
+  
+  
   # Data for DFA trend plot
   
   data_to_plot_tr <- data.frame(t(x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
@@ -873,30 +890,37 @@ make_dfa2 <- function(data_ts, # dataset of time series
                                            Z_hat %*% varimax(Z_hat)$rotmat), id.vars="code_sp"),
                            se.value = NA)
     
+    data_loadings <- merge(data_loadings, species_sub[,c("name_long","code_sp")],by="code_sp")
+    
     # Plots
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
       geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
       geom_line(aes(y=exp(pred.value))) +
       geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
-      facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
-      theme_modern()
+      facet_wrap(name_long ~ ., ncol=4, scales = "free", labeller = label_bquote(col = italic(.(name_long)))) +
+      theme_modern() + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
-      geom_line(aes(colour=variable))+
-      theme_modern()
+      geom_line(aes(colour=variable))+ylab("Rotated value")+
+      scale_color_discrete(labels=c('Latent trend 1', 'Latent trend 2', 'Latent trend 3', 'Latent trend 4', 'Latent trend 5'))+
+      theme_modern() + theme(legend.title = element_blank())
     
     plot_ld <- ggplot(data_loadings) + 
-      geom_col(aes(value, code_sp, fill=variable)) +
-      geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
-      facet_wrap(variable ~ ., ncol=4) +
-      theme_modern() + theme(legend.position = "none")
+      geom_col(aes(value, name_long, fill=variable)) +
+      geom_errorbar(aes(x=value,y=name_long,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
+      facet_wrap(variable ~ ., ncol=length(unique(data_loadings$variable))) +
+      theme_modern() + 
+      theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank(),
+            axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))
     
-    plot_sp_group <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
+    plot_sp_group_all <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
                                      centroids = group_dfa[[2]],
                                      kmeans_res = group_dfa[[1]],
                                      hulls = group_dfa[[3]],
                                      sdrep = sdRep, nT = nT)
+    plot_sp_group <- plot_sp_group_all[1:2]
+    trend_group <- plot_sp_group_all[[3]]
   }else{
     data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
                              se=melt(data_to_plot_tr_se, id.vars = "Year")[,3])
@@ -925,9 +949,20 @@ make_dfa2 <- function(data_ts, # dataset of time series
       theme_modern() + theme(legend.position = "none")
     
     plot_sp_group <- plot_tr
+    trend_group <- NA
   }
   
-  return(list(data_to_plot_sp, data_to_plot_tr, data_loadings,
-              plot_sp, plot_tr, plot_ld, plot_sp_group, aic, sdRep, group_dfa))
+  return(list(data_to_plot_sp, # data on species time-series and fit
+              data_to_plot_tr, # data on latent trends
+              data_loadings, # data on factor loadings
+              plot_sp, # plot of species time-series and fit
+              plot_tr, # plot of latent trends
+              plot_ld, # plot of factor loadings
+              plot_sp_group, # plot clusters and cluster time-series
+              aic, # best AIC
+              sdRep, # optimisation output
+              group_dfa, # cluster results
+              trend_group # cluster barycentre times-series
+              ))
 }
 

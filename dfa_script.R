@@ -287,6 +287,12 @@ all_nfac <- make_dfa2(data_ts = y_all, data_ts_se = obs_se_all,
 rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
                       species_sub = species_rand)
 
+ggsave("output/farm_nfac.png",
+       dpi=300,
+       width = 8,
+       height = 8
+       )
+
 # examples if number of trends known 
 farm_nfac3 <- make_dfa2(data_ts = y_farm, data_ts_se = obs_se_farm,
                         nfac = 3, species_sub = species_farm)
@@ -439,6 +445,7 @@ simul_rand_dfa_intern <- function(a,
                                   y_init,
                                   sd_rand,
                                   sd_rand2,
+                                  sd_ci,
                                   nboot){
   
     seed_id <- 0
@@ -454,7 +461,7 @@ simul_rand_dfa_intern <- function(a,
           seed_id <- seed_id + 1
           #set.seed(seed_id)
           mean_u_g <- runif(1, -1, 1)
-          lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.1)
+          lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
           assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
           assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
           mat_dist[g,lt] <- mean_u_g
@@ -576,21 +583,22 @@ simul_rand_dfa_intern <- function(a,
 simul_rand_dfa_intern2 <- function(a,cum_perc,n_sp_init,
                      nb_group_exp,thres,n_y,
                      n_sp,y_init,sd_rand,
-                     sd_rand2,nboot){
+                     sd_rand2,sd_ci,nboot){
   tryCatch(simul_rand_dfa_intern(a,cum_perc,n_sp_init,
                                  nb_group_exp,thres,n_y,
                                  n_sp,y_init,sd_rand,
-                                 sd_rand2,nboot),
+                                 sd_rand2,sd_ci,nboot),
            error=function(e) list(NA,NA,NA))}
 
 simul_rand_dfa <- function(n_y = 25, # number of year
                            n_sp = 30, # number of species ts
                            n_sp_init = 2, # number of latent trends
                            nb_group_exp = 2, # number of expected clusters
-                           thres = 1, # min distance between barycenters of clusters (1 and 2)
+                           thres = 1, # min distance between barycenters of clusters
                            sd_rand = 0.01, # observation error on data
                            sd_rand2 = 0.5, # random noise on ts
-                           nboot=100 # number of bootstrap for clustering
+                           sd_ci = 0.1, # standard deviation of the loading factors
+                           nboot = 100 # number of bootstrap for clustering
                            ){
   ## Simulate latent trends
   
@@ -653,6 +661,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
                                                                      y_init,
                                                                      sd_rand,
                                                                      sd_rand2,
+                                                                     sd_ci,
                                                                      nboot))})
   stopCluster(cl)
   
@@ -673,6 +682,11 @@ rand_nfac_test2 <- lapply(c(2,3,4),
 rand_nfac_test3 <- lapply(c(0.25,0.5,0.75),
                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
                                                                 thres = x)})
+rand_nfac_test4 <- lapply(c(0.01,1),
+                          FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+                                                         thres = 1,
+                                                         sd_ci = x)})
+
 
 # full simulations
 rep_sim <- 50
@@ -683,6 +697,12 @@ rand_nfac_test_g <- lapply(sort(rep(c(2,3,4),rep_sim)),
 rand_nfac_test_d <- lapply(sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)),
                            FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
                                                                  thres = x)})
+
+rand_nfac_test_l <- lapply(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)),
+                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+                                                          thres = 1,
+                                                          sd_ci = x)})
+
 
 # result simulation for number of groups
 res_tot_g <- array(NA,dim=c(6,4,length(sort(rep(c(2,3,4),rep_sim)))))
@@ -806,3 +826,67 @@ ggplot(res_det_d2, aes(dist_group, simil)) +
   geom_boxplot(aes(group=dist_group))
 ggplot(res_det_d2, aes(dist_group, clust_stab)) +
   geom_boxplot(aes(group=dist_group))
+
+
+# result simulation for standard error of factor loadings
+res_tot_l <- array(NA,dim=c(6,4,length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))))
+for(i in 1:length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))){
+  exp_loadfact_sd <- sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))[i]
+  
+  res_i <- rand_nfac_test_l[[i]]
+  res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
+  res_i$nb_group <- as.numeric(res_i$nb_group)
+  res_i2 <- as.matrix(res_i[,2:4])
+  res_tot_l[1:nrow(res_i2),1:ncol(res_i2),i] <- res_i2
+  res_tot_l[,4,i] <- exp_loadfact_sd
+}
+
+for(j in 1:5){
+  seq_loadfact_sd <- c(0.01,0.05,0.2,0.5,1)
+  res_mean_l <- apply(res_tot_l[1:nrow(rand_nfac_test_l[[(j*rep_sim)]]),,(((j-1)*rep_sim+1):(j*rep_sim))], c(1,2), function(x){mean(x, na.rm=T)})
+  res_sd_l <- apply(res_tot_l[1:nrow(rand_nfac_test_l[[(j*rep_sim)]]),,(((j-1)*rep_sim+1):(j*rep_sim))], c(1,2), function(x){sd(x, na.rm=T)})
+  res_mean_l <- data.frame(perc_group=rand_nfac_test_l[[(j*rep_sim)]]$perc_group,
+                           loadfact_sd_exp=seq_loadfact_sd[j],
+                           simil=res_mean_l[,1],
+                           nb_group_obs=res_mean_l[,2],
+                           clust_stab=res_mean_l[,3])
+  res_sd_l <- data.frame(perc_group=rand_nfac_test_l[[(j*rep_sim)]]$perc_group,
+                         loadfact_sd_exp=seq_loadfact_sd[j],
+                         simil=res_sd_l[,1],
+                         nb_group_obs=res_sd_l[,2],
+                         clust_stab=res_sd_l[,3])
+  assign(paste0("res_mean_l",j),res_mean_l)
+  assign(paste0("res_sd_l",j),res_sd_l)
+}
+
+res_mean_l <- rbind(res_mean_l1,res_mean_l2,res_mean_l3,res_mean_l4,res_mean_l5)
+res_mean_l <- melt(res_mean_l,id.vars = c("perc_group", "loadfact_sd_exp"))
+
+res_sd_l <- rbind(res_sd_l1,res_sd_l2,res_sd_l3,res_sd_l4,res_sd_l5)
+res_sd_l <- melt(res_sd_l,id.vars = c("perc_group", "loadfact_sd_exp"))
+names(res_sd_l)[4] <- "sd"
+
+# global results
+res_l <- merge(res_mean_l, res_sd_l, by=c("perc_group", "loadfact_sd_exp", "variable"))
+
+ggplot(res_l, aes(loadfact_sd_exp, value)) +
+  geom_point(aes(col=variable))
+
+# detailed results
+res_det_l <- data.frame(perc_group=rand_nfac_test_l[[1]]$perc_group,res_tot_l[,,1])
+for(i in 2:dim(res_tot_l)[3]){
+  res_det_l <- rbind(res_det_l, data.frame(perc_group=rand_nfac_test_l[[i]]$perc_group,res_tot_l[1:nrow(rand_nfac_test_l[[i]]),,i]))
+}
+for(i in 1:rep_sim){
+  to_add <- data.frame(perc_group=rand_nfac_test_g[[i]]$perc_group,res_tot_g[1:nrow(rand_nfac_test_g[[i]]),,i])
+  to_add[,5] <- 0.1
+  res_det_l <- rbind(res_det_l, to_add)
+}
+names(res_det_l) <- c("perc_group","simil","nb_group_obs","clust_stab","loadfact_sd")
+
+res_det_l2 <- res_det_l[res_det_l$perc_group!="100-0" & res_det_l$perc_group!="0-100",]
+
+ggplot(res_det_l2, aes(loadfact_sd, simil)) +
+  geom_boxplot(aes(group=loadfact_sd))
+ggplot(res_det_l2, aes(loadfact_sd, clust_stab)) +
+  geom_boxplot(aes(group=loadfact_sd))
