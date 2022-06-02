@@ -1,0 +1,253 @@
+name_long,code_sp,genus,species,class,order,family,iucnRedListCategory,name_long_en,name_long_se
+Corvus frugilegus,CORFRU,Corvus,frugilegus,Aves,Passeriformes,Corvidae,LC,Rook,Råka
+Chroicocephalus ridibundus,CHRRID,Chroicocephalus,ridibundus,Aves,Charadriiformes,Laridae,,Black-headed gull,Skrattmås
+Gallinago gallinago,GALGAL,Gallinago,gallinago,Aves,Charadriiformes,Scolopacidae,LC,Common snipe,Enkelbeckasin
+Prunella modularis,PRUMOD,Prunella,modularis,Aves,Passeriformes,Prunellidae,LC,Dunnock,Järnsparv
+Vanellus vanellus,VANVAN,Vanellus,vanellus,Aves,Charadriiformes,Charadriidae,NT,Northern lapwing,Tofsvipa
+Columba livia,COLLIV,Columba,livia,Aves,Columbiformes,Columbidae,LC,Rock dove,Klippduva
+Troglodytes troglodytes,TROTRO,Troglodytes,troglodytes,Aves,Passeriformes,Troglodytidae,LC,Eurasian wren,Gärdsmyg
+Phylloscopus trochilus,PHYTRU,Phylloscopus,trochilus,Aves,Passeriformes,Phylloscopidae,LC,Willow warbler,Lövsångare
+Pica pica,PICPIC,Pica,pica,Aves,Passeriformes,Corvidae,LC,Eurasian magpie,Skata
+Falco tinnunculus,FALTIN,Falco,tinnunculus,Aves,Falconiformes,Falconidae,LC,Common kestrel,Tornfalk
+Pernis apivorus,PERAPI,Pernis,apivorus,Aves,Accipitriformes,Accipitridae,LC,European honey buzzard,Bivråk
+Larus canus,LARCAN,Larus,canus,Aves,Charadriiformes,Laridae,LC,Common gull,Fiskmås
+Parus major,PARMAJ,Parus,major,Aves,Passeriformes,Paridae,LC,Great tit,Talgoxe
+Motacilla alba,MOTALB,Motacilla,alba,Aves,Passeriformes,Motacillidae,LC,White wagtail,Sädesärla
+Phylloscopus collybita,PHYCOL,Phylloscopus,collybita,Aves,Passeriformes,Phylloscopidae,LC,Common chiffchaff,Gransångare
+Sturnus vulgaris,STUVUL,Sturnus,vulgaris,Aves,Passeriformes,Sturnidae,LC,Common starling,Stare
+Emberiza citrinella,EMBCIT,Emberiza,citrinella,Aves,Passeriformes,Emberizidae,LC,Yellowhammer,Gulsparv
+Haematopus ostralegus,HAEOST,Haematopus,ostralegus,Aves,Charadriiformes,Haematopodidae,NT,Eurasian oystercatcher,Strandskata
+Anthus pratensis,ANTPRA,Anthus,pratensis,Aves,Passeriformes,Motacillidae,NT,Meadow pipit,Ängspiplärka
+Sylvia communis,SYLCOM,Sylvia,communis,Aves,Passeriformes,Sylviidae,LC,Common whitethroat,Törnsångare
+Linaria cannabina,LINCAN,Linaria,cannabina,Aves,Passeriformes,Fringillidae,LC,Common linnet,Hämpling
+Sylvia borin,SYLBOR,Sylvia,borin,Aves,Passeriformes,Sylviidae,LC,Garden warbler,Trädgårdssångare
+Cuculus canorus,CUCCAN,Cuculus,canorus,Aves,Cuculiformes,Cuculidae,LC,Common cuckoo,Gök
+Erithacus rubecula,ERIRUB,Erithacus,rubecula,Aves,Passeriformes,Muscicapidae,LC,European robin,Rödhake
+Muscicapa striata,MUSSTR,Muscicapa,striata,Aves,Passeriformes,Muscicapidae,LC,Spotted flycatcher,Grå flugsnappare
+Corvus corone,CORCOR,Corvus,corone,Aves,Passeriformes,Corvidae,LC,Carrion crow,Svartkråka
+Oenanthe oenanthe,OENOEN,Oenanthe,oenanthe,Aves,Passeriformes,Muscicapidae,LC,Northern wheatear,Stenskvätta
+Coccothraustes coccothraustes,COCCOC,Coccothraustes,coccothraustes,Aves,Passeriformes,Fringillidae,LC,Hawfinch,Stenknäck
+Hippolais icterina,HIPICT,Hippolais,icterina,Aves,Passeriformes,Acrocephalidae,LC,Icterine warbler,Härmsångare
+Dendrocopos major,DENMAJ,Dendrocopos,major,Aves,Piciformes,Picidae,LC,Great spotted woodpecker,Större hackspett
+Apus apus,APUAPU,Apus,apus,Aves,Apodiformes,Apodidae,LC,Common swift,Tornseglare
+Passer domesticus,PASDOM,Passer,domesticus,Aves,Passeriformes,Passeridae,LC,House sparrow,Gråsparv
+Columba oenas,COLOEN,Columba,oenas,Aves,Columbiformes,Columbidae,LC,Stock dove,Skogsduva
+Phasianus colchicus,PHACOL,Phasianus,colchicus,Aves,Galliformes,Phasianidae,LC,Common pheasant,Fasan
+Anthus trivialis,ANTTRI,Anthus,trivialis,Aves,Passeriformes,Motacillidae,LC,Tree pipit,Trädpiplärka
+Sylvia curruca,SYLCUR,Sylvia,curruca,Aves,Passeriformes,Sylviidae,LC,Lesser whitethroat,Ärtsångare
+Lanius collurio,LANCOL,Lanius,collurio,Aves,Passeriformes,Laniidae,LC,Red-backed shrike,Törnskata
+Ardea cinerea,ARDCIN,Ardea,cinerea,Aves,Pelecaniformes,Ardeidae,LC,Grey heron,Gråhäger
+Turdus philomelos,TURPHI,Turdus,philomelos,Aves,Passeriformes,Turdidae,LC,Song thrush,Taltrast
+Hirundo rustica,HIRRUS,Hirundo,rustica,Aves,Passeriformes,Hirundinidae,LC,Barn swallow,Ladusvala
+Turdus pilaris,TURPIL,Turdus,pilaris,Aves,Passeriformes,Turdidae,LC,Fieldfare,Björktrast
+Chloris chloris,CHLCHL,Chloris,chloris,Aves,Passeriformes,Fringillidae,LC,European greenfinch,Grönfink
+Saxicola rubetra,SAXRUB,Saxicola,rubetra,Aves,Passeriformes,Muscicapidae,LC,Whinchat,Buskskvätta
+Passer montanus,PASMON,Passer,montanus,Aves,Passeriformes,Passeridae,LC,Eurasian tree sparrow,Pilfink
+Anas platyrhynchos,ANAPLA,Anas,platyrhynchos,Aves,Anseriformes,Anatidae,LC,Mallard,Gräsand
+Sylvia atricapilla,SYLATR,Sylvia,atricapilla,Aves,Passeriformes,Sylviidae,LC,Eurasian blackcap,Svarthätta
+Turdus merula,TURMER,Turdus,merula,Aves,Passeriformes,Turdidae,LC,Common blackbird,Koltrast
+Acrocephalus palustris,ACRPAL,Acrocephalus,palustris,Aves,Passeriformes,Acrocephalidae,LC,Marsh warbler,Kärrsångare
+Ficedula hypoleuca,FICHYP,Ficedula,hypoleuca,Aves,Passeriformes,Muscicapidae,LC,European pied flycatcher,Svartvit flugsnappare
+Certhia familiaris,CERFAM,Certhia,familiaris,Aves,Passeriformes,Certhiidae,LC,Eurasian treecreeper,Trädkrypare
+Acanthis flammea,ACAFLA,Acanthis,flammea,Aves,Passeriformes,Fringillidae,LC,Common redpoll,Gråsiska
+Circus aeruginosus,CIRAER,Circus,aeruginosus,Aves,Accipitriformes,Accipitridae,LC,Western marsh harrier,Brun kärrhök
+Emberiza schoeniclus,EMBSCH,Emberiza,schoeniclus,Aves,Passeriformes,Emberizidae,LC,Common reed bunting,Sävsparv
+Larus argentatus,LARARG,Larus,argentatus,Aves,Charadriiformes,Laridae,LC,European herring gull,Gråtrut
+Columba palumbus,COLPAL,Columba,palumbus,Aves,Columbiformes,Columbidae,LC,Common wood pigeon,Ringduva
+Regulus regulus,REGREG,Regulus,regulus,Aves,Passeriformes,Regulidae,LC,Goldcrest,Kungsfågel
+Coloeus monedula,COLMON,Coloeus,monedula,Aves,Passeriformes,Corvidae,LC,Western jackdaw,Kaja
+Bucephala clangula,BUCCLA,Bucephala,clangula,Aves,Anseriformes,Anatidae,LC,Common goldeneye,Knipa
+Delichon urbicum,DELURB,Delichon,urbicum,Aves,Passeriformes,Hirundinidae,LC,Common house martin,Hussvala
+Cyanistes caeruleus,CYACAE,Cyanistes,caeruleus,Aves,Passeriformes,Paridae,LC,Eurasian blue tit,Blåmes
+Carduelis carduelis,CARCAR,Carduelis,carduelis,Aves,Passeriformes,Fringillidae,LC,European goldfinch,Steglits
+Phylloscopus sibilatrix,PHYSIB,Phylloscopus,sibillatrix,Aves,Passeriformes,Phylloscopidae,LC,Wood warbler,Grönsångare
+Garrulus glandarius,GARGLA,Garrulus,glandarius,Aves,Passeriformes,Corvidae,LC,Eurasian jay,Nötskrika
+Luscinia luscinia,LUSLUS,Luscinia,luscinia,Aves,Passeriformes,Muscicapidae,LC,Thrush nightingale,Näktergal
+Acrocephalus scirpaceus,ACRSCI,Acrocephalus,scirpaceus,Aves,Passeriformes,Acrocephalidae,LC,Eurasian reed warbler,Rörsångare
+Turdus viscivorus,TURVIS,Turdus,viscivorus,Aves,Passeriformes,Turdidae,LC,Mistle thrush,Dubbeltrast
+Poecile palustris,POEPAL,Poecile,palustris,Aves,Passeriformes,Paridae,LC,Marsh tit,Entita
+Branta leucopsis,BRALEU,Branta,leucopsis,Aves,Anseriformes,Anatidae,LC,Barnacle goose,Vitkindad gås
+Cygnus olor,CYGOLO,Cygnus,olor,Aves,Anseriformes,Anatidae,LC,Mute swan,Knölsvan
+Grus grus,GRUGRU,Grus,grus,Aves,Gruiformes,Gruidae,LC,Common crane,Trana
+Branta canadensis,BRACAN,Branta,canadensis,Aves,Anseriformes,Anatidae,LC,Canada goose,Kanadagås
+Buteo buteo,BUTBUT,Buteo,buteo,Aves,Accipitriformes,Accipitridae,LC,Common buzzard,Ormvråk
+Alauda arvensis,ALAARV,Alauda,arvensis,Aves,Passeriformes,Alaudidae,LC,Eurasian skylark,Sånglärka
+Fringilla coelebs,FRICOE,Fringilla,coelebs,Aves,Passeriformes,Fringillidae,LC,Common chaffinch,Bofink
+Anser anser,ANSANS,Anser,anser,Aves,Anseriformes,Anatidae,LC,Greylag goose,Grågås
+Dryocopus martius,DRYMAR,Dryocopus,martius,Aves,Piciformes,Picidae,LC,Black woodpecker,Spillkråka
+Anas crecca,ANACRE,Anas,crecca,Aves,Anseriformes,Anatidae,LC,Eurasian teal,Kricka
+Somateria mollissima,SOMMOL,Somateria,mollissima,Aves,Anseriformes,Anatidae,NT,Common eider,Ejder
+Perdix perdix,PERPER,Perdix,perdix,Aves,Galliformes,Phasianidae,LC,Grey partridge,Rapphöna
+Upupa epops,UPUEPO,Upupa,epops,Aves,Bucerotiformes,Upupidae,LC,Eurasian hoopoe,Härfågel
+Coturnix coturnix,COTCOT,Coturnix,coturnix,Aves,Galliformes,Phasianidae,LC,Common quail,Vaktel
+Motacilla flava,MOTFLA,Motacilla,flava,Aves,Passeriformes,Motacillidae,LC,Western yellow wagtail,Gulärla
+Corvus corax,CORCOX,Corvus,corax,Aves,Passeriformes,Corvidae,LC,Common raven,Korp
+Sitta europaea,SITEUR,Sitta,europaea,Aves,Passeriformes,Sittidae,LC,Eurasian nuthatch,Nötväcka
+Carpodacus erythrinus,CARERY,Carpodacus,erythrinus,Aves,Passeriformes,Fringillidae,LC,Common rosefinch,Rosenfink
+Tadorna tadorna,TADTAD,Tadorna,tadorna,Aves,Anseriformes,Anatidae,LC,Common shelduck,Gravand
+Periparus ater,PERATE,Periparus,ater,Aves,Passeriformes,Paridae,LC,Coal tit,Svartmes
+Numenius arquata,NUMARQ,Numenius,arquata,Aves,Charadriiformes,Scolopacidae,NT,Eurasian curlew,Storspov
+Spinus spinus,SPISPI,Spinus,spinus,Aves,Passeriformes,Fringillidae,LC,Eurasian siskin,Grönsiska
+Pandion haliaetus,PANHAL,Pandion,haliaetus,Aves,Accipitriformes,Pandionidae,LC,Osprey,Fiskgjuse
+Scolopax rusticola,SCORUS,Scolopax,rusticola,Aves,Charadriiformes,Scolopacidae,LC,Eurasian woodcock,Morkulla
+Phoenicurus phoenicurus,PHOPHO,Phoenicurus,phoenicurus,Aves,Passeriformes,Muscicapidae,LC,Common redstart,Rödstjärt
+Larus marinus,LARMAR,Larus,marinus,Aves,Charadriiformes,Laridae,LC,Great black-backed gull,Havstrut
+Tringa ochropus,TRIOCH,Tringa,ochropus,Aves,Charadriiformes,Scolopacidae,LC,Green sandpiper,Skogssnäppa
+Milvus milvus,MILMIL,Milvus,milvus,Aves,Accipitriformes,Accipitridae,LC,Red kite,Röd glada
+Tringa totanus,TRITOT,Tringa,totanus,Aves,Charadriiformes,Scolopacidae,LC,Common redshank,Rödbena
+Loxia curvirostra,LOXCUR,Loxia,curvirostra,Aves,Passeriformes,Fringillidae,LC,Red crossbill,Mindre korsnäbb
+Podiceps cristatus,PODCRI,Podiceps,cristatus,Aves,Podicipediformes,Podicipedidae,LC,Great crested grebe,Skäggdopping
+Actitis hypoleucos,ACTHYP,Actitis,hypoleucos,Aves,Charadriiformes,Scolopacidae,LC,Common sandpiper,Drillsnäppa
+Ciconia ciconia,CICCIC,Ciconia,ciconia,Aves,Ciconiiformes,Ciconiidae,LC,White stork,Vit stork
+Aythya fuligula,AYTFUL,Aythya,fuligula,Aves,Anseriformes,Anatidae,LC,Tufted duck,Vigg
+Streptopelia decaocto,STRDEC,Streptopelia,decaocto,Aves,Columbiformes,Columbidae,LC,Eurasian collared dove,Turkduva
+Anas strepera,ANASTR,Anas,strepera,Aves,Anseriformes,Anatidae,LC,Gadwall,Snatterand
+Falco subbuteo,FALSUB,Falco,subbuteo,Aves,Falconiformes,Falconidae,LC,Eurasian hobby,Lärkfalk
+Fulica atra,FULATR,Fulica,atra,Aves,Gruiformes,Rallidae,LC,Eurasian coot,Sothöna
+Picus viridis,PICVIR,Picus,viridis,Aves,Piciformes,Picidae,LC,European green woodpecker,Gröngöling
+Crex crex,CRECRE,Crex,crex,Aves,Gruiformes,Rallidae,LC,Corn crake,Kornknarr
+Jynx torquilla,JYNTOR,Jynx,torquilla,Aves,Piciformes,Picidae,LC,Eurasian wryneck,Göktyta
+Turdus iliacus,TURILI,Turdus,iliacus,Aves,Passeriformes,Turdidae,NT,Redwing,Rödvingetrast
+Pluvialis apricaria,PLUAPR,Pluvialis,apricaria,Aves,Charadriiformes,Charadriidae,LC,European golden plover,Ljungpipare
+Lophophanes cristatus,LOPCRI,Lophophanes,cristatus,Aves,Passeriformes,Paridae,LC,European crested tit,Tofsmes
+Lullula arborea,LULARB,Lullula,arborea,Aves,Passeriformes,Alaudidae,LC,Woodlark,Trädlärka
+Tringa erythropus,TRIERY,Tringa,erythropus,Aves,Charadriiformes,Scolopacidae,LC,Spotted redshank,Svartsnäppa
+Pyrrhula pyrrhula,PYRPYR,Pyrrhula,pyrrhula,Aves,Passeriformes,Fringillidae,LC,Eurasian bullfinch,Domherre
+Mergus merganser,MERMER,Mergus,merganser,Aves,Anseriformes,Anatidae,LC,Common merganser,Storskrake
+Riparia riparia,RIPRIP,Riparia,riparia,Aves,Passeriformes,Hirundinidae,LC,Sand martin,Backsvala
+Aegithalos caudatus,AEGCAU,Aegithalos,caudatus,Aves,Passeriformes,Aegithalidae,LC,Long-tailed tit,Stjärtmes
+Sterna hirundo,STEHIR,Sterna,hirundo,Aves,Charadriiformes,Laridae,LC,Common tern,Fisktärna
+Motacilla cinerea,MOTCIN,Motacilla,cinerea,Aves,Passeriformes,Motacillidae,LC,Grey wagtail,Forsärla
+Accipiter gentilis,ACCGEN,Accipiter,gentilis,Aves,Accipitriformes,Accipitridae,LC,Northern goshawk,Duvhök
+Calidris alpina,CALALP,Calidris,alpina,Aves,Charadriiformes,Scolopacidae,LC,Dunlin,Kärrsnäppa
+Tetrao urogallus,TETURO,Tetrao,urogallus,Aves,Galliformes,Phasianidae,LC,Western capercaillie,Tjäder
+Oriolus oriolus,ORIORI,Oriolus,oriolus,Aves,Passeriformes,Oriolidae,LC,Eurasian golden oriole,Sommargylling
+Phalacrocorax carbo,PHACAR,Phalacrocorax,carbo,Aves,Suliformes,Phalacrocoracidae,LC,Great cormorant,Storskarv
+Tachybaptus ruficollis,TACRUF,Tachybaptus,ruficollis,Aves,Podicipediformes,Podicipedidae,LC,Little grebe,Smådopping
+Charadrius hiaticula,CHAHIA,Charadrius,hiaticula,Aves,Charadriiformes,Charadriidae,LC,Common ringed plover,Större strandpipare
+Philomachus pugnax,PHIPUG,Philomachus,pugnax,Aves,Charadriiformes,Scolopacidae,LC,Ruff,Brushane
+Acrocephalus schoenobaenus,ACRSCH,Acrocephalus,schoenobaenus,Aves,Passeriformes,Acrocephalidae,LC,Sedge warbler,Sävsångare
+Cygnus cygnus,CYGCYG,Cygnus,cygnus,Aves,Anseriformes,Anatidae,LC,Whooper swan,Sångsvan
+Dryobates minor,DRYMIN,Dryobates,minor,Aves,Piciformes,Picidae,LC,Lesser spotted woodpecker,Mindre hackspett
+Gavia arctica,GAVARC,Gavia,arctica,Aves,Gaviiformes,Gaviidae,LC,Black-throated loon,Storlom
+Charadrius dubius,CHADUB,Charadrius,dubius,Aves,Charadriiformes,Charadriidae,LC,Little ringed plover,Mindre strandpipare
+Lyrurus tetrix,LYRTET,Lyrurus,tetrix,Aves,Galliformes,Phasianidae,LC,Black grouse,Orre
+Poecile montanus,POEMON,Poecile,montanus,Aves,Passeriformes,Paridae,LC,Willow tit,Talltita
+Circus cyaneus,CIRCYA,Circus,cyaneus,Aves,Accipitriformes,Accipitridae,LC,Hen harrier,Blå kärrhök
+Rallus aquaticus,RALAQU,Rallus,aquaticus,Aves,Gruiformes,Rallidae,LC,Water rail,Vattenrall
+Larus fuscus,LARFUS,Larus,fuscus,Aves,Charadriiformes,Laridae,LC,Lesser black-backed gull,Silltrut
+Anas clypeata,ANACLY,Anas,clypeata,Aves,Anseriformes,Anatidae,LC,Northern shoveler,Skedand
+Loxia pytyopsittacus,LOXPYT,Loxia,pytyopsittacus,Aves,Passeriformes,Fringillidae,LC,Parrot crossbill,Större korsnäbb
+Ficedula parva,FICPAR,Ficedula,parva,Aves,Passeriformes,Muscicapidae,LC,Red-breasted flycatcher,Mindre flugsnappare
+Strix aluco,STRALU,Strix,aluco,Aves,Strigiformes,Strigidae,LC,Tawny owl,Kattuggla
+Gavia stellata,GAVSTE,Gavia,stellata,Aves,Gaviiformes,Gaviidae,LC,Red-throated loon,Smålom
+Accipiter nisus,ACCNIS,Accipiter,nisus,Aves,Accipitriformes,Accipitridae,LC,Eurasian sparrowhawk,Sparvhök
+Limosa lapponica,LIMLAP,Limosa,lapponica,Aves,Charadriiformes,Scolopacidae,NT,Bar-tailed godwit,Myrspov
+Nucifraga caryocatactes,NUCCAR,Nucifraga,caryocatactes,Aves,Passeriformes,Corvidae,LC,Spotted nutcracker,Nötkråka
+Mergus serrator,MERSER,Mergus,serrator,Aves,Anseriformes,Anatidae,LC,Red-breasted merganser,Småskrake
+Ficedula albicollis,FICALB,Ficedula,albicollis,Aves,Passeriformes,Muscicapidae,LC,Collared flycatcher,Halsbandsflugsnappare
+Sternula albifrons,STEALB,Sternula,albifrons,Aves,Charadriiformes,Laridae,LC,Little tern,Småtärna
+Locustella naevia,LOCNAE,Locustella,naevia,Aves,Passeriformes,Locustellidae,LC,Common grasshopper warbler,Gräshoppsångare
+Alcedo atthis,ALCATT,Alcedo,atthis,Aves,Coraciiformes,Alcedinidae,LC,Common kingfisher,Kungsfiskare
+Thalasseus sandvicensis,THASAN,Thalasseus,sandvicensis,Aves,Charadriiformes,Laridae,LC,Sandwich tern,Kentsk tärna
+Sylvia nisoria,SYLNIS,Sylvia,nisoria,Aves,Passeriformes,Sylviidae,LC,Barred warbler,Höksångare
+Fringilla montifringilla,FRIMON,Fringilla,montifringilla,Aves,Passeriformes,Fringillidae,LC,Brambling,Bergfink
+Tringa glareola,TRIGLA,Tringa,glareola,Aves,Charadriiformes,Scolopacidae,LC,Wood sandpiper,Grönbena
+Tetrastes bonasia,TETBON,Tetrastes,bonasia,Aves,Galliformes,Phasianidae,,Hazel grouse,Järpe
+Turdus torquatus,TURTOR,Turdus,torquatus,Aves,Passeriformes,Turdidae,LC,Ring ouzel,Ringtrast
+Emberiza hortulana,EMBHOR,Emberiza,hortulana,Aves,Passeriformes,Emberizidae,LC,Ortolan bunting,Ortolansparv
+Tringa nebularia,TRINEB,Tringa,nebularia,Aves,Charadriiformes,Scolopacidae,LC,Common greenshank,Gluttsnäppa
+Perisoreus infaustus,PERINF,Perisoreus,infaustus,Aves,Passeriformes,Corvidae,LC,Siberian jay,Lavskrika
+Numenius phaeopus,NUMPHA,Numenius,phaeopus,Aves,Charadriiformes,Scolopacidae,LC,Eurasian whimbrel,Småspov
+Poecile cinctus,POECIN,Poecile,cinctus,Aves,Passeriformes,Paridae,LC,Grey-headed chickadee,Lappmes
+Acrocephalus arundinaceus,ACRARU,Acrocephalus,arundinaceus,Aves,Passeriformes,Acrocephalidae,LC,Great reed warbler,Trastsångare
+Sterna paradisaea,STEPAD,Sterna,paradisaea,Aves,Charadriiformes,Laridae,LC,Arctic tern,Silvertärna
+Buteo lagopus,BUTLAG,Buteo,lagopus,Aves,Accipitriformes,Accipitridae,LC,Rough-legged buzzard,Fjällvråk
+Emberiza rustica,EMBRUS,Emberiza,rustica,Aves,Passeriformes,Emberizidae,VU,Rustic bunting,Videsparv
+Lanius excubitor,LANEXC,Lanius,excubitor,Aves,Passeriformes,Laniidae,LC,Great grey shrike,Varfågel
+Picoides tridactylus,PICTRI,Picoides,tridactylus,Aves,Piciformes,Picidae,LC,Eurasian three-toed woodpecker,Tretåig hackspett
+Falco columbarius,FALCOL,Falco,columbarius,Aves,Falconiformes,Falconidae,LC,Merlin,Stenfalk
+Charadrius morinellus,CHAMOR,Charadrius,morinellus,Aves,Charadriiformes,Charadriidae,,Eurasian dotterel,Fjällpipare
+Melanitta nigra,MELNIG,Melanitta,nigra,Aves,Anseriformes,Anatidae,LC,Common scoter,Sjöorre
+Porzana porzana,PORPOR,Porzana,porzana,Aves,Gruiformes,Rallidae,LC,Spotted crake,Småfläckig sumphöna
+Lagopus lagopus,LAGLAG,Lagopus,lagopus,Aves,Galliformes,Phasianidae,LC,Willow ptarmigan,Dalripa
+Luscinia svecica,LUSSVE,Luscinia,svecica,Aves,Passeriformes,Muscicapidae,LC,Bluethroat,Blåhake
+Plectrophenax nivalis,PLENIV,Plectrophenax,nivalis,Aves,Passeriformes,Calcariidae,LC,Snow bunting,Snösparv
+Anthus petrosus,ANTPET,Anthus,petrosus,Aves,Passeriformes,Motacillidae,LC,European rock pipit,Skärpiplärka
+Picus canus,PICCAN,Picus,canus,Aves,Piciformes,Picidae,LC,Grey-headed woodpecker,Gråspett
+Aegolius funereus,AEGFUN,Aegolius,funereus,Aves,Strigiformes,Strigidae,LC,Boreal owl,Pärluggla
+Stercorarius longicaudus,STELON,Stercorarius,longicaudus,Aves,Charadriiformes,Stercorariidae,LC,Long-tailed jaeger,Fjällabb
+Asio flammeus,ASIFLA,Asio,flammeus,Aves,Strigiformes,Strigidae,LC,Short-eared owl,Jorduggla
+Anser fabalis,ANSFAB,Anser,fabalis,Aves,Anseriformes,Anatidae,LC,Taiga bean goose,Sädgås
+Anas penelope,ANAPEN,Anas,penelope,Aves,Anseriformes,Anatidae,LC,Eurasian wigeon,Bläsand
+Surnia ulula,SURULU,Surnia,ulula,Aves,Strigiformes,Strigidae,LC,Northern hawk-owl,Hökuggla
+Lagopus muta,LAGMUT,Lagopus,muta,Aves,Galliformes,Phasianidae,LC,Rock ptarmigan,Fjällripa
+Gallinago media,GALMED,Gallinago,media,Aves,Charadriiformes,Scolopacidae,NT,Great snipe,Dubbelbeckasin
+Phylloscopus trochiloides,PHYTRO,Phylloscopus,trochiloides,Aves,Passeriformes,Phylloscopidae,LC,Greenish warbler,Lundsångare
+Bombycilla garrulus,BOMGAR,Bombycilla,garrulus,Aves,Passeriformes,Bombycillidae,LC,Bohemian waxwing,Sidensvans
+Lymnocryptes minimus,LYMMIN,Lymnocryptes,minimus,Aves,Charadriiformes,Scolopacidae,LC,Jack snipe,Dvärgbeckasin
+Melanitta fusca,MELFUS,Melanitta,fusca,Aves,Anseriformes,Anatidae,VU,Velvet scoter,Svärta
+Hydrocoloeus minutus,HYDMIN,Hydrocoloeus,minutus,Aves,Charadriiformes,Laridae,LC,Little gull,Dvärgmås
+Limicola falcinellus,LIMFAL,Limicola,falcinellus,Aves,Charadriiformes,Scolopacidae,LC,Broad-billed sandpiper,Myrsnäppa
+Podiceps grisegena,PODGRI,Podiceps,grisegena,Aves,Podicipediformes,Podicipedidae,LC,Red-necked grebe,Gråhakedopping
+Calcarius lapponicus,CALLAP,Calcarius,lapponicus,Aves,Passeriformes,Calcariidae,LC,Lapland longspur,Lappsparv
+Emberiza pusilla,EMBPUS,Emberiza,pusilla,Aves,Passeriformes,Emberizidae,LC,Little bunting,Dvärgsparv
+Calidris temminckii,CALTEM,Calidris,temminckii,Aves,Charadriiformes,Scolopacidae,LC,Temminck's stint,Mosnäppa
+Phalaropus lobatus,PHALOB,Phalaropus,lobatus,Aves,Charadriiformes,Scolopacidae,LC,Red-necked phalarope,Smalnäbbad simsnäppa
+Stercorarius parasiticus,STEPAR,Stercorarius,parasiticus,Aves,Charadriiformes,Stercorariidae,LC,Parasitic jaeger,Kustlabb
+Tarsiger cyanurus,TARCYA,Tarsiger,cyanurus,Aves,Passeriformes,Muscicapidae,LC,Red-flanked bluetail,Tajgablåstjärt
+Pinicola enucleator,PINENU,Pinicola,enucleator,Aves,Passeriformes,Fringillidae,LC,Pine grosbeak,Tallbit
+Loxia leucoptera,LOXLEU,Loxia,leucoptera,Aves,Passeriformes,Fringillidae,,Two-barred crossbill,Bändelkorsnäbb
+Aythya marila,AYTMAR,Aythya,marila,Aves,Anseriformes,Anatidae,LC,Greater scaup,Bergand
+Cinclus cinclus,CINCIN,Cinclus,cinclus,Aves,Passeriformes,Cinclidae,LC,White-throated dipper,Strömstare
+Clangula hyemalis,CLAHYE,Clangula,hyemalis,Aves,Anseriformes,Anatidae,VU,Long-tailed duck,Alfågel
+Asio otus,ASIOTU,Asio,otus,Aves,Strigiformes,Strigidae,LC,Long-eared owl,Hornuggla
+Glaucidium passerinum,GLAPAS,Glaucidium,passerinum,Aves,Strigiformes,Strigidae,LC,Eurasian pygmy owl,Sparvuggla
+Caprimulgus europaeus,CAPEUR,Caprimulgus,europaeus,Aves,Caprimulgiformes,Caprimulgidae,LC,European nightjar,Nattskärra
+Acanthis hornemanni,ACAHOR,Acanthis,hornemanni,Aves,Passeriformes,Fringillidae,,Arctic redpoll,Snösiska
+Gallinula chloropus,GALCHL,Gallinula,chloropus,Aves,Gruiformes,Rallidae,LC,Common moorhen,Rörhöna
+Alca torda,ALCTOR,Alca,torda,Aves,Charadriiformes,Alcidae,NT,Razorbill,Tordmule
+Strix uralensis,STRURA,Strix,uralensis,Aves,Strigiformes,Strigidae,LC,Ural owl,Slaguggla
+Strix nebulosa,STRNEB,Strix,nebulosa,Aves,Strigiformes,Strigidae,LC,Great grey owl,Lappuggla
+Botaurus stellaris,BOTSTE,Botaurus,stellaris,Aves,Pelecaniformes,Ardeidae,LC,Eurasian bittern,Rördrom
+Calidris maritima,CALMAR,Calidris,maritima,Aves,Charadriiformes,Scolopacidae,LC,Purple sandpiper,Skärsnäppa
+Podiceps auritus,PODAUR,Podiceps,auritus,Aves,Podicipediformes,Podicipedidae,VU,Horned grebe,Svarthakedopping
+Cepphus grylle,CEPGRY,Cepphus,grylle,Aves,Charadriiformes,Alcidae,LC,Black guillemot,Tobisgrissla
+Anthus cervinus,ANTCER,Anthus,cervinus,Aves,Passeriformes,Motacillidae,LC,Red-throated pipit,Rödstrupig piplärka
+Anas querquedula,ANAQUE,Anas,querquedula,Aves,Anseriformes,Anatidae,LC,Garganey,Årta
+Branta bernicla,BRABER,Branta,bernicla,Aves,Anseriformes,Anatidae,LC,Brant,Prutgås
+Recurvirostra avosetta,RECAVO,Recurvirostra,avosetta,Aves,Charadriiformes,Recurvirostridae,LC,Pied avocet,Skärfläcka
+Milvus migrans,MILMIG,Milvus,migrans,Aves,Accipitriformes,Accipitridae,LC,Black kite,Brun glada
+Mergellus albellus,MERALB,Mergellus,albellus,Aves,Anseriformes,Anatidae,LC,Smew,Salskrake
+Aythya ferina,AYTFER,Aythya,ferina,Aves,Anseriformes,Anatidae,VU,Common pochard,Brunand
+Phylloscopus borealis,PHYBOR,Phylloscopus,borealis,Aves,Passeriformes,Phylloscopidae,LC,Arctic warbler,Nordsångare
+Linaria flavirostris,LINFLA,Linaria,flavirostris,Aves,Passeriformes,Fringillidae,LC,Twite,Vinterhämpling
+Anas acuta,ANAACU,Anas,acuta,Aves,Anseriformes,Anatidae,LC,Northern pintail,Stjärtand
+Locustella fluviatilis,LOCFLU,Locustella,fluviatilis,Aves,Passeriformes,Locustellidae,LC,River warbler,Flodsångare
+Arenaria interpres,AREINT,Arenaria,interpres,Aves,Charadriiformes,Scolopacidae,LC,Ruddy turnstone,Roskarl
+Locustella luscinioides,LOCLUS,Locustella,luscinioides,Aves,Passeriformes,Locustellidae,LC,Savi's warbler,Vassångare
+Regulus ignicapilla,REGIGN,Regulus,ignicapilla,Aves,Passeriformes,Regulidae,LC,Common firecrest,Brandkronad kungsfågel
+Hydroprogne caspia,HYDCAS,Hydroprogne,caspia,Aves,Charadriiformes,Laridae,LC,Caspian tern,Skräntärna
+Anser albifrons,ANSALB,Anser,albifrons,Aves,Anseriformes,Anatidae,LC,Greater white-fronted goose,Bläsgås
+Panurus biarmicus,PANBIA,Panurus,biarmicus,Aves,Passeriformes,Panuridae,LC,Bearded reedling,Skäggmes
+Remiz pendulinus,REMPEN,Remiz,pendulinus,Aves,Passeriformes,Remizidae,LC,Eurasian penduline tit,Pungmes
+Acrocephalus dumetorum,ACRDUM,Acrocephalus,dumetorum,Aves,Passeriformes,Acrocephalidae,LC,Blyth's reed warbler,Busksångare
+Eremophila alpestris,EREALP,Eremophila,alpestris,Aves,Passeriformes,Alaudidae,LC,Horned lark,Berglärka
+Phalacrocorax aristotelis,PHAARI,Phalacrocorax,aristotelis,Aves,Suliformes,Phalacrocoracidae,LC,European shag,Toppskarv
+Phoenicurus ochruros,PHOOCH,Phoenicurus,ochruros,Aves,Passeriformes,Muscicapidae,LC,Black redstart,Svart rödstjärt
+Uria aalge,URIAAL,Uria,aalge,Aves,Charadriiformes,Alcidae,LC,Common murre,Sillgrissla
+Limosa limosa,LIMLIM,Limosa,limosa,Aves,Charadriiformes,Scolopacidae,NT,Black-tailed godwit,Rödspov
+Pluvialis squatarola,PLUSQU,Pluvialis,squatarola,Aves,Charadriiformes,Charadriidae,LC,Grey plover,Kustpipare
+Gavia adamsii,GAVADA,Gavia,adamsii,Aves,Gaviiformes,Gaviidae,NT,Yellow-billed loon,Vitnäbbad islom
+Saxicola maurus,SAXMAU,Saxicola,maurus,Aves,Passeriformes,Muscicapidae,,Siberian stonechat,Vitgumpad buskskvätta
+Phylloscopus inornatus,PHYINO,Phylloscopus,inornatus,Aves,Passeriformes,Phylloscopidae,LC,Yellow-browed warbler,Tajgasångare
+Fulmarus glacialis,FULGLA,Fulmarus,glacialis,Aves,Procellariiformes,Procellariidae,LC,Northern fulmar,Stormfågel
+Morus bassanus,MORBAS,Morus,bassanus,Aves,Suliformes,Sulidae,LC,Northern gannet,Havssula
+Streptopelia turtur,STRTUR,Streptopelia,turtur,Aves,Columbiformes,Columbidae,VU,European turtle dove,Turturduva
+Gavia immer,GAVIMM,Gavia,immer,Aves,Gaviiformes,Gaviidae,LC,Common loon,Svartnäbbad islom
+Podiceps nigricollis,PODNIG,Podiceps,nigricollis,Aves,Podicipediformes,Podicipedidae,LC,Black-necked grebe,Svarthalsad dopping
+Lanius senator,LANSEN,Lanius,senator,Aves,Passeriformes,Laniidae,LC,Woodchat shrike,Rödhuvad törnskata
+Anthus campestris,ANTCAM,Anthus,campestris,Aves,Passeriformes,Motacillidae,LC,Tawny pipit,Fältpiplärka
+Chlidonias niger,CHLNIG,Chlidonias,niger,Aves,Charadriiformes,Laridae,LC,Black tern,Svarttärna
+Ardea alba,ARDALB,Ardea,alba,Aves,Pelecaniformes,Ardeidae,LC,Great egret,Ägretthäger
+Serinus serinus,SERSER,Serinus,serinus,Aves,Passeriformes,Fringillidae,LC,European serin,Gulhämpling

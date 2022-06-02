@@ -14,6 +14,7 @@ source('function_dfa_test.R')
 
 ts_bird_se_allcountry <- readRDS("output/ts_bird_se_allcountry.rds")
 species_data <- readRDS("output/species_data.rds")
+species_data_en_se <- read.csv("output/species_data_en_se.csv", header = T)
 
 # Clean data 
 

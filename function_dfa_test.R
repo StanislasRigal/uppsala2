@@ -496,9 +496,58 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   
   # Get centroid of groups
   
-  centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) 
+  #centroids <- as.data.frame(hulls %>% group_by(group) %>% summarize(PC1=mean(PC1), PC2=mean(PC2))) # unweigthed
+  centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) # weigthed
   
-  return(list(kmeans_res, centroids, hulls, stability_cluster_final))
+  # Average distance between species and cluster centres
+  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
+  for(g in 1:length(unique(kmeans_1$group))){
+    sp_coord <- kmeans_1[kmeans_1$group==g, grepl("X",names(kmeans_1))]
+    cluster_coord <- kmeans_2[kmeans_2$group==g, grepl("X",names(kmeans_2))]
+    dist_clust <- c()
+    for(i in 1:nrow(sp_coord)){
+      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+      dist_clust <- c(dist_clust, dist(mat_dist_clust))
+    }
+    data_weight_mean <- data.frame(all_dist = dist_clust,
+                                   uncert = kmeans_1[kmeans_1$group==g,"uncert"])
+    mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
+    row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
+  }
+  
+  kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[,grepl("X",names(kmeans_1))], kmeans_2[,grepl("X",names(kmeans_2))])))
+  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
+  for(g in 1:length(unique(kmeans_1$group))){
+    sp_coord <- kmeans_scale[which(kmeans_1$group==g),]
+    cluster_coord <- kmeans_scale[(nrow(kmeans_1)+g), ]
+    dist_clust <- c()
+    for(i in 1:nrow(sp_coord)){
+      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+      dist_clust <- c(dist_clust, dist(mat_dist_clust))
+    }
+    data_weight_mean <- data.frame(all_dist = dist_clust,
+                                   uncert = kmeans_1[kmeans_1$group==g,"uncert"])
+    mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
+    row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
+  }
+  
+  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
+  for(g in 1:length(unique(kmeans_1$group))){
+    kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[kmeans_1$group==g, grepl("X",names(kmeans_1))],kmeans_2[kmeans_2$group==g, grepl("X",names(kmeans_2))])))
+    sp_coord <- kmeans_scale[1:(nrow(kmeans_scale)-1),]
+    cluster_coord <- kmeans_scale[nrow(kmeans_scale),]
+    dist_clust <- c()
+    for(i in 1:nrow(sp_coord)){
+      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+      dist_clust <- c(dist_clust, dist(mat_dist_clust))
+    }
+    data_weight_mean <- data.frame(all_dist = dist_clust,
+                                   uncert = kmeans_1[kmeans_1$group==g,"uncert"])
+    mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
+    row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
+  }
+  
+  return(list(kmeans_res, centroids, hulls, stability_cluster_final, mean_dist_clust))
 }
 
 # Plot groups and clustering trends
@@ -578,7 +627,8 @@ plot_group2 <- function(nb_group, centroids, kmeans_res, hulls, sdrep){
 }
 
 
-plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
+plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT,
+                            stability_cluster_final, mean_dist_clust){
   
   data_trend_group <- data.frame(group=rep(paste0("g",1:nb_group),nT),
                                  year=sort(rep(c(1998:(nT+1997)), nb_group)),
@@ -591,12 +641,16 @@ plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
     test <- data_trend_group[data_trend_group$group==paste0("g",i),]
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
+    min1 <- min(test$Index-test$Index_SE) + (max(test$Index+test$Index_SE)-min(test$Index-test$Index_SE))/10
+    min2 <- min(test$Index-test$Index_SE)
     ggplot(test, aes(x=year, y=Index)) +
       geom_line(col=hex_codes1[i], size=2) +
       #geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.7, col="black",fill="white")+
       geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes1[i])+
       xlab(NULL) + 
       ylab(NULL) + 
+      annotate("text", x=mean(test$year), y=min1, label= paste0("Stability = ", round(stability_cluster_final[i],3))) +
+      annotate("text", x=mean(test$year), y=min2, label= paste0("Mean distance = ", round(mean_dist_clust[i,1],3))) +
       theme_modern() + #theme_transparent()+
       theme(plot.margin=unit(c(0,0,0,0),"mm"),#axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
             #axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank(),
@@ -619,12 +673,14 @@ plot_group_boot <- function(nb_group, centroids, kmeans_res, hulls, sdrep, nT){
   width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
   
   res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
+  #res_to_plot <- merge(res_to_plot, species_data_en_se[,c("name_long_se","code_sp")],by="code_sp", all.x=T)
   
   final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
     geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
     geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
     #geom_text(label=res_to_plot$name_long, nudge_x = width_nudge, nudge_y = width_nudge, check_overlap = F) +
     #geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=centroids_data) +
+    geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15)+
     theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
     ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
     theme(legend.position='none')
@@ -891,6 +947,8 @@ make_dfa2 <- function(data_ts, # dataset of time series
                            se.value = NA)
     
     data_loadings <- merge(data_loadings, species_sub[,c("name_long","code_sp")],by="code_sp")
+    #data_loadings <- merge(data_loadings, species_data_en_se[,c("name_long_se","code_sp")],by="code_sp", all.x=T)
+    
     
     # Plots
     
