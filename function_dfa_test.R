@@ -500,36 +500,6 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
   centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) # weigthed
   
   # Average distance between species and cluster centres
-  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
-  for(g in 1:length(unique(kmeans_1$group))){
-    sp_coord <- kmeans_1[kmeans_1$group==g, grepl("X",names(kmeans_1))]
-    cluster_coord <- kmeans_2[kmeans_2$group==g, grepl("X",names(kmeans_2))]
-    dist_clust <- c()
-    for(i in 1:nrow(sp_coord)){
-      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
-      dist_clust <- c(dist_clust, dist(mat_dist_clust))
-    }
-    data_weight_mean <- data.frame(all_dist = dist_clust,
-                                   uncert = kmeans_1[kmeans_1$group==g,"uncert"])
-    mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
-    row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
-  }
-  
-  kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[,grepl("X",names(kmeans_1))], kmeans_2[,grepl("X",names(kmeans_2))])))
-  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
-  for(g in 1:length(unique(kmeans_1$group))){
-    sp_coord <- kmeans_scale[which(kmeans_1$group==g),]
-    cluster_coord <- kmeans_scale[(nrow(kmeans_1)+g), ]
-    dist_clust <- c()
-    for(i in 1:nrow(sp_coord)){
-      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
-      dist_clust <- c(dist_clust, dist(mat_dist_clust))
-    }
-    data_weight_mean <- data.frame(all_dist = dist_clust,
-                                   uncert = kmeans_1[kmeans_1$group==g,"uncert"])
-    mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
-    row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
-  }
   
   mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
   for(g in 1:length(unique(kmeans_1$group))){
@@ -976,7 +946,9 @@ make_dfa2 <- function(data_ts, # dataset of time series
                                      centroids = group_dfa[[2]],
                                      kmeans_res = group_dfa[[1]],
                                      hulls = group_dfa[[3]],
-                                     sdrep = sdRep, nT = nT)
+                                     sdrep = sdRep, nT = nT,
+                                     stability_cluster_final = group_dfa[[4]], 
+                                     mean_dist_clust = group_dfa[[5]])
     plot_sp_group <- plot_sp_group_all[1:2]
     trend_group <- plot_sp_group_all[[3]]
   }else{
