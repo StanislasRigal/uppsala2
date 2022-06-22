@@ -12,7 +12,7 @@ source("package_used.R")
 
 # Load functions
 
-source('function_dfa_CLEAN.R')
+source('function_dfa_clean.R')
 
 ```
 
