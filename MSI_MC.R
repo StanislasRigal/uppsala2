@@ -7,10 +7,13 @@ ts_bird_se_allcountry_clean <- ts_bird_se_allcountry[which(!is.na(ts_bird_se_all
 species_data <- readRDS("output/species_data.rds")
 
 ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                             c("VANVAN","NUMARQ","ALAARV","HIRRUS",
-                                               "MOTFLA","OENOEN","SAXRUB","SYLCOM",
-                                               "LANCOL","STUVUL","LINCAN","EMBCIT",
-                                               "PASMON","CORFRU","ANTPRA","EMBHOR"),])
+                                             c( "FALTIN","VANVAN","ALAARV","HIRRUS","CORFRU",
+                                                "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
+                                                "STUVUL","LINCAN","EMBCIT","EMBHOR","PASMON"),])
+                                               #"VANVAN","NUMARQ","ALAARV","HIRRUS",
+                                               #"MOTFLA","OENOEN","SAXRUB","SYLCOM",
+                                               #"LANCOL","STUVUL","LINCAN","EMBCIT",
+                                               #"PASMON","CORFRU","ANTPRA","EMBHOR"),])
 
 ts_forest <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
                                                       c("ACCNIS","TETBON","TRIOCH","COLOEN",
@@ -21,6 +24,9 @@ ts_forest <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$
                                                         "PHYCOL","PHYSIB","REGREG","FICHYP",
                                                         "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
 
+ts_all <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                   species_all$code_sp,])
+
 
 
 # load main function
@@ -29,6 +35,8 @@ source("function_ts.R")
 RES_farmland <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
 RES_forest <- MSI_MC_func(ts_forest,SEbaseyear=1998, plotbaseyear=1998)
+
+RES_all <- MSI_MC_func(ts_all,SEbaseyear=1998, plotbaseyear=1998)
 
 ggplot(RES_farmland, aes(x=year, y=MSI))+
   geom_point(colour = "dark green",size=3)+
@@ -40,7 +48,7 @@ ggplot(RES_farmland, aes(x=year, y=MSI))+
 
 ggplot(RES_farmland, aes(x=year, y=MSI))+
   geom_point(size=3)+
-  ylim(70, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend), size=1)+ theme_modern() +
   geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
@@ -61,6 +69,53 @@ ggplot(RES_forest, aes(x=year, y=MSI))+
 ggsave("output/forest_msi.png",
        dpi=300,
        width = 6,
+       height = 4
+)
+
+ggplot(RES_all, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+
+ggsave("output/all_msi.png",
+       dpi=300,
+       width = 6,
+       height = 4
+)
+
+ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                        c( "FALTIN","ALAARV","CORFRU",
+                                                           "SAXRUB","ANTPRA","MOTFLA",
+                                                           "LINCAN","EMBHOR","PASMON"),])
+RES_farmland1 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
+
+ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                        c( "FALTIN","VANVAN","HIRRUS","CORFRU",
+                                                           "SYLCOM","LANCOL",
+                                                           "STUVUL","LINCAN","EMBCIT","EMBHOR"),])
+RES_farmland2 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
+
+ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                        c( "VANVAN","ALAARV","HIRRUS",
+                                                           "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
+                                                           "STUVUL","EMBCIT","EMBHOR","PASMON"),])
+RES_farmland3 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
+
+RES_farmland_all <- rbind(RES_farmland,RES_farmland1,RES_farmland2,RES_farmland3)
+RES_farmland_all$group <- c(rep("All",23),rep("Without cluster 1",23),
+                            rep("Without cluster 2",23),rep("Without cluster 3",23))
+
+ggplot(RES_farmland_all, aes(x=year, y=MSI, fill=group))+
+  ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend, col=group), size=1)+ theme_modern() +
+  theme(legend.title = element_blank())
+
+ggsave("output/farm_msi_compare.png",
+       dpi=300,
+       width = 8,
        height = 4
 )
 

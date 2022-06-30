@@ -246,7 +246,7 @@ group_from_dfa_boot <- function(data_loadings, cov_mat_Z, species_sub, nboot=100
       },
       #if an error occurs
       error=function(e) {
-        data.frame(Best.partition=rep(NA,nrow(rand_load)))
+        data.frame(Best.partition=rep(NA,nrow(data)))
       }
     )
   }
@@ -785,6 +785,18 @@ make_dfa2 <- function(data_ts, # dataset of time series
     }
     if(length(which.min(aic2_best))==0){stop("Convergence issues")}
     nfac <- which.min(aic2_best)
+    
+    if(length(na.omit(aic2_best))>1){
+      aic2_best_no_na <- aic2_best
+      aic2_best_no_na[is.na(aic2_best_no_na)] <- max(aic2_best_no_na, na.rm=T)
+      delta_aic <- 0
+      nfac <- nfac + 1
+      while(nfac>1 && delta_aic<2){
+        nfac <- nfac - 1
+        delta_aic <- aic2_best_no_na[(nfac-1)]-aic2_best_no_na[nfac]
+      } 
+    }
+    
     core_dfa_res <- get(paste0("core_dfa",nfac))
   }else{
     core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac)

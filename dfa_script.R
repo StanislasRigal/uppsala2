@@ -8,7 +8,7 @@ source("package_used.R")
 source("function_ts.R")
 
 # DFA with TMB
-source('function_dfa_test.R')
+source('function_dfa_clean.R')
 
 # Time-series from the SBBS
 
@@ -23,10 +23,12 @@ ts_bird_se_allcountry_data <- ts_bird_se_allcountry[which(!is.na(ts_bird_se_allc
 
 # Farmland birds
 
-species_sub <- species_farm <-  droplevels(species_data[species_data$code_sp %in% c("VANVAN","NUMARQ","ALAARV","HIRRUS",
-                                                                   "MOTFLA","OENOEN","SAXRUB","SYLCOM",
-                                                                   "LANCOL","STUVUL","LINCAN","EMBCIT",
-                                                                   "PASMON","CORFRU","ANTPRA","EMBHOR"),])
+species_sub <- species_farm <-  droplevels(species_data[species_data$code_sp %in% c(
+  "FALTIN","VANVAN","ALAARV","HIRRUS","CORFRU",
+  "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
+  "STUVUL","LINCAN","EMBCIT","EMBHOR","PASMON"),])
+  #"VANVAN","NUMARQ","ALAARV","HIRRUS","MOTFLA","OENOEN","SAXRUB","SYLCOM",
+  #"LANCOL","STUVUL","LINCAN","EMBCIT","PASMON","CORFRU","ANTPRA","EMBHOR"),])
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 y_farm <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
@@ -37,13 +39,11 @@ obs_se_farm <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
 
 # Forest bird
 
-species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %in% c("ACCNIS","TETBON","TRIOCH","COLOEN",
-                                                                   "DENMAJ","DRYMAR","PICVIR","JYNTOR",
-                                                                   "DRYMIN","PICTRI","NUCCAR","GARGLA",
-                                                                   "PERATE","LOPCRI","POEPAL","POEMON",
-                                                                   "SITEUR","CERFAM","TURVIS","PHOPHO",
-                                                                   "PHYCOL","PHYSIB","REGREG","FICHYP",
-                                                                   "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
+species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %in% c(
+  "ACCNIS","TETBON","TRIOCH","COLOEN","DENMAJ","DRYMAR","PICVIR","JYNTOR",
+  "DRYMIN","PICTRI","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
+  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP",
+  "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
 
@@ -69,8 +69,8 @@ species_sub <- species_all <- droplevels(species_data[species_data$code_sp %in% 
                                                                                   "PHYCOL","PHYSIB","REGREG","FICHYP",
                                                                                   "ANTTRI","COCCOC","SPISPI","PYRPYR",
                                                                                   "EMBRUS",
-                                                                                  "VANVAN","NUMARQ","ALAARV","HIRRUS", # farmland
-                                                                                  "MOTFLA","OENOEN","SAXRUB","SYLCOM",
+                                                                                  "VANVAN","FALTIN","ALAARV","HIRRUS", # farmland
+                                                                                  "MOTFLA","SAXRUB","SYLCOM",
                                                                                   "LANCOL","STUVUL","LINCAN","EMBCIT",
                                                                                   "PASMON","CORFRU","ANTPRA","EMBHOR",
                                                                                   "PODCRI","ARDCIN","ANAPLA","TADTAD",# others
@@ -274,19 +274,48 @@ names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
 y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
 species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
 
+# swedish indicator birds
+
+species_sub <- species_forest_sw <- droplevels(species_data[species_data$code_sp %in% c("TETURO","TETBON","COLOEN","PICVIR","DRYMIN","PICTRI","NUCCAR","PERINF",
+                                                                                        "AEGCAU","PERATE","LOPCRI","POECIN","POEPAL","POEMON","CERFAM","PYRPYR"),])
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+y_forest_sw <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+                     code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se_forest_sw <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                          code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
+
+# mountrain birds
+species_sub <- species_rock <- droplevels(species_data[species_data$code_sp %in% c("LAGMUT","PLUAPR","STELON","OENOEN",
+                                                                                   "ANTPRA","CALLAP","PLENIV","LAGLAG",
+                                                                                   "TURILI","PHOPHO","LUSSVE","PHYTRO",
+                                                                                   "ACAFLA","FRIMON"),])
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+y_rock <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se_rock <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                     code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 
 
 # DFA
 
 # if number of trends unknown
-farm_nfac <- make_dfa2(data_ts = y_farm, data_ts_se = obs_se_farm,
+farm_nfac <- make_dfa(data_ts = y_farm, data_ts_se = obs_se_farm,
                        species_sub = species_farm)
-forest_nfac <- make_dfa2(data_ts = y_forest, data_ts_se = obs_se_forest,
+forest_nfac <- make_dfa(data_ts = y_forest, data_ts_se = obs_se_forest,
                          species_sub = species_forest)
-all_nfac <- make_dfa2(data_ts = y_all, data_ts_se = obs_se_all,
+all_nfac <- make_dfa(data_ts = y_all, data_ts_se = obs_se_all,
                        species_sub = species_all)
-rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+rand_nfac <- make_dfa(data_ts = y_rand, data_ts_se = obs_se_rand,
                       species_sub = species_rand)
+forest_sw_nfac <- make_dfa(data_ts = y_forest_sw, data_ts_se = obs_se_forest_sw,
+                            species_sub = species_forest_sw)
+rock_nfac <- make_dfa(data_ts = y_rock, data_ts_se = obs_se_rock,
+                       species_sub = species_rock)
+
 
 ggsave("output/farm_nfac.png",
        dpi=300,
@@ -448,6 +477,30 @@ simul_rand_dfa_intern <- function(a,
                                   sd_rand2,
                                   sd_ci,
                                   nboot){
+  ## Simulate latent trends
+  
+  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
+  test_cor <- 1
+  while(abs(test_cor)>0.5){
+    for(i in 1:n_sp_init){
+      #set.seed(i+10)
+      y_ts <- c()
+      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+      for (t in 2:n_y) {
+        r.w <- rnorm(n = 1, mean = 0, sd = 1)
+        y_ts[t] <- y_ts[t - 1] + r.w
+      }
+      y_ts <- y_ts + abs(min(y_ts))+1
+      y_ts <- exp(scale(log(y_ts)))
+      #max_new <- max(y_ts) - mean(y_ts)/4
+      #min_new <- min(y_ts) + mean(y_ts)/4
+      #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+      y_init[i,] <- y_ts
+    }
+    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
+  }
+  
+  ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
   
     seed_id <- 0
     id_vec <- c()
@@ -504,7 +557,7 @@ simul_rand_dfa_intern <- function(a,
     
     # DFA
     
-    rand_nfac <- make_dfa2(data_ts = y_rand, data_ts_se = obs_se_rand,
+    rand_nfac <- make_dfa(data_ts = y_rand, data_ts_se = obs_se_rand,
                            species_sub = species_rand, nboot=nboot)
     
     # compare DFA results to expected
@@ -517,7 +570,7 @@ simul_rand_dfa_intern <- function(a,
       clust_nb <- 1
       clust_stab <- 1
     }else{
-      clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[4]],2))))
+      clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[3]],2))))
       
       clust_nb <- length(unique(obs_group$group))
       jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
@@ -601,32 +654,7 @@ simul_rand_dfa <- function(n_y = 25, # number of year
                            sd_ci = 0.1, # standard deviation of the loading factors
                            nboot = 100 # number of bootstrap for clustering
                            ){
-  ## Simulate latent trends
   
-  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
-  test_cor <- 1
-  while(abs(test_cor)>0.5){
-    for(i in 1:n_sp_init){
-      #set.seed(i+10)
-      y_ts <- c()
-      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
-      for (t in 2:n_y) {
-        r.w <- rnorm(n = 1, mean = 0, sd = 1)
-        y_ts[t] <- y_ts[t - 1] + r.w
-      }
-      y_ts <- y_ts + abs(min(y_ts))+1
-      y_ts <- exp(scale(log(y_ts)))
-      #max_new <- max(y_ts) - mean(y_ts)/4
-      #min_new <- min(y_ts) + mean(y_ts)/4
-      #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
-      y_init[i,] <- y_ts
-    }
-    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
-  }
-  
-  
-  ## from these n_sp_init latent trend, simulate n_sp ts from loading factors
-
   list_to_expend <- list()
   for(g in 1:nb_group_exp){
     list_to_expend[[g]] <- c(0,20,40,60,80,100)
@@ -677,9 +705,10 @@ simul_rand_dfa <- function(n_y = 25, # number of year
 
 # test function before simulation
 rand_nfac_test <- simul_rand_dfa(nb_group_exp = 2, thres = 1)
-rand_nfac_test2 <- lapply(c(2,3,4),
+rand_nfac_test2 <- lapply(c(1,2,3,4),
                           FUN=function(x){simul_rand_dfa(nb_group_exp = x,
-                                                                thres = 1)})
+                                                         thres = 1,
+                                                         sd_ci = 0.01)})
 rand_nfac_test3 <- lapply(c(0.25,0.5,0.75),
                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
                                                                 thres = x)})
@@ -690,19 +719,48 @@ rand_nfac_test4 <- lapply(c(0.01,1),
 
 
 # full simulations
-rep_sim <- 50
-rand_nfac_test_g <- lapply(sort(rep(c(2,3,4),rep_sim)),
-                          FUN=function(x){simul_rand_dfa(nb_group_exp = x,
+rep_sim <- 100
+
+sim_data <- data.frame(num_sim=1:(rep_sim*4),nb_group_exp=sort(rep(c(1,2,3,4),rep_sim)))
+
+library(doParallel)
+library(parallel)
+no_cores <- detectCores() - 1
+registerDoParallel(cores=no_cores)
+rand_nfac_test_g <- dlply(sim_data,.(num_sim),
+                              .fun=function(x){simul_rand_dfa(nb_group_exp = x$nb_group_exp,
+                                                             thres = 1)},
+                          .parallel = T)
+
+
+
+library(parallel)
+# Calculate the number of cores
+no_cores <- detectCores() - 1
+# Initiate cluster
+cl <- makeCluster(no_cores, type="FORK")
+rand_nfac_test_g <- parLapply(cl,sort(rep(c(1,2,3,4),rep_sim)),
+                          fun=function(x){simul_rand_dfa(nb_group_exp = x,
                                                                 thres = 1)})
+stopCluster(cl)
 
-rand_nfac_test_d <- lapply(sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)),
-                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+
+no_cores <- detectCores() - 1
+cl <- makeCluster(no_cores, type="FORK")
+rand_nfac_test_d <- parLapply(cl,sort(rep(c(0.25,0.5,0.75,1.5,2),rep_sim)),
+                           fun=function(x){simul_rand_dfa(nb_group_exp = 2,
                                                                  thres = x)})
+stopCluster(cl)
 
-rand_nfac_test_l <- lapply(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)),
-                           FUN=function(x){simul_rand_dfa(nb_group_exp = 2,
+no_cores <- detectCores() - 1
+cl <- makeCluster(no_cores, type="FORK")
+rand_nfac_test_l <- parLapply(cl,sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)),
+                           fun=function(x){simul_rand_dfa(nb_group_exp = 2,
                                                           thres = 1,
                                                           sd_ci = x)})
+
+stopCluster(cl)
+
 
 
 # result simulation for number of groups
