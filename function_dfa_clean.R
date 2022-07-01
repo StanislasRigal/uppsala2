@@ -161,7 +161,7 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
                                 nboot2=1000,
                                 ny, # Number of time series
                                 nfac # Number of latent trends
-                                ){
+){
   
   # Indices of fixed loadings
   
@@ -213,12 +213,12 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
     }
     
     rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
-
+    
     # Find the best number of clusters in the bootstrap loadings
-
+    
     nb <- NbClust2(rand_load, diss=NULL, distance = "euclidean",
-                  method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
-                  index = "alllong", alphaBeale = 0.1)
+                   method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                   index = "alllong", alphaBeale = 0.1)
     
     nb_group_best <- c(nb_group_best, max(nb$Best.partition))
     all_partition <- rbind(all_partition,nb$Best.partition)
@@ -292,7 +292,7 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
   nb_group <- nb_group + 1
   
   while(min(stability_cluster_final)<0.5){  # dilution cluster if stability < 0.5
-
+    
     nb_group <- nb_group - 1
     
     all_partition2 <- kmeans(mat_loading, nb_group, iter.max = 100)$cluster
@@ -359,10 +359,10 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
                                        return(y)
                                      })
   all_partition_group <- apply(all_partition2, 2,
-                                     FUN = function(x){
-                                       xmax <- as.numeric(names(which.max(table(x))))
-                                       return(xmax)
-                                     })
+                               FUN = function(x){
+                                 xmax <- as.numeric(names(which.max(table(x))))
+                                 return(xmax)
+                               })
   if(length(unique(all_partition_group))<nb_group){
     all_partition_group <- all_partition2[1,]
   }
@@ -435,8 +435,435 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
               centroids, # Position of cluster barycentres
               stability_cluster_final, # Stability of clusters
               mean_dist_clust # Average distance between species and barycentre
-              ))
+  ))
 }
+
+## test 1
+
+group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loadings
+                                cov_mat_Z, # Covariance matrix of species factor loadings
+                                species_sub, # Species names
+                                nboot=100, # Number of bootstrap iteration
+                                ny, # Number of time series
+                                nfac # Number of latent trends
+){
+  
+  # Indices of fixed loadings
+  
+  row_col_0 <- which(data_loadings$value==0)
+  
+  # Loadings in matrix
+  
+  dfa_res_val <- dcast(data_loadings, code_sp~variable, value.var = "value")
+  mat_loading <- as.matrix(dfa_res_val[,-1])
+  
+  # Find the best number of clusters in the original data
+  
+  NbClust2 <- function(data, diss=NULL, distance = "euclidean",
+                       method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                       index = "alllong", alphaBeale = 0.1){
+    tryCatch(
+      #try to do this
+      {
+        NbClust(data, diss=NULL, distance = "euclidean",
+                method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                index = "alllong", alphaBeale = 0.1)
+      },
+      #if an error occurs
+      error=function(e) {
+        data.frame(Best.partition=rep(NA,nrow(rand_load)))
+      }
+    )
+  }
+  
+  nb <- NbClust2(mat_loading, diss=NULL, distance = "euclidean",
+                 method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                 index = "alllong", alphaBeale = 0.1)
+  
+  nb_group_best <- max(nb$Best.partition)
+  all_partition <- nb$Best.partition
+  
+  # Check cluster stability
+
+  stability_cluster_final <- rep(0,nb_group_best)
+  nb_group <- nb_group_best + 1
+
+  while(min(stability_cluster_final)<0.5){  # dilution cluster if stability < 0.5
+    
+    nb_group <- nb_group - 1
+    
+    all_partition2_all <- kmeans(mat_loading, nb_group, iter.max = 100)
+    all_partition2 <- all_partition2_all$cluster
+    all_partition2_centers <- all_partition2_all$centers
+    
+    # Bootstrap for cluster stability
+    
+    for(i in 1:nboot){
+      
+      # Draw factor loadings using covariance matrix
+      set.seed(i)
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      
+      # Complete loading vector with fixed values
+      for(j in 1:(nfac-1)){
+        index_0 <- ny*j
+        rand_load <- append(rand_load, rep(0,j), after=index_0)
+      }
+      
+      rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+      
+      # Find the best number of clusters in the bootstrap loadings
+      
+      nb <- NbClust2(rand_load, diss=NULL, distance = "euclidean",
+                     method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                     index = "alllong", alphaBeale = 0.1)
+      if(!anyNA(nb$Best.partition)){
+        all_partition2 <- rbind(all_partition2,nb$Best.partition)
+        
+        # Compute Jaccard similarity to relabel clusters as in the original clustering
+        
+        jac_sim_res <- matrix(NA, ncol=length(unique(all_partition2[1,])),
+                              nrow=length(unique(nb$Best.partition)))
+        for(k in sort(unique(all_partition2[1,]))){
+          for(l in sort(unique(nb$Best.partition))){
+            jac_sim_mat <- all_partition2[c(1,(i+1)),]
+            jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+            jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+            jac_sim_mat[jac_sim_mat>0] <- 1
+            jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+            jac_sim_res[l,k] <- jac_sim
+          }
+        }
+        
+        # If same number of clusters
+        
+        if(length(unique(all_partition2[1,]))==length(unique(nb$Best.partition))){
+          for(l in sort(unique(nb$Best.partition))){
+            all_partition2[(i+1),][which(nb$Best.partition==l)] <- which.max(jac_sim_res[l,])
+          }
+        }
+        
+        # If more clusters in the bootstrap clustering
+        
+        if(length(unique(all_partition2[1,]))<length(unique(nb$Best.partition))){
+          l_data <- c()
+          for(k in sort(unique(all_partition2[1,]))){
+            l_data <- c(l_data,which.max(jac_sim_res[,k]))
+          }
+          k <- 0
+          for(l in l_data){
+            k <- k+1
+            all_partition2[(i+1),][which(nb$Best.partition==l)] <- k
+          }
+          extra_clus <- sort(unique(nb$Best.partition))[which(!(sort(unique(nb$Best.partition)) %in% l_data))]
+          for(g_sup in 1:length(extra_clus)){
+            k <- k +1
+            all_partition2[(i+1),][which(nb$Best.partition==extra_clus[g_sup])] <- k
+          }
+          
+        }
+        
+        # If less clusters in the bootstrap clustering
+        
+        if(length(unique(all_partition2[1,]))>length(unique(nb$Best.partition))){
+          k_data <- c()
+          for(l in sort(unique(nb$Best.partition))){
+            k_data <- c(k_data,which.max(jac_sim_res[l,]))
+          }
+          l <- 0
+          for(k in k_data){
+            l <- l+1
+            all_partition2[(i+1),][which(nb$Best.partition==l)] <- k
+          }
+        }
+        
+        if(i == 1){
+          stability_cluster <- apply(jac_sim_res,2,max)
+        }else{
+          stability_cluster <- rbind(stability_cluster,apply(jac_sim_res,2,max))
+        }
+      }else{
+        all_partition2 <- rbind(all_partition2,rep(0,ncol(all_partition2)))
+      }
+      
+    }
+    
+    stability_cluster_final <- apply(stability_cluster,2, mean)
+  }
+  
+  # Frequency of classification of each species in its reference cluster
+  
+  all_partition2[all_partition2==0] <- NA
+  all_partition2 <- na.omit(all_partition2)
+  
+  all_partition_uncertainty <- apply(all_partition2, 2,
+                                     FUN = function(x){
+                                       y <- max(table(x))/length(x)
+                                       return(y)
+                                     })
+  all_partition_group <- apply(all_partition2, 2,
+                               FUN = function(x){
+                                 xmax <- as.numeric(names(which.max(table(x))))
+                                 return(xmax)
+                               })
+  if(length(unique(all_partition_group))!=nb_group){
+    all_partition_group <- all_partition2[1,]
+  }
+  
+  # Compute PCA to get axes of the graph
+  
+  myPCA <- prcomp(mat_loading, scale. = F, center = F)
+  
+  # Group all info as output
+  
+  kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
+                               myPCA$x[,1:2],
+                               group = all_partition_group,
+                               dfa_res_val[,-1],
+                               uncert = all_partition_uncertainty),species_sub[,c("name_long","code_sp")],by="code_sp")
+  kmeans_center <- rep(NA,nfac)
+  for(i in 1:nb_group){
+    kmeans_center_row <- c()
+    for(j in 1:nfac){
+      kmeans_center_row <- c(kmeans_center_row,weighted.mean(kmeans_1[kmeans_1$group==i,paste0("X",j)],
+                                                             kmeans_1[kmeans_1$group==i,"uncert"]))
+    }
+    kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+  }
+  kmeans_center <- kmeans_center[-1,]
+  kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                         kmeans_center %*% myPCA$rotation[,1:2])
+  
+  kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
+  
+  kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
+  
+  # Get weigthed centroid of groups
+  
+  centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) 
+  
+  # Average distance between species and cluster centres
+  
+  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
+  if(length(unique(kmeans_1$group))>1){
+    for(g in 1:length(unique(kmeans_1$group))){
+      kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[kmeans_1$group==g, grepl("X",names(kmeans_1))],kmeans_2[kmeans_2$group==g, grepl("X",names(kmeans_2))])))
+      sp_coord <- kmeans_scale[1:(nrow(kmeans_scale)-1),]
+      cluster_coord <- kmeans_scale[nrow(kmeans_scale),]
+      dist_clust <- c()
+      for(i in 1:nrow(sp_coord)){
+        mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+        dist_clust <- c(dist_clust, dist(mat_dist_clust))
+      }
+      data_weight_mean <- data.frame(all_dist = dist_clust,
+                                     uncert = kmeans_1[kmeans_1$group==g,"uncert"])
+      mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
+      row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
+    }
+  }else{
+    kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[, grepl("X",names(kmeans_1))],kmeans_center)))
+    sp_coord <- kmeans_scale[1:(nrow(kmeans_scale)-1),]
+    cluster_coord <- kmeans_scale[nrow(kmeans_scale),]
+    dist_clust <- c()
+    for(i in 1:nrow(sp_coord)){
+      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+      dist_clust <- c(dist_clust, dist(mat_dist_clust))
+    }
+    mean_dist_clust[1,1] <- mean(dist_clust)
+    row.names(mean_dist_clust) <- paste0("cluster_",1)
+  }
+  
+  
+  return(list(kmeans_res, # Results of clustering
+              centroids, # Position of cluster barycentres
+              stability_cluster_final, # Stability of clusters
+              mean_dist_clust # Average distance between species and barycentre
+  ))
+}
+
+## test 2 
+
+group_from_dfa_boot2 <- function(data_loadings, # Species initial factor loadings
+                                cov_mat_Z, # Covariance matrix of species factor loadings
+                                species_sub, # Species names
+                                nboot=1000, # Number of bootstrap iteration
+                                ny, # Number of time series
+                                nfac # Number of latent trends
+){
+  
+  # Indices of fixed loadings
+  
+  row_col_0 <- which(data_loadings$value==0)
+  
+  # Loadings in matrix
+  
+  dfa_res_val <- dcast(data_loadings, code_sp~variable, value.var = "value")
+  mat_loading <- as.matrix(dfa_res_val[,-1])
+  
+  # Best number of clusters
+  
+  stability_cluster_all <- list()
+  all_partition_all <- list()
+  
+  for(ii in 1:min(max(c(2,round(ny/3))),10)){  # dilution cluster if stability < 0.5
+    
+    nb_group <- ii
+    stability_cluster_final <- rep(0,nb_group)
+    
+    all_partition2 <- kmeans(mat_loading, nb_group, iter.max = 100)$cluster
+    
+    # Bootstrap for cluster stability
+    
+    for(i in 1:nboot){
+      
+      # Draw factor loadings using covariance matrix
+      set.seed(i)
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      
+      # Complete loading vector with fixed values
+      for(j in 1:(nfac-1)){
+        index_0 <- ny*j
+        rand_load <- append(rand_load, rep(0,j), after=index_0)
+      }
+      
+      rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+      
+      # Find the best number of clusters in the bootstrap loadings
+      
+      nb <- kmeans(rand_load, nb_group, iter.max = 100)
+      
+      all_partition2 <- rbind(all_partition2,nb$cluster)
+      
+      # Compute Jaccard similarity to relabel clusters as in the original clustering
+      
+      jac_sim_res <- matrix(NA, ncol=length(unique(all_partition2[1,])),
+                            nrow=length(unique(nb$cluster)))
+      for(k in sort(unique(all_partition2[1,]))){
+        for(l in sort(unique(nb$cluster))){
+          jac_sim_mat <- all_partition2[c(1,(i+1)),]
+          jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+          jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+          jac_sim_mat[jac_sim_mat>0] <- 1
+          jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+          jac_sim_res[l,k] <- jac_sim
+        }
+      }
+      
+      if(i == 1){
+        stability_cluster <- apply(jac_sim_res,2,max)
+      }else{
+        stability_cluster <- rbind(stability_cluster,apply(jac_sim_res,2,max))
+      }
+      
+      if(length(unique(all_partition2[1,]))==length(unique(nb$cluster))){
+        for(l in sort(unique(nb$cluster))){
+          all_partition2[(i+1),][which(nb$cluster==l)] <- which.max(jac_sim_res[l,])
+        }
+      }
+      
+    }
+    
+    all_partition_all[[ii]] <- all_partition2 
+    
+    stability_cluster_final <- apply(stability_cluster,2, mean)
+    stability_cluster_all[[ii]] <- stability_cluster_final
+  }
+  
+  while(min(stability_cluster_all[[ii]])<0.5){
+    ii <- ii - 1 
+  }
+  nb_group <- ii
+  all_partition2 <- all_partition_all[[ii]]
+  stability_cluster_final <- stability_cluster_all[[ii]]
+  
+  # Frequency of classification of each species in its reference cluster
+  
+  all_partition_uncertainty <- apply(all_partition2, 2,
+                                     FUN = function(x){
+                                       y <- max(table(x))/length(x)
+                                       return(y)
+                                     })
+  all_partition_group <- apply(all_partition2, 2,
+                               FUN = function(x){
+                                 xmax <- as.numeric(names(which.max(table(x))))
+                                 return(xmax)
+                               })
+  
+  if(length(unique(all_partition_group))<nb_group){
+    all_partition_group <- all_partition2[1,]
+  }
+
+  # Compute PCA to get axes of the graph
+  
+  myPCA <- prcomp(mat_loading, scale. = F, center = F)
+  
+  # Group all info as output
+  
+  kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
+                               myPCA$x[,1:2],
+                               group = all_partition_group,
+                               dfa_res_val[,-1],
+                               uncert = all_partition_uncertainty),species_sub[,c("name_long","code_sp")],by="code_sp")
+  kmeans_center <- rep(NA,nfac)
+  for(i in 1:nb_group){
+    kmeans_center_row <- c()
+    for(j in 1:nfac){
+      kmeans_center_row <- c(kmeans_center_row,weighted.mean(kmeans_1[kmeans_1$group==i,paste0("X",j)],
+                                                             kmeans_1[kmeans_1$group==i,"uncert"]))
+    }
+    kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+  }
+  kmeans_center <- kmeans_center[-1,]
+  kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                         kmeans_center %*% myPCA$rotation[,1:2])
+  
+  kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
+  
+  kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
+  
+  # Get weigthed centroid of groups
+  
+  centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) 
+  
+  # Average distance between species and cluster centres
+  
+  mean_dist_clust <- data.frame(mean_dist=rep(NA,length(unique(kmeans_1$group))))
+  if(length(unique(kmeans_1$group))>1){
+    for(g in 1:length(unique(kmeans_1$group))){
+      kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[kmeans_1$group==g, grepl("X",names(kmeans_1))],kmeans_2[kmeans_2$group==g, grepl("X",names(kmeans_2))])))
+      sp_coord <- kmeans_scale[1:(nrow(kmeans_scale)-1),]
+      cluster_coord <- kmeans_scale[nrow(kmeans_scale),]
+      dist_clust <- c()
+      for(i in 1:nrow(sp_coord)){
+        mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+        dist_clust <- c(dist_clust, dist(mat_dist_clust))
+      }
+      data_weight_mean <- data.frame(all_dist = dist_clust,
+                                     uncert = kmeans_1[kmeans_1$group==g,"uncert"])
+      mean_dist_clust[g,1] <- weighted.mean(data_weight_mean$all_dist,data_weight_mean$uncert)
+      row.names(mean_dist_clust)[g] <- paste0("cluster_",g)
+    }
+  }else{
+    kmeans_scale <- as.data.frame(scale(rbind(kmeans_1[, grepl("X",names(kmeans_1))],kmeans_center)))
+    sp_coord <- kmeans_scale[1:(nrow(kmeans_scale)-1),]
+    cluster_coord <- kmeans_scale[nrow(kmeans_scale),]
+    dist_clust <- c()
+    for(i in 1:nrow(sp_coord)){
+      mat_dist_clust <- as.matrix(rbind(cluster_coord,sp_coord[i,]))
+      dist_clust <- c(dist_clust, dist(mat_dist_clust))
+    }
+    mean_dist_clust[1,1] <- mean(dist_clust)
+    row.names(mean_dist_clust) <- paste0("cluster_",1)
+  }
+  
+  
+  return(list(kmeans_res, # Results of clustering
+              centroids, # Position of cluster barycentres
+              stability_cluster_final, # Stability of clusters
+              mean_dist_clust # Average distance between species and barycentre
+  ))
+}
+
 
 ## 3) Plot groups and clustering trends
 
@@ -718,7 +1145,7 @@ make_dfa <- function(data_ts, # Dataset of time series
   # Run group_from_dfa_boot to obtain species clusters
   
   if(nfac>1){
-    group_dfa <- group_from_dfa_boot(data_loadings, cov_mat_Z, species_sub, nboot=nboot, nboot2=1000, ny, nfac)
+    group_dfa <- group_from_dfa_boot1(data_loadings, cov_mat_Z, species_sub, nboot=nboot, ny, nfac)
     
     if(length(group_dfa[[3]])>1){
       Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
@@ -895,14 +1322,18 @@ simul_rand_dfa_intern <- function(cum_perc,
                                   sd_rand,
                                   sd_rand2,
                                   sd_ci,
-                                  nboot){
+                                  nboot,
+                                  seed){
   ## Simulate latent trends
   
   y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
   test_cor <- 1
+  seednum <- 0
   while(abs(test_cor)>0.8){ # check difference between latent trend
     for(i in 1:n_sp_init){
+      seednum <- seednum + 1
       y_ts <- c()
+      set.seed((seed+seednum))
       y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
       for (t in 2:n_y) {
         r.w <- rnorm(n = 1, mean = 0, sd = 1)
@@ -931,15 +1362,18 @@ simul_rand_dfa_intern <- function(cum_perc,
     }
   }else{
     id_vec <- c()
+    seednum <- 0
     min_dist_bary <- 0
     max_dist_bary <- 2*thres+1
     mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
-    while(min_dist_bary<thres | min_dist_bary > (2*thres)){ # check if enough distance between the groups
+    while(min_dist_bary<thres | max_dist_bary > (2*thres)){ # check if enough distance between the groups
       for(g in 1:nb_group_exp){
         nb_sp_g <- round(cum_perc[g]*n_sp/100)
         assign(paste0("nb_sp_g",g),nb_sp_g)
         id_vec <- c(id_vec,rep(g,nb_sp_g))
         for(lt in 1:n_sp_init){
+          seednum <- seednum + 1
+          set.seed((seed+seednum))
           mean_u_g <- runif(1, -1, 1)
           lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
           assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
@@ -960,8 +1394,11 @@ simul_rand_dfa_intern <- function(cum_perc,
   
   y <- data.frame(t(rep(NA,(n_y+2))))
   obs_se <- data.frame(t(rep(NA,(n_y+1))))
+  seednum <- 0
   
   for(i in 1:n_sp){ # get simulated ts from loadings
+    seednum <- seednum + 1
+    set.seed((seed+seednum))
     noise <- rnorm(n_y,0,sd_rand2)
     y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
     y_ts <- rep(0,n_y)
@@ -1069,12 +1506,12 @@ simul_rand_dfa_intern2 <- function(cum_perc,n_sp_init,
                                    nb_group_exp,thres,n_y,
                                    n_sp,
                                    sd_rand,
-                                   sd_rand2,sd_ci,nboot){
+                                   sd_rand2,sd_ci,nboot,seed){
   tryCatch(simul_rand_dfa_intern(cum_perc,n_sp_init,
                                  nb_group_exp,thres,n_y,
                                  n_sp,
                                  sd_rand,
-                                 sd_rand2,sd_ci,nboot),
+                                 sd_rand2,sd_ci,nboot,seed),
            error=function(e) list(NA,NA,NA))}
 
 simul_rand_dfa <- function(n_y = 20, # number of year
@@ -1086,7 +1523,8 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            sd_rand2 = 0.5, # random noise on ts
                            sd_ci = 0.1, # standard deviation of the loading factors
                            nboot = 100, # number of bootstrap for clustering
-                           equi = TRUE # equal size of cluster
+                           equi = TRUE, # equal size of cluster
+                           seed = 1
 ){
   if(nb_group_exp>1){
     cum_perc <- rep(round(100/nb_group_exp),nb_group_exp)
@@ -1104,7 +1542,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
 
   
   rand_nfac_list <- simul_rand_dfa_intern2(cum_perc,n_sp_init,nb_group_exp,thres,
-                                           n_y,n_sp,sd_rand,sd_rand2,sd_ci,nboot)
+                                           n_y,n_sp,sd_rand,sd_rand2,sd_ci,nboot,seed)
   
   res_sim <- data.frame(perc_group=gsub(", ","-",toString(paste0(cum_perc))), value=as.numeric(rand_nfac_list[[1]]),
                         nb_group=rand_nfac_list[[2]], clust_stab=rand_nfac_list[[3]])

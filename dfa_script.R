@@ -721,7 +721,7 @@ rand_nfac_test4 <- lapply(c(0.01,1),
 # full simulations
 rep_sim <- 100
 
-sim_data <- data.frame(num_sim=1:(rep_sim*4),nb_group_exp=sort(rep(c(1,2,3,4),rep_sim)))
+sim_data <- data.frame(num_sim=1:(rep_sim*5),nb_group_exp=sort(rep(c(1,2,3,4,5),rep_sim)))
 
 library(doParallel)
 library(parallel)
@@ -729,8 +729,38 @@ no_cores <- detectCores() - 1
 registerDoParallel(cores=no_cores)
 rand_nfac_test_g <- dlply(sim_data,.(num_sim),
                               .fun=function(x){simul_rand_dfa(nb_group_exp = x$nb_group_exp,
-                                                             thres = 1)},
+                                                             thres = 1,
+                                                             seed= x$num_sim)},
                           .parallel = T)
+
+sim_data <- data.frame(num_sim=1:(rep_sim*5),nb_group_exp=sort(rep(c(1,2,3,4,5),rep_sim)), equal=FALSE)
+registerDoParallel(cores=no_cores)
+rand_nfac_test_g2 <- dlply(sim_data,.(num_sim),
+                          .fun=function(x){simul_rand_dfa(nb_group_exp = x$nb_group_exp,
+                                                          thres = 1,
+                                                          seed= x$num_sim)},
+                          .parallel = T)
+
+
+sim_data <- data.frame(num_sim=1:(rep_sim*5),sd_ci=sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))
+registerDoParallel(cores=no_cores)
+rand_nfac_test_l <- dlply(sim_data,.(num_sim),
+                           .fun=function(x){simul_rand_dfa(sd_ci = x$sd_ci,
+                                                           seed= x$num_sim)},
+                           .parallel = T)
+
+sim_data <- data.frame(num_sim=1:(rep_sim*5),sd_ci=sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)), equal=FALSE)
+registerDoParallel(cores=no_cores)
+rand_nfac_test_l2 <- dlply(sim_data,.(num_sim),
+                          .fun=function(x){simul_rand_dfa(sd_ci = x$sd_ci,
+                                                          seed= x$num_sim)},
+                          .parallel = T)
+
+
+
+
+
+
 
 
 

@@ -769,6 +769,7 @@ make_dfa2 <- function(data_ts, # dataset of time series
                      eco_reg=FALSE, weight=FALSE)  # option for group_from_dfa2
 {
   #data_ts=y_rand;data_ts_se=obs_se_rand;nfac=0;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_rand;nboot=100;eco_reg=FALSE;weight=FALSE
+  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=4;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_farm;nboot=100;eco_reg=FALSE;weight=FALSE
   
   if(nfac==0){
     aic2_best <- aic_best <- c()
