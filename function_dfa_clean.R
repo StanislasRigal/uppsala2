@@ -1434,12 +1434,14 @@ simul_rand_dfa_intern <- function(cum_perc,
   
   if(length(obs_group)==1){
     obs_group_new <- rep(1,nrow(y_rand))
-    clust_nb <- 1
+    clust_nb <- clust_nb2 <- 1
     clust_stab <- 1
   }else{
     clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[3]],2))))
     
     clust_nb <- length(unique(obs_group$group))
+    clust_nb2 <- data.frame(obs_group %>% group_by(group) %>% summarize(count=n()))
+    clust_nb2 <- length(unique(clust_nb2$group[clust_nb2$count>1]))
     jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
                           nrow=length(unique(obs_group$group)))
     for(k in sort(unique(y[,ncol(y)]))){
@@ -1498,7 +1500,7 @@ simul_rand_dfa_intern <- function(cum_perc,
   }
   
   res_rand <- c(1 - vegdist(rbind(y[,ncol(y)],obs_group_new), method="jaccard"))
-  return(list(res_rand, clust_nb, clust_stab))
+  return(list(res_rand, clust_nb, clust_stab, clust_nb2))
 }
 
 simul_rand_dfa_intern2 <- function(cum_perc,n_sp_init,
@@ -1511,7 +1513,7 @@ simul_rand_dfa_intern2 <- function(cum_perc,n_sp_init,
                                  n_sp,
                                  sd_rand,
                                  sd_rand2,sd_ci,nboot,seed),
-           error=function(e) list(NA,NA,NA))}
+           error=function(e) list(NA,NA,NA,NA))}
 
 simul_rand_dfa <- function(n_y = 20, # number of year
                            n_sp = 15, # number of species ts
@@ -1544,7 +1546,8 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                                            n_y,n_sp,sd_rand,sd_rand2,sd_ci,nboot,seed)
   
   res_sim <- data.frame(perc_group=gsub(", ","-",toString(paste0(cum_perc))), value=as.numeric(rand_nfac_list[[1]]),
-                        nb_group=rand_nfac_list[[2]], clust_stab=rand_nfac_list[[3]])
+                        nb_group=rand_nfac_list[[2]], clust_stab=rand_nfac_list[[3]],
+                        nb_group2=rand_nfac_list[[4]])
   
   
   return(res_sim)
