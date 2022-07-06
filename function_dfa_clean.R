@@ -158,9 +158,9 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
                                 cov_mat_Z, # Covariance matrix of species factor loadings
                                 species_sub, # Species names
                                 nboot=100, # Number of bootstrap iteration
-                                nboot2=1000,
                                 ny, # Number of time series
-                                nfac # Number of latent trends
+                                nfac, # Number of latent trends
+                                nboot2=1000
 ){
   
   # Indices of fixed loadings
@@ -186,7 +186,7 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
       },
       #if an error occurs
       error=function(e) {
-        data.frame(Best.partition=rep(NA,nrow(rand_load)))
+        data.frame(Best.partition=rep(NA,nrow(mat_loading)))
       }
     )
   }
@@ -471,7 +471,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
       },
       #if an error occurs
       error=function(e) {
-        data.frame(Best.partition=rep(NA,nrow(rand_load)))
+        data.frame(Best.partition=rep(NA,nrow(mat_loading)))
       }
     )
   }
@@ -1363,32 +1363,31 @@ simul_rand_dfa_intern <- function(cum_perc,
   }else{
     id_vec <- c()
     seednum <- 0
-    min_dist_bary <- 0
-    max_dist_bary <- 2*thres+1
+    dist_clust <- 1
+    coord_clust <- t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # distance between summit of a tetrahedron
+                              -dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
+                              dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
+                              0,-dist_clust/(2*sqrt(6)),sqrt(3)/3*dist_clust), ncol=4))
     mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
-    while(min_dist_bary<thres | max_dist_bary > (2*thres)){ # check if enough distance between the groups
-      for(g in 1:nb_group_exp){
-        nb_sp_g <- round(cum_perc[g]*n_sp/100)
-        assign(paste0("nb_sp_g",g),nb_sp_g)
-        id_vec <- c(id_vec,rep(g,nb_sp_g))
-        for(lt in 1:n_sp_init){
-          seednum <- seednum + 1
-          set.seed((seed+seednum))
-          mean_u_g <- runif(1, -1, 1)
-          lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
-          assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
-          assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
-          mat_dist[g,lt] <- mean_u_g
-        }
+    for(g in 1:nb_group_exp){
+      nb_sp_g <- round(cum_perc[g]*n_sp/100)
+      assign(paste0("nb_sp_g",g),nb_sp_g)
+      id_vec <- c(id_vec,rep(g,nb_sp_g))
+      for(lt in 1:n_sp_init){
+        seednum <- seednum + 1
+        set.seed((seed+seednum))
+        mean_u_g <- coord_clust[g,lt]
+        lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
+        assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+        assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+        mat_dist[g,lt] <- mean_u_g
       }
-      if(length(id_vec)>n_sp){ # it may happen because of rounding
-        id_vec <- id_vec[1:n_sp]
-      }
-      if(length(id_vec)<n_sp){ # it may happen because of rounding
-        n_sp <- length(id_vec)
-      }
-      min_dist_bary <- min(dist(mat_dist))
-      max_dist_bary <- max(dist(mat_dist))
+    }
+    if(length(id_vec)>n_sp){ # it may happen because of rounding
+      id_vec <- id_vec[1:n_sp]
+    }
+    if(length(id_vec)<n_sp){ # it may happen because of rounding
+      n_sp <- length(id_vec)
     }
   }
   

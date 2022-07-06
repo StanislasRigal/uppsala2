@@ -1009,3 +1009,243 @@ make_dfa2 <- function(data_ts, # dataset of time series
               ))
 }
 
+# Simulation
+
+simul_rand_dfa_intern <- function(cum_perc,
+                                  n_sp_init,
+                                  nb_group_exp,
+                                  thres,
+                                  n_y,
+                                  n_sp,
+                                  sd_rand,
+                                  sd_rand2,
+                                  sd_ci,
+                                  nboot,
+                                  seed){
+  ## Simulate latent trends
+  
+  y_init <- data.frame(t(rep(NA,(n_y)))) # latent trends
+  test_cor <- 1
+  seednum <- 0
+  while(abs(test_cor)>0.8){ # check difference between latent trend
+    for(i in 1:n_sp_init){
+      seednum <- seednum + 1
+      y_ts <- c()
+      set.seed((seed+seednum))
+      y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+      for (t in 2:n_y) {
+        r.w <- rnorm(n = 1, mean = 0, sd = 1)
+        y_ts[t] <- y_ts[t - 1] + r.w
+      }
+      y_ts <- y_ts + abs(min(y_ts))+1
+      y_ts <- exp(scale(log(y_ts)))
+      y_init[i,] <- y_ts
+    }
+    test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
+  }
+  
+  ## From these n_sp_init latent trend, simulate n_sp ts from loading factors
+  
+  if(nb_group_exp==1){
+    id_vec <- c()
+    nb_sp_g <- n_sp
+    g <- 1
+    assign(paste0("nb_sp_g",g),nb_sp_g)
+    id_vec <- c(id_vec,rep(g,nb_sp_g))
+    for(lt in 1:n_sp_init){
+      mean_u_g <- runif(1, -1, 1)
+      lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
+      assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+      assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+    }
+  }else{
+    id_vec <- c()
+    seednum <- 0
+    min_dist_bary <- 0
+    max_dist_bary <- 2*thres+1
+    mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
+    while(min_dist_bary<thres | max_dist_bary > (2*thres)){ # check if enough distance between the groups
+      for(g in 1:nb_group_exp){
+        nb_sp_g <- round(cum_perc[g]*n_sp/100)
+        assign(paste0("nb_sp_g",g),nb_sp_g)
+        id_vec <- c(id_vec,rep(g,nb_sp_g))
+        for(lt in 1:n_sp_init){
+          seednum <- seednum + 1
+          set.seed((seed+seednum))
+          mean_u_g <- runif(1, -1, 1)
+          lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
+          assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+          assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
+          mat_dist[g,lt] <- mean_u_g
+        }
+      }
+      if(length(id_vec)>n_sp){ # it may happen because of rounding
+        id_vec <- id_vec[1:n_sp]
+      }
+      if(length(id_vec)<n_sp){ # it may happen because of rounding
+        n_sp <- length(id_vec)
+      }
+      min_dist_bary <- min(dist(mat_dist))
+      max_dist_bary <- max(dist(mat_dist))
+    }
+  }
+  
+  y <- data.frame(t(rep(NA,(n_y+2))))
+  obs_se <- data.frame(t(rep(NA,(n_y+1))))
+  seednum <- 0
+  
+  for(i in 1:n_sp){ # get simulated ts from loadings
+    seednum <- seednum + 1
+    set.seed((seed+seednum))
+    noise <- rnorm(n_y,0,sd_rand2)
+    y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+    y_ts <- rep(0,n_y)
+    g <- id_vec[i]
+    i_g <- which(which(id_vec==g)==i) # new index for i in group g
+    for(lt in 1:n_sp_init){
+      lf_u_g <- get(paste0("lf_u",lt,"_g",g))
+      y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
+    }
+    y_ts <- y_ts + noise
+    y_ts <- y_ts + abs(min(y_ts)) + 1
+    y_ts <- exp(scale(log(y_ts)))
+    y[i,2:(n_y+1)] <- y_ts
+    y[i,(n_y+2)] <- id_vec[i]
+    obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+    obs_se[obs_se>1] <- 1
+  }  
+  
+  y_rand <- data.table(y[,1:(n_y+1)])
+  obs_se_rand <- data.table(obs_se)
+  names(y_rand) <- names(obs_se_rand) <- c("code_sp",1:n_y)
+  y_rand$code_sp <- obs_se_rand$code_sp <- sprintf("SP%03d",1:nrow(y_rand))
+  species_rand <- data.frame(name_long=sprintf("species %03d",1:nrow(y_rand)), code_sp=y_rand$code_sp)
+  
+  # DFA
+  
+  rand_nfac <- make_dfa(data_ts = y_rand, data_ts_se = obs_se_rand,
+                        species_sub = species_rand, nboot=nboot)
+  
+  # compare DFA results to expected
+  
+  obs_group <- rand_nfac[[10]][[1]][[1]]
+  y[,ncol(y)] <- as.numeric(as.factor(y[,ncol(y)]))
+  
+  if(length(obs_group)==1){
+    obs_group_new <- rep(1,nrow(y_rand))
+    clust_nb <- 1
+    clust_stab <- 1
+  }else{
+    clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[3]],2))))
+    
+    clust_nb <- length(unique(obs_group$group))
+    jac_sim_res <- matrix(NA, ncol=length(unique(y[,ncol(y)])),
+                          nrow=length(unique(obs_group$group)))
+    for(k in sort(unique(y[,ncol(y)]))){
+      for(l in sort(unique(obs_group$group))){
+        jac_sim_mat <- rbind(y[,ncol(y)],obs_group$group)
+        jac_sim_mat[1,][which(jac_sim_mat[1,]!=k)] <- 0
+        jac_sim_mat[2,][which(jac_sim_mat[2,]!=l)] <- 0
+        jac_sim_mat[jac_sim_mat>0] <- 1
+        jac_sim <- c(1 - vegdist(jac_sim_mat, method="jaccard"))
+        jac_sim_res[l,k] <- jac_sim
+      }
+    }
+    
+    obs_group_new <- rep(NA,length(obs_group$group))
+    
+    # If same number of clusters
+    
+    if(length(unique(y[,ncol(y)]))==length(unique(obs_group$group))){
+      for(l in sort(unique(obs_group$group))){
+        obs_group_new[which(obs_group$group==l)] <- which.max(jac_sim_res[l,])
+      }
+    }
+    
+    # If more clusters in the observed clustering
+    
+    if(length(unique(y[,ncol(y)]))<length(unique(obs_group$group))){
+      l_data <- c()
+      for(k in sort(unique(y[,ncol(y)]))){
+        l_data <- c(l_data,which.max(jac_sim_res[,k]))
+      }
+      k <- 0
+      for(l in l_data){
+        k <- k+1
+        obs_group_new[which(obs_group$group==l)] <- k
+      }
+      extra_clus <- sort(unique(obs_group$group))[which(!(sort(unique(obs_group$group)) %in% l_data))]
+      for(g_sup in 1:length(extra_clus)){
+        k <- k +1
+        obs_group_new[which(obs_group$group==extra_clus[g_sup])] <- k
+      }
+    }
+    
+    # If less clusters in the bootstrap clustering
+    
+    if(length(unique(y[,ncol(y)]))>length(unique(obs_group$group))){
+      k_data <- c()
+      for(l in sort(unique(obs_group$group))){
+        k_data <- c(k_data,which.max(jac_sim_res[l,]))
+      }
+      l <- 0
+      for(k in k_data){
+        l <- l+1
+        obs_group_new[which(obs_group$group==l)] <- k
+      }
+    }
+  }
+  
+  res_rand <- c(1 - vegdist(rbind(y[,ncol(y)],obs_group_new), method="jaccard"))
+  return(list(res_rand, clust_nb, clust_stab))
+}
+
+simul_rand_dfa_intern2 <- function(cum_perc,n_sp_init,
+                                   nb_group_exp,thres,n_y,
+                                   n_sp,
+                                   sd_rand,
+                                   sd_rand2,sd_ci,nboot,seed){
+  tryCatch(simul_rand_dfa_intern(cum_perc,n_sp_init,
+                                 nb_group_exp,thres,n_y,
+                                 n_sp,
+                                 sd_rand,
+                                 sd_rand2,sd_ci,nboot,seed),
+           error=function(e) list(NA,NA,NA))}
+
+simul_rand_dfa <- function(n_y = 20, # number of year
+                           n_sp = 15, # number of species ts
+                           n_sp_init = 3, # number of latent trends
+                           nb_group_exp = 2, # number of expected clusters
+                           thres = 1, # min distance between barycenters of clusters
+                           sd_rand = 0.01, # observation error on data
+                           sd_rand2 = 0.5, # random noise on ts
+                           sd_ci = 0.1, # standard deviation of the loading factors
+                           nboot = 100, # number of bootstrap for clustering
+                           equi = TRUE, # equal size of cluster
+                           seed = 1
+){
+  if(nb_group_exp>1){
+    cum_perc <- rep(round(100/nb_group_exp),nb_group_exp)
+    skew_val <- 100 - nb_group_exp*10
+    cum_perc <- rbind(cum_perc,
+                      c(skew_val,rep(round((100-skew_val)/(nb_group_exp-1)),(nb_group_exp-1))))
+    if(equi==TRUE){
+      cum_perc <- cum_perc[1,]
+    }else{
+      cum_perc <- cum_perc[2,]
+    }
+  }else{
+    cum_perc <- 100
+  }
+  
+  
+  rand_nfac_list <- simul_rand_dfa_intern2(cum_perc,n_sp_init,nb_group_exp,thres,
+                                           n_y,n_sp,sd_rand,sd_rand2,sd_ci,nboot,seed)
+  
+  res_sim <- data.frame(perc_group=gsub(", ","-",toString(paste0(cum_perc))), value=as.numeric(rand_nfac_list[[1]]),
+                        nb_group=rand_nfac_list[[2]], clust_stab=rand_nfac_list[[3]])
+  
+  
+  return(res_sim)
+}
+
