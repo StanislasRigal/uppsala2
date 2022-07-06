@@ -939,7 +939,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
 core_dfa <- function(data_ts, # Dataset of time series
                      data_ts_se, # Dataset of standard error of time series 
                      nfac, # Number of trends for the DFA
-                     rand_seed=1, # Initial values for the sd of the random effect
+                     rep_rand_seed=10, # Number of initial values for the sd of the random effect
                      AIC=TRUE # Display AIC
                      ){
   
@@ -975,6 +975,51 @@ core_dfa <- function(data_ts, # Dataset of time series
   ny <- nrow(data_ts) # Number of time series
   nT <- ncol(data_ts) # Number of time step
   
+  best_nll <- c()
+  
+  for(rand_seed in 1:rep_rand_seed){
+    
+    # Starting values for the optimisation
+    
+    set.seed(rand_seed) 
+    log_re_sp <- runif(ny, -1, 0)
+    
+    Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
+    
+    # Set constrained elements to zero
+    
+    constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
+    Zinit[constrInd] <- 0
+    
+    # List of parameters for DFA
+    
+    tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
+                    x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
+                             ncol = nT, nrow = nfac))
+    
+    # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
+    
+    Zmap <- matrix(ncol = nfac, nrow = ny)
+    Zmap[constrInd] <- NA
+    Zmap[!constrInd] <- 1:sum(!constrInd)
+    xmap <- matrix(ncol = nT, nrow = nfac)
+    xmap[,1] <- NA
+    xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
+    tmbMap <- list(Z = as.factor(Zmap),
+                   x = as.factor(xmap))
+    
+    # Make DFA
+    
+    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
+    tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+    
+    best_nll[rand_seed] <- tmbOpt$objective
+  }
+  
+  sd_nll <- sd(best_nll)
+  
+  rand_seed <- which.min(best_nll)
+  
   # Starting values for the optimisation
   
   set.seed(rand_seed) 
@@ -1008,6 +1053,8 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
   tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+  
+  best_nll[rand_seed] <- tmbOpt$objective
   
   # Avoid infinite SE when SD are close or equal to zero
   
@@ -1045,7 +1092,8 @@ core_dfa <- function(data_ts, # Dataset of time series
               aic2, # AIC not counting singular random effects
               conv, # Convergence check
               sdRep_test, # Summary of the TMB optimisation output
-              sdRep_test_all # Complete TMB optimisation output
+              sdRep_test_all, # Complete TMB optimisation output
+              sd_nll # standard deviation of loglikelihood
               ))
 }
 
@@ -1056,7 +1104,7 @@ make_dfa <- function(data_ts, # Dataset of time series
                      nfac=0, # Number of trends for the DFA, 0 to estimate the best number of trends
                      mintrend=1, # Minimum number of trends to test
                      maxtrend=5, # Maximum number of trends to test
-                     rand_seed=1, # Initial values for the sd of the random effect
+                     rep_rand_seed=10, # Number of initial values for the sd of the random effect
                      AIC=TRUE, # Display AIC
                      species_sub,  # Species names
                      nboot=100 # Number of bootstrap for clustering
@@ -1071,7 +1119,7 @@ make_dfa <- function(data_ts, # Dataset of time series
   if(nfac==0){
     aic2_best <- aic_best <- c()
     for(i in mintrend:maxtrend){
-      core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i))
+      core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i, rep_rand_seed=rep_rand_seed))
       
       if(core_dfa_res[[12]]==T){
         aic_best <- c(aic_best, core_dfa_res[[10]])
@@ -1086,7 +1134,7 @@ make_dfa <- function(data_ts, # Dataset of time series
     
     core_dfa_res <- get(paste0("core_dfa",nfac))
   }else{
-    core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac)
+    core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac, rep_rand_seed=rep_rand_seed)
   }
   tmbObj <- core_dfa_res[[1]]
   tmbOpt <- core_dfa_res[[2]]
@@ -1102,6 +1150,7 @@ make_dfa <- function(data_ts, # Dataset of time series
   conv <- core_dfa_res[[12]]
   sdRep_test <- core_dfa_res[[13]]
   sdRep_test_all <- core_dfa_res[[14]]
+  sd_nll <- core_dfa_res[[15]]
   
   if(is.na(aic2)){
     stop("Convergence issues")
@@ -1306,7 +1355,8 @@ make_dfa <- function(data_ts, # Dataset of time series
               aic, # Best AIC
               sdRep, # Optimisation output
               group_dfa, # Cluster results
-              trend_group # Cluster barycentre times-series
+              trend_group, # Cluster barycentre times-series
+              sd_nll # standard deviation of loglikelihood
               ))
 }
 
@@ -1525,7 +1575,8 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            sd_ci = 0.1, # standard deviation of the loading factors
                            nboot = 100, # number of bootstrap for clustering
                            equi = TRUE, # equal size of cluster
-                           seed = 1
+                           seed = 1, # set seed for simulation data
+                           rep_rand_seed = 2 # number of initial values for parameters in DFA
 ){
   if(nb_group_exp>1){
     cum_perc <- rep(round(100/nb_group_exp),nb_group_exp)
