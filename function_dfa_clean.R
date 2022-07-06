@@ -1576,7 +1576,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            nboot = 100, # number of bootstrap for clustering
                            equi = TRUE, # equal size of cluster
                            seed = 1, # set seed for simulation data
-                           rep_rand_seed = 2 # number of initial values for parameters in DFA
+                           rep_rand_seed = 1 # number of initial values for parameters in DFA
 ){
   if(nb_group_exp>1){
     cum_perc <- rep(round(100/nb_group_exp),nb_group_exp)
