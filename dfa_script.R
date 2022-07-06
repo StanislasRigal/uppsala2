@@ -119,8 +119,8 @@ all_nfac <- make_dfa(data_ts = y_all, data_ts_se = obs_se_all,
 
 ggsave("output/farm_nfac.png",
        dpi=300,
-       width = 8,
-       height = 8
+       width = 8, # 10 # 6
+       height = 8 # 8 # 3
        )
 
 
