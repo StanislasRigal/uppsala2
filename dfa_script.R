@@ -139,16 +139,16 @@ no_cores <- detectCores() - 1
 registerDoParallel(cores=no_cores)
 rand_nfac_test_g <- dlply(sim_data,.(num_sim),
                               .fun=function(x){simul_rand_dfa(nb_group_exp = x$nb_group_exp,
-                                                             thres = 1,
+                                                             rep_rand_seed = 2,
                                                              seed= x$num_sim)},
                           .parallel = T)
 saveRDS(rand_nfac_test_g,"output/rand_nfac_test_g_new.rds")
 
-sim_data <- data.frame(num_sim=1:(rep_sim*5),nb_group_exp=sort(rep(c(1,2,3,4,5),rep_sim)), equal=FALSE)
+sim_data <- data.frame(num_sim=1:(rep_sim*4),nb_group_exp=sort(rep(c(1,2,3,4),rep_sim)), equal=FALSE)
 registerDoParallel(cores=no_cores)
 rand_nfac_test_g2 <- dlply(sim_data,.(num_sim),
                           .fun=function(x){simul_rand_dfa(nb_group_exp = x$nb_group_exp,
-                                                          thres = 1,
+                                                          rep_rand_seed = 2,
                                                           seed= x$num_sim,
                                                           equi = FALSE)},
                           .parallel = T)
@@ -158,6 +158,7 @@ sim_data <- data.frame(num_sim=1:(rep_sim*5),sd_ci=sort(rep(c(0.01,0.05,0.2,0.5,
 registerDoParallel(cores=no_cores)
 rand_nfac_test_l <- dlply(sim_data,.(num_sim),
                            .fun=function(x){simul_rand_dfa(sd_ci = x$sd_ci,
+                                                           rep_rand_seed = 2,
                                                            seed= x$num_sim)},
                            .parallel = T)
 saveRDS(rand_nfac_test_l,"output/rand_nfac_test_l_new.rds")
@@ -166,6 +167,7 @@ sim_data <- data.frame(num_sim=1:(rep_sim*5),sd_ci=sort(rep(c(0.01,0.05,0.2,0.5,
 registerDoParallel(cores=no_cores)
 rand_nfac_test_l2 <- dlply(sim_data,.(num_sim),
                           .fun=function(x){simul_rand_dfa(sd_ci = x$sd_ci,
+                                                          rep_rand_seed = 2,
                                                           seed= x$num_sim,
                                                           equi = FALSE)},
                           .parallel = T)
@@ -199,15 +201,15 @@ res_tot_g_sum <- data.frame(res_tot_g %>% group_by(nb_group_exp) %>% summarize(m
                                                                                  mean_stability = mean(stability, na.rm=T),
                                                                                  sd_stability = sd(stability, na.rm=T)))
 
-res_tot_g2 <- matrix(NA,nrow=length(sort(rep(c(1,2,3,4),rep_sim))),ncol=4)
+res_tot_g2 <- matrix(NA,nrow=length(sort(rep(c(1,2,3,4),rep_sim))),ncol=5)
 for(i in 1:length(sort(rep(c(1,2,3,4),rep_sim)))){
   exp_group <- sort(rep(c(1,2,3,4),rep_sim))[i]
   res_i <- rand_nfac_test_g2[[i]]
   res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
   res_i$nb_group <- as.numeric(res_i$nb_group)
-  res_i2 <- as.matrix(res_i[,2:4])
+  res_i2 <- as.matrix(res_i[,2:5])
   res_tot_g2[i,1:ncol(res_i2)] <- res_i2
-  res_tot_g2[i,4] <- exp_group
+  res_tot_g2[i,5] <- exp_group
 }
 
 res_tot_g2 <- data.frame(res_tot_g2)
@@ -221,15 +223,15 @@ res_tot_g2_sum <- data.frame(res_tot_g2 %>% group_by(nb_group_exp) %>% summarize
                                                                                sd_stability = sd(stability, na.rm=T)))
 
 
-res_tot_l <- matrix(NA,nrow=length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))),ncol=4)
+res_tot_l <- matrix(NA,nrow=length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))),ncol=5)
 for(i in 1:length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))){
   exp_group <- sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))[i]
   res_i <- rand_nfac_test_l[[i]]
   res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
   res_i$nb_group <- as.numeric(res_i$nb_group)
-  res_i2 <- as.matrix(res_i[,2:4])
+  res_i2 <- as.matrix(res_i[,2:5])
   res_tot_l[i,1:ncol(res_i2)] <- res_i2
-  res_tot_l[i,4] <- exp_group
+  res_tot_l[i,5] <- exp_group
 }
 
 res_tot_l <- data.frame(res_tot_l)
@@ -241,4 +243,25 @@ res_tot_l_sum <- data.frame(res_tot_l %>% group_by(proximity) %>% summarize(mean
                                                                                sd_similarity = sd(similarity, na.rm=T),
                                                                                mean_stability = mean(stability, na.rm=T),
                                                                                sd_stability = sd(stability, na.rm=T)))
+
+res_tot_l2 <- matrix(NA,nrow=length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))),ncol=5)
+for(i in 1:length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))){
+  exp_group <- sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim))[i]
+  res_i <- rand_nfac_test_l2[[i]]
+  res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
+  res_i$nb_group <- as.numeric(res_i$nb_group)
+  res_i2 <- as.matrix(res_i[,2:5])
+  res_tot_l2[i,1:ncol(res_i2)] <- res_i2
+  res_tot_l2[i,5] <- exp_group
+}
+
+res_tot_l2 <- data.frame(res_tot_l2)
+names(res_tot_l2) <- c("similarity","nb_group_obs","stability","proximity")
+
+table(res_tot_l2$nb_group_obs,res_tot_l2$proximity)
+
+res_tot_l2_sum <- data.frame(res_tot_l2 %>% group_by(proximity) %>% summarize(mean_similarity = mean(similarity, na.rm=T),
+                                                                            sd_similarity = sd(similarity, na.rm=T),
+                                                                            mean_stability = mean(stability, na.rm=T),
+                                                                            sd_stability = sd(stability, na.rm=T)))
 
