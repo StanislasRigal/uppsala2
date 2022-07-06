@@ -1355,7 +1355,7 @@ simul_rand_dfa_intern <- function(cum_perc,
     assign(paste0("nb_sp_g",g),nb_sp_g)
     id_vec <- c(id_vec,rep(g,nb_sp_g))
     for(lt in 1:n_sp_init){
-      mean_u_g <- runif(1, -1, 1)
+      mean_u_g <- 0#runif(1, -1, 1)
       lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
       assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
       assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
