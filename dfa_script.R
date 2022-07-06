@@ -176,21 +176,23 @@ saveRDS(rand_nfac_test_l2,"output/rand_nfac_test_l2_new.rds")
 
 
 # result simulation for number of groups
-res_tot_g <- matrix(NA,nrow=length(sort(rep(c(1,2,3,4),rep_sim))),ncol=4)
+res_tot_g <- matrix(NA,nrow=length(sort(rep(c(1,2,3,4),rep_sim))),ncol=5)
 for(i in 1:length(sort(rep(c(1,2,3,4),rep_sim)))){
   exp_group <- sort(rep(c(1,2,3,4),rep_sim))[i]
   res_i <- rand_nfac_test_g[[i]]
   res_i$clust_stab <- apply(str_split_fixed(res_i$clust_stab, '-', max(as.numeric(res_i$nb_group))),1,function(y){mean(as.numeric(y), na.rm=T)})
   res_i$nb_group <- as.numeric(res_i$nb_group)
-  res_i2 <- as.matrix(res_i[,2:4])
+  res_i$nb_group2 <- as.numeric(res_i$nb_group2)
+  res_i2 <- as.matrix(res_i[,2:5])
   res_tot_g[i,1:ncol(res_i2)] <- res_i2
-  res_tot_g[i,4] <- exp_group
+  res_tot_g[i,5] <- exp_group
 }
 
 res_tot_g <- data.frame(res_tot_g)
-names(res_tot_g) <- c("similarity","nb_group_obs","stability","nb_group_exp")
+names(res_tot_g) <- c("similarity","nb_group_obs","stability","nb_group_obs2","nb_group_exp")
 
 table(res_tot_g$nb_group_obs,res_tot_g$nb_group_exp)
+table(res_tot_g$nb_group_obs2,res_tot_g$nb_group_exp)
 
 res_tot_g_sum <- data.frame(res_tot_g %>% group_by(nb_group_exp) %>% summarize(mean_similarity = mean(similarity, na.rm=T),
                                                                                  sd_similarity = sd(similarity, na.rm=T),
