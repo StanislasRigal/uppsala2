@@ -213,9 +213,11 @@ for(i in 1:length(sort(rep(c(1,2,3,4),rep_sim)))){
 }
 
 res_tot_g2 <- data.frame(res_tot_g2)
-names(res_tot_g2) <- c("similarity","nb_group_obs","stability","nb_group_exp")
+names(res_tot_g2) <- c("similarity","nb_group_obs","stability","nb_group_obs2","nb_group_exp")
 
 table(res_tot_g2$nb_group_obs,res_tot_g2$nb_group_exp)
+table(res_tot_g2$nb_group_obs2,res_tot_g2$nb_group_exp)
+
 
 res_tot_g2_sum <- data.frame(res_tot_g2 %>% group_by(nb_group_exp) %>% summarize(mean_similarity = mean(similarity, na.rm=T),
                                                                                sd_similarity = sd(similarity, na.rm=T),
@@ -235,9 +237,11 @@ for(i in 1:length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))){
 }
 
 res_tot_l <- data.frame(res_tot_l)
-names(res_tot_l) <- c("similarity","nb_group_obs","stability","proximity")
+names(res_tot_l) <- c("similarity","nb_group_obs","stability","nb_group_obs2","proximity")
 
 table(res_tot_l$nb_group_obs,res_tot_l$proximity)
+table(res_tot_l$nb_group_obs2,res_tot_l$proximity)
+
 
 res_tot_l_sum <- data.frame(res_tot_l %>% group_by(proximity) %>% summarize(mean_similarity = mean(similarity, na.rm=T),
                                                                                sd_similarity = sd(similarity, na.rm=T),
@@ -256,9 +260,11 @@ for(i in 1:length(sort(rep(c(0.01,0.05,0.2,0.5,1),rep_sim)))){
 }
 
 res_tot_l2 <- data.frame(res_tot_l2)
-names(res_tot_l2) <- c("similarity","nb_group_obs","stability","proximity")
+names(res_tot_l2) <- c("similarity","nb_group_obs","stability","nb_group_obs2","proximity")
 
 table(res_tot_l2$nb_group_obs,res_tot_l2$proximity)
+table(res_tot_l2$nb_group_obs2,res_tot_l2$proximity)
+
 
 res_tot_l2_sum <- data.frame(res_tot_l2 %>% group_by(proximity) %>% summarize(mean_similarity = mean(similarity, na.rm=T),
                                                                             sd_similarity = sd(similarity, na.rm=T),
