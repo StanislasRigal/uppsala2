@@ -159,6 +159,24 @@ summary(lm(MSI~year, data=RES_forest))$coef
 cor.test(forest_nfac[[11]][forest_nfac[[11]]$group=="g1","Estimate"],RES_forest$MSI)
 
 
+table_res_alla <- dcast(data=all_nfac[[3]], name_long~variable, id.vars="value")
+table_res_allb <- all_nfac[[10]][[1]][[1]]
+table_res_all <- merge(table_res_allb[,c("name_long", "group", "uncert")], table_res_alla, by="name_long", all.x=T )
+table_res_all$pvalue <- table_res_all$st_error <- table_res_all$slope <-  NA
+for(i in 1:nrow(table_res_all)){
+  res_lm <- summary(lm(pred.value~Year,
+                       data=all_nfac[[1]][all_nfac[[1]]$code_sp==unique(all_nfac[[1]]$code_sp)[i],]))$coef
+  table_res_all$slope[i] <- res_lm[2,1]
+  table_res_all$st_error[i] <- res_lm[2,2]
+  table_res_all$pvalue[i] <- res_lm[2,4]
+}
+table_res_all[,3:7] <- round(table_res_all[,3:7],4)
+
+summary(lm(Estimate~year, data=all_nfac[[11]][all_nfac[[11]]$group=="g1",]))$coef
+summary(lm(MSI~year, data=RES_all))$coef
+cor.test(all_nfac[[11]][all_nfac[[11]]$group=="g1","Estimate"],RES_all$MSI)
+
+
 # test simulation function
 
 rand_nfac_test <- simul_rand_dfa(nb_group_exp = 2, thres = 1)
