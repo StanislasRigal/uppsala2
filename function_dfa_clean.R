@@ -1413,7 +1413,7 @@ simul_rand_dfa_intern <- function(cum_perc,
   }else{
     id_vec <- c()
     seednum <- 0
-    dist_clust <- 1
+    dist_clust <- thres
     coord_clust <- t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # distance between summit of a tetrahedron
                               -dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
                               dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
@@ -1569,7 +1569,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            n_sp = 15, # number of species ts
                            n_sp_init = 3, # number of latent trends
                            nb_group_exp = 2, # number of expected clusters
-                           thres = 1, # min distance between barycenters of clusters
+                           thres = 1, # distance between barycenters of clusters
                            sd_rand = 0.01, # observation error on data
                            sd_rand2 = 0.5, # random noise on ts
                            sd_ci = 0.1, # standard deviation of the loading factors

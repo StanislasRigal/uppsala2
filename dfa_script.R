@@ -123,6 +123,41 @@ ggsave("output/farm_nfac.png",
        height = 8 # 8 # 3
        )
 
+table_res_farma <- dcast(data=farm_nfac[[3]], name_long~variable, id.vars="value")
+table_res_farmb <- farm_nfac[[10]][[1]][[1]]
+table_res_farm <- merge(table_res_farmb[,c("name_long", "group", "uncert")], table_res_farma, by="name_long", all.x=T )
+table_res_farm$pvalue <- table_res_farm$st_error <- table_res_farm$slope <-  NA
+for(i in 1:nrow(table_res_farm)){
+  res_lm <- summary(lm(pred.value~Year,
+                       data=farm_nfac[[1]][farm_nfac[[1]]$code_sp==unique(farm_nfac[[1]]$code_sp)[i],]))$coef
+  table_res_farm$slope[i] <- res_lm[2,1]
+  table_res_farm$st_error[i] <- res_lm[2,2]
+  table_res_farm$pvalue[i] <- res_lm[2,4]
+}
+table_res_farm[,3:9] <- round(table_res_farm[,3:9],4)
+
+summary(lm(Estimate~year, data=farm_nfac[[11]][farm_nfac[[11]]$group=="g1",]))$coef
+summary(lm(MSI~year, data=RES_farmland))$coef
+cor.test(farm_nfac[[11]][farm_nfac[[11]]$group=="g1","Estimate"],RES_farmland$MSI)
+
+
+table_res_foresta <- dcast(data=forest_nfac[[3]], name_long~variable, id.vars="value")
+table_res_forestb <- forest_nfac[[10]][[1]][[1]]
+table_res_forest <- merge(table_res_forestb[,c("name_long", "group", "uncert")], table_res_foresta, by="name_long", all.x=T )
+table_res_forest$pvalue <- table_res_forest$st_error <- table_res_forest$slope <-  NA
+for(i in 1:nrow(table_res_forest)){
+  res_lm <- summary(lm(pred.value~Year,
+                       data=forest_nfac[[1]][forest_nfac[[1]]$code_sp==unique(forest_nfac[[1]]$code_sp)[i],]))$coef
+  table_res_forest$slope[i] <- res_lm[2,1]
+  table_res_forest$st_error[i] <- res_lm[2,2]
+  table_res_forest$pvalue[i] <- res_lm[2,4]
+}
+table_res_forest[,3:9] <- round(table_res_forest[,3:9],4)
+
+summary(lm(Estimate~year, data=forest_nfac[[11]][forest_nfac[[11]]$group=="g1",]))$coef
+summary(lm(MSI~year, data=RES_forest))$coef
+cor.test(forest_nfac[[11]][forest_nfac[[11]]$group=="g1","Estimate"],RES_forest$MSI)
+
 
 # test simulation function
 

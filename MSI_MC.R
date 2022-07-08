@@ -86,21 +86,15 @@ ggsave("output/all_msi.png",
 )
 
 ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                        c( "FALTIN","ALAARV","CORFRU",
-                                                           "SAXRUB","ANTPRA","MOTFLA",
-                                                           "LINCAN","EMBHOR","PASMON"),])
+                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="1"])],])
 RES_farmland1 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
 ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                        c( "FALTIN","VANVAN","HIRRUS","CORFRU",
-                                                           "SYLCOM","LANCOL",
-                                                           "STUVUL","LINCAN","EMBCIT","EMBHOR"),])
+                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="4"])],])
 RES_farmland2 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
 ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                        c( "VANVAN","ALAARV","HIRRUS",
-                                                           "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
-                                                           "STUVUL","EMBCIT","EMBHOR","PASMON"),])
+                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="2"])],])
 RES_farmland3 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
 RES_farmland_all <- rbind(RES_farmland,RES_farmland1,RES_farmland2,RES_farmland3)
@@ -111,6 +105,10 @@ ggplot(RES_farmland_all, aes(x=year, y=MSI, fill=group))+
   ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend, col=group), size=1)+ theme_modern() +
+  scale_fill_manual(values=c("All"="black", "Without cluster 1"="#f7756cff",
+                      "Without cluster 2"="#00b0f6ff","Without cluster 3"="#a2a500ff")) +
+  scale_color_manual(values=c("All"="black", "Without cluster 1"="#f7756cff",
+                             "Without cluster 2"="#00b0f6ff","Without cluster 3"="#a2a500ff")) +
   theme(legend.title = element_blank())
 
 ggsave("output/farm_msi_compare.png",
