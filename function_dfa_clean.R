@@ -1,6 +1,7 @@
 # I) TMB function
 
 library(TMB)
+library(mvtnorm)
 
 dfa_model_se <- "
 // Dynamic Factor Analysis for multivariate time series
@@ -22,12 +23,14 @@ template<class Type>
   DATA_MATRIX(Z_pred);
   DATA_UPDATE(Z_pred);
   
+  DATA_INTEGER(rwOrder);
+  
   // Parameters
   PARAMETER_VECTOR(log_re_sp); // log of sd for random effect by species
   
   // Loadings matrix
   PARAMETER_MATRIX(Z);
-
+  
   // Latent trends
   PARAMETER_MATRIX(x);
   
@@ -35,7 +38,7 @@ template<class Type>
   matrix<Type> x_pred(Z_pred.rows(), nT);
 
   // Mean of latent trends
-  matrix<Type> x_mean(x.rows(), 1);
+  matrix<Type> x_sum(x.rows(), 1);
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
@@ -46,36 +49,47 @@ template<class Type>
   // Optimization target: negative log-likelihood (nll)
   Type nll = 0.0;
   
-  // Latent random walk model. x(0) = 0. 
-  for(int t = 1; t < x.cols(); ++t){
-    for(int f = 0; f < x.rows(); ++f){
-      nll -= dnorm(x(f, t), x(f, t-1), Type(1), true);
+  if (rwOrder == 1) {
+    // Latent random walk model. x(0) = 0. 
+    for(int t = 1; t < x.cols(); ++t){
+      for(int f = 0; f < x.rows(); ++f){
+        nll -= dnorm(x(f, t), x(f, t-1), Type(1), true);
     
-    // Simulation block for process equation
-    SIMULATE {
-        x(f, t) = rnorm(x(f, t-1), Type(1));
-        REPORT(x);
-     }
+      // Simulation block for process equation
+      SIMULATE {
+          x(f, t) = rnorm(x(f, t-1), Type(1));
+          REPORT(x);
+      }
+      }
+    }
+  } 
+  if (rwOrder == 2) { // Experimental
+    for(int t = 2; t < x.cols(); ++t){ // Define prior for x(f, 1) ??
+      for(int f = 0; f < x.rows(); ++f) {
+        nll -= dnorm(x(f, t), -2 * x(f, t-1) + x(f, t-2), Type(1), true);
+      }
     }
   }
 
   for (int f = 0; f < x.rows(); ++f) {
-    x_mean(f) = x.row(f).sum() / nT;
+    x_sum(f) = x.row(f).sum();
     SIMULATE {
-      x_mean(f) = x.row(f).sum() / nT;
+      x_sum(f) = x.row(f).sum();
     }
   }
 
   // Species trends
   for(int i = 0; i < nSp; ++i) {
-    for(int t = 0; t < nT; ++t) {
-      x_sp(i, t) = (Z.row(i) * (x.col(t) - x_mean)).sum();
+    x_sp(i, 0) = (Z.row(i) * (-x_sum)).sum();
+    for(int t = 1; t < nT; ++t) {
+      x_sp(i, t) = (Z.row(i) * (x.col(t))).sum();
     }
   }  
   
   // Cluster center
-  for (int t=0; t < nT; ++t) {
-    x_pred.col(t) = Z_pred * (x.col(t) - x_mean);
+  x_pred.col(0) = Z_pred * (-x_sum);
+  for (int t=1; t < nT; ++t) {
+    x_pred.col(t) = Z_pred * (x.col(t));
   } 
   
   
@@ -88,17 +102,22 @@ template<class Type>
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       SIMULATE {
-          y(i,t) = rnorm((Z.row(i) * (x.col(t) - x_mean)).sum(), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)));
+          y(i,t) = rnorm(x_sp(i, t), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)));
           REPORT(y);
         }
     }  
+  }
+  
+  //Penalty for very small random effects variances, this is to avoid issues with non semidefinite variance matrices.
+  for (int i=0; i < nSp; ++i) {
+    nll += exp(-3.5 * log_re_sp(i) - 20);
   }
   
   // State the transformed parameters to report
   // Using ADREPORT will return the point values and the standard errors
   // Note that we only need to specify this for parameters
   // we transformed, see section D above
-  // The other parameters, including the random effects (states),
+  // The other parameters, including the random effects (states),Q
   // will be returned automatically
   ADREPORT(re_sp);
   ADREPORT(x_sp);
@@ -136,20 +155,16 @@ template<class Type>
 ## Only works if obj has been already optimized
 ## AIC is computed excluding zero variance
 
-AIC.tmb <- function(obj, tol = 0.01, dontCount) {
+AIC.tmb <- function(obj, dontCount) {
   
   # Simple convergence check
-  stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
+  #stopifnot(max(abs(obj$gr(obj$env$last.par.best[obj$env$lfixed()]))) < tol)
   
   # AIC
   
   as.numeric(2 * obj$env$value.best + 2*(sum(obj$env$lfixed()) - dontCount))
 }
 
-## Prevent function to stop (to be use in loops)  
-AIC.tmb2 <- function(obj, tol = 0.01, dontCount){
-  tryCatch(AIC.tmb(obj, tol = 0.01, dontCount),
-           error=function(e) NA)}
 
 
 ## 2) Group species
@@ -204,7 +219,7 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
     
     # Draw factor loadings using covariance matrix
     set.seed(i)
-    rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+    rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
     
     # Complete loading vector with fixed values
     for(j in 1:(nfac-1)){
@@ -303,7 +318,7 @@ group_from_dfa_boot <- function(data_loadings, # Species initial factor loadings
       
       # Draw factor loadings using covariance matrix
       set.seed(i)
-      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
       
       # Complete loading vector with fixed values
       for(j in 1:(nfac-1)){
@@ -502,7 +517,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
       
       # Draw factor loadings using covariance matrix
       set.seed(i)
-      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
       
       # Complete loading vector with fixed values
       for(j in 1:(nfac-1)){
@@ -718,7 +733,7 @@ group_from_dfa_boot2 <- function(data_loadings, # Species initial factor loading
       
       # Draw factor loadings using covariance matrix
       set.seed(i)
-      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, cov=cov_mat_Z) 
+      rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
       
       # Complete loading vector with fixed values
       for(j in 1:(nfac-1)){
@@ -940,9 +955,10 @@ core_dfa <- function(data_ts, # Dataset of time series
                      data_ts_se, # Dataset of standard error of time series 
                      nfac, # Number of trends for the DFA
                      rand_seed=1, # Initial values for the sd of the random effect
-                     AIC=TRUE # Display AIC
-                     ){
-  
+                     AIC=TRUE, # Display AIC
+                     silent = TRUE, 
+                     control = list()
+                     ) {
   # Save input data for plot
   
   data_ts_save <- as.data.frame(data_ts)
@@ -956,8 +972,10 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   data_ts <- data_ts %>% select_if(Negate(is.character))
   data_ts_se <- data_ts_se %>% select_if(Negate(is.character))
-  
-  # List of data for DFA
+
+  # Overwrite any changes to default control 
+  con <- list(nstart = 3, maxit = 10000, reltol = 1e-12, factr = 1e-11, gradtol = 1e-3, nlldeltatol = 1e-4, method = c('NLMINB', 'BFGS'))
+  con[names(control)] <- control
   
   # Initialise Z_pred, actual values will be provided by group_from_dfa2
   
@@ -967,7 +985,7 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se),
-                  Z_pred = Z_predinit)
+                  Z_pred = Z_predinit, rwOrder = 1)
   
   # Prepare parameters for DFA
   
@@ -975,59 +993,83 @@ core_dfa <- function(data_ts, # Dataset of time series
   ny <- nrow(data_ts) # Number of time series
   nT <- ncol(data_ts) # Number of time step
   
-  # Starting values for the optimisation
-  
-  set.seed(rand_seed) 
-  log_re_sp <- runif(ny, -1, 0)
-  
-  Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
-  
-  # Set constrained elements to zero
-  
-  constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
-  Zinit[constrInd] <- 0
-  
-  # List of parameters for DFA
-  
-  tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
-                  x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
-                           ncol = nT, nrow = nfac))
-  
   # Set up parameter constraints. Elements set to NA will be fixed and not estimated.
-  
+  constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
   Zmap <- matrix(ncol = nfac, nrow = ny)
   Zmap[constrInd] <- NA
   Zmap[!constrInd] <- 1:sum(!constrInd)
   xmap <- matrix(ncol = nT, nrow = nfac)
   xmap[,1] <- NA
-  xmap[(nfac + 1) : length(tmbPar$x)] <- 1:(length(tmbPar$x) - nfac)
+  xmap[(nfac + 1) : (nT * nfac)] <- 1:((nT - 1)* nfac)
   tmbMap <- list(Z = as.factor(Zmap),
                  x = as.factor(xmap))
   
-  # Make DFA
+  # Starting values for the optimisation
   
-  tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se")
-  tmbOpt <- nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = 2000, eval.max  =3000))
+  set.seed(rand_seed) # Jonas: Suggest to remove this. Seed could be set before calling the functions.
   
-  # Avoid infinite SE when SD are close or equal to zero
   
-  oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
-  singularThreshold = 1e-5
-  nSingular = sum(diag(oh) < singularThreshold)
-  diag(oh) <- pmax(diag(oh), singularThreshold)
-  sdRep_test <- summary(sdreport(tmbObj, hessian.fixed = oh))
-  sdRep_test_all <- sdreport(tmbObj, hessian.fixed = oh)
+  optList = vector(con$nstart * length(con$method), mode = 'list')
+  names(optList) = rep(con$method, con$nstart)
+
+  
+  for (i in 1:length(optList)) {
+    log_re_sp <- runif(ny, -1, 0)
+    
+    Zinit <- matrix(rnorm(ny * nfac), ncol = nfac)
+    
+    # Set constrained elements to zero
+    
+    Zinit[constrInd] <- 0
+    
+    # List of parameters for DFA
+    
+    tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
+                    x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
+                             ncol = nT, nrow = nfac))
+    #tmbPar$x_sum = matrix(rep(0, nfac), ncol = 1)
+    
+    # Make DFA
+    tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se", silent = silent)
+    optList[[i]] = switch(names(optList)[i],
+                          NLMINB = nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = con$maxit, eval.max  =2*con$maxit, rel.tol =  con$reltol)),
+                          BFGS = optim(tmbObj$par, tmbObj$fn, tmbObj$gr, method = 'BFGS', control = list(maxit = con$maxit, reltol = con$reltol)),
+                          LBFGS = optim(tmbObj$par, tmbObj$fn, tmbObj$gr, method = 'L-BFGS-B', control = list(maxit = con$maxit, factr = con$factr))
+    )
+    if (names(optList)[i] == 'NLMINB')
+      optList[[i]]$value = optList[[i]]$objective
+  }
+  convergence = sapply(optList, FUN = `[[`, 'convergence')
+  print(convergence)
+  nll = sapply(optList, FUN = `[[`, 'value')
+  print(nll)
+  maxgrad = sapply(optList, FUN = function(opt) {max(abs(tmbObj$gr(opt$par))) })
+  print(maxgrad)
+  eligible = abs(nll - min(nll)) < con$nlldeltatol & convergence == 0 & maxgrad < con$gradtol
+  if (!any(eligible)) { 
+    eligible = abs(nll - min(nll)) < con$nlldeltatol & convergence == 0 # Currently prioritizes optim convergence over gradient check
+    if(!any(eligible))
+      eligible = abs(nll - min(nll)) < con$nlldeltatol
+  } 
+
+  ind.best =  which.min((nll - 1e6 * sign(min(nll)) * !eligible)) # Return the smallest loglikelihood fit that meets other convergence criteria
+  tmbOpt = optList[[ind.best]] 
+  
+  # Jonas: I suggest we return the full nll, convergence, and maxgrad vectors at the end of the function. It's useful to have for checking stability of the model.
+  
+  sdRep_test_all <- sdreport(tmbObj)
+  sdRep_test <- summary(sdRep_test_all)
   
   # Check convergence
-  
-  conv <- grepl("relative convergence",tmbOpt$message)
-  if(!conv){warning(paste0("Convergence issue:", tmbOpt$message))}
-  
+  conv <- tmbOpt$convergence
+  if(tmbOpt$convergence != 0){warning(paste0("Convergence issue:", tmbOpt$message))}
+  if (tmbOpt$convergence == 0 & maxgrad[ind.best] > con$gradtol) 
+    warning(paste0('Optimization converged, but maximum gradient = ', maxgrad[ind.best]))
   # Compute AIC
   
   if(AIC){
-    aic <- AIC.tmb2(tmbObj, dontCount = 0) 
-    aic2 <- AIC.tmb2(tmbObj, dontCount = nSingular) 
+    aic <- AIC.tmb(tmbObj, dontCount = 0) 
+    aic2 <- aic # AIC.tmb(tmbObj, dontCount = nSingular) 
     writeLines(paste('AIC: ', aic))
     writeLines(paste('AIC not counting singular random effects: ', aic2))
   } else {aic <- aic2 <- NA}
@@ -1059,7 +1101,9 @@ make_dfa <- function(data_ts, # Dataset of time series
                      rand_seed=1, # Initial values for the sd of the random effect
                      AIC=TRUE, # Display AIC
                      species_sub,  # Species names
-                     nboot=100 # Number of bootstrap for clustering
+                     nboot=100, # Number of bootstrap for clustering
+                     silent = TRUE,
+                     control = list()
                      )
 {
   # Save first year for plot
@@ -1071,9 +1115,9 @@ make_dfa <- function(data_ts, # Dataset of time series
   if(nfac==0){
     aic2_best <- aic_best <- c()
     for(i in mintrend:maxtrend){
-      core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i))
+      core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i, silent = silent, control = control))
       
-      if(core_dfa_res[[12]]==T){
+      if(core_dfa_res[[12]]==0){
         aic_best <- c(aic_best, core_dfa_res[[10]])
         aic2_best <- c(aic2_best, core_dfa_res[[11]])
       } else {
@@ -1086,7 +1130,7 @@ make_dfa <- function(data_ts, # Dataset of time series
     
     core_dfa_res <- get(paste0("core_dfa",nfac))
   }else{
-    core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac)
+    core_dfa_res <- core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=nfac, silent = silent, control = control)
   }
   tmbObj <- core_dfa_res[[1]]
   tmbOpt <- core_dfa_res[[2]]
@@ -1167,12 +1211,12 @@ make_dfa <- function(data_ts, # Dataset of time series
   tmbObj$env$data$Z_pred <- Z_pred_from_kmeans
   
   # Recalcul sdreport
-  
-  oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
-  singularThreshold = 1e-5
-  nSingular = sum(diag(oh) < singularThreshold)
-  diag(oh) <- pmax(diag(oh), singularThreshold)
-  sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
+  #oh <- optimHess(tmbOpt$par, fn=tmbObj$fn, gr=tmbObj$gr)
+  #singularThreshold = 1e-5
+  #nSingular = sum(diag(oh) < singularThreshold)
+  #diag(oh) <- pmax(diag(oh), singularThreshold)
+  #sdRep <- summary(sdreport(tmbObj, hessian.fixed = oh))
+  sdRep <- summary(sdreport(tmbObj))
   
   # Prepare data to plot
   
@@ -1303,9 +1347,9 @@ make_dfa <- function(data_ts, # Dataset of time series
               plot_tr, # Plot of latent trends
               plot_ld, # Plot of factor loadings
               plot_sp_group, # Plot clusters and cluster time-series
-              aic, # Best AIC
-              sdRep, # Optimisation output
-              group_dfa, # Cluster results
+              aic = aic, # Best AIC
+              sdRep = sdRep, # Optimisation output
+              group = group_dfa, # Cluster results
               trend_group # Cluster barycentre times-series
               ))
 }
