@@ -216,7 +216,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     
     # Draw factor loadings using covariance matrix
     set.seed(i)
-    rand_load <- rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
+    rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
     
     # Complete loading vector with fixed values
     for(j in 1:(nfac-1)){
@@ -499,7 +499,6 @@ plot_group_boot <- function(nb_group, # Number of clusters
 core_dfa <- function(data_ts, # Dataset of time series
                      data_ts_se, # Dataset of standard error of time series 
                      nfac, # Number of trends for the DFA
-                     rep_rand_seed=10, # Number of initial values for the sd of the random effect
                      AIC=TRUE, # Display AIC
                      silent = TRUE, 
                      control = list()
@@ -551,9 +550,6 @@ core_dfa <- function(data_ts, # Dataset of time series
                  x = as.factor(xmap))
   
   # Starting values for the optimisation
-  
-  set.seed(rand_seed) # Jonas: Suggest to remove this. Seed could be set before calling the functions.
-  
   
   optList = vector(con$nstart * length(con$method), mode = 'list')
   names(optList) = rep(con$method, con$nstart)
@@ -650,7 +646,8 @@ make_dfa <- function(data_ts, # Dataset of time series
                      )
 {
   
-  # data_ts=y_farm;data_ts_se=obs_se_farm;nfac=4;mintrend=1;maxtrend=5;rand_seed=1;AIC=TRUE;species_sub=species_farm;nboot=100;silent = TRUE;control = list()
+  # data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=100;silent = TRUE;control = list()
+  # data_ts=y_all;data_ts_se=obs_se_all;nfac=8;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_all;nboot=100;silent = TRUE;control = list()
   
   # Save first year for plot
   
@@ -738,9 +735,9 @@ make_dfa <- function(data_ts, # Dataset of time series
       Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
       
     }else{
-      group_dfa <- 1
       
-      Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
+      Z_pred_from_kmeans <- t(as.matrix(group_dfa[[1]][[2]][grepl("kmeans_center",names(group_dfa[[1]][[2]]))]))
+      
     }
     
   }else{
@@ -822,9 +819,11 @@ make_dfa <- function(data_ts, # Dataset of time series
       theme_modern() + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
-      geom_line(aes(colour=variable))+ylab("Rotated value")+
-      scale_color_discrete(labels=c('Latent trend 1', 'Latent trend 2', 'Latent trend 3', 'Latent trend 4', 'Latent trend 5'))+
-      theme_modern() + theme(legend.title = element_blank())
+      geom_line(aes(colour=variable))+ylab("Rotated value") +
+      geom_ribbon(aes(ymax = (value+1.96*se.value), ymin=(value-1.96*se.value), fill=variable), alpha=0.1) +
+      scale_color_discrete(labels=paste0('Latent trend ',1:length(unique(data_to_plot_tr$variable))))+
+      theme_modern() + theme(legend.title = element_blank()) +
+      guides(fill = "none")
     
     plot_ld <- ggplot(data_loadings) + 
       geom_col(aes(value, name_long, fill=variable)) +
@@ -864,7 +863,7 @@ make_dfa <- function(data_ts, # Dataset of time series
     
   }
   
-  if(is.list(group_dfa)){
+  if(is.list(group_dfa) & length(group_dfa[[3]])>1){
     plot_sp_group_all <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
                                          centroids = group_dfa[[2]],
                                          kmeans_res = group_dfa[[1]],
@@ -874,8 +873,21 @@ make_dfa <- function(data_ts, # Dataset of time series
                                          mean_dist_clust = group_dfa[[4]])
     plot_sp_group <- plot_sp_group_all[1:2]
     trend_group <- plot_sp_group_all[[3]]
-  }else{
-    plot_sp_group <- plot_tr
+  }
+  if(is.list(group_dfa) & length(group_dfa[[3]])==1){
+    plot_sp_group_all <- plot_group_boot(nb_group = 1,
+                                         centroids = group_dfa[[2]],
+                                         kmeans_res = group_dfa[[1]],
+                                         sdrep = sdRep, nT = nT,
+                                         min_year = min_year,
+                                         stability_cluster_final = group_dfa[[3]], 
+                                         mean_dist_clust = group_dfa[[4]])
+    plot_sp_group <- plot_sp_group_all[1:2]
+    trend_group <- plot_sp_group_all[[3]]
+  }
+  if(!is.list(group_dfa)){
+    plot_sp_group_all <- NA
+    plot_sp_group <- NA
     trend_group <- NA
   }
   
@@ -1108,8 +1120,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            sd_ci = 0.1, # standard deviation of the loading factors
                            nboot = 100, # number of bootstrap for clustering
                            equi = TRUE, # equal size of cluster
-                           seed = 1, # set seed for simulation data
-                           rep_rand_seed = 1 # number of initial values for parameters in DFA
+                           seed = 1 # set seed for simulation data
 ){
   if(nb_group_exp>1){
     cum_perc <- rep(round(100/nb_group_exp),nb_group_exp)

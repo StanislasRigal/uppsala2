@@ -110,9 +110,9 @@ obs_se_all <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
 # DFA
 
 # if number of trends unknown
-farm_nfac <- make_dfa(data_ts = y_farm, data_ts_se = obs_se_farm,
+farm_nfac <- make_dfa(data_ts = y_farm, data_ts_se = obs_se_farm, #nfac=3
                        species_sub = species_farm)
-forest_nfac <- make_dfa(data_ts = y_forest, data_ts_se = obs_se_forest,
+forest_nfac <- make_dfa(data_ts = y_forest, data_ts_se = obs_se_forest, # nfac=4
                          species_sub = species_forest)
 all_nfac <- make_dfa(data_ts = y_all, data_ts_se = obs_se_all,
                        species_sub = species_all)
