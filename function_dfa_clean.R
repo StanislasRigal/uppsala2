@@ -646,8 +646,9 @@ make_dfa <- function(data_ts, # Dataset of time series
                      )
 {
   
-  # data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=100;silent = TRUE;control = list()
-  # data_ts=y_all;data_ts_se=obs_se_all;nfac=8;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_all;nboot=100;silent = TRUE;control = list()
+  # data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list()
+  # data_ts=y_all;data_ts_se=obs_se_all;nfac=15;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_all;nboot=100;silent = TRUE;control = list()
+  # data_ts=y_rand;data_ts_se=obs_se_rand;nfac=0;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_rand;nboot=100;silent = TRUE;control = list()
   
   # Save first year for plot
   
@@ -863,28 +864,31 @@ make_dfa <- function(data_ts, # Dataset of time series
     
   }
   
-  if(is.list(group_dfa) & length(group_dfa[[3]])>1){
-    plot_sp_group_all <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
-                                         centroids = group_dfa[[2]],
-                                         kmeans_res = group_dfa[[1]],
-                                         sdrep = sdRep, nT = nT,
-                                         min_year = min_year,
-                                         stability_cluster_final = group_dfa[[3]], 
-                                         mean_dist_clust = group_dfa[[4]])
-    plot_sp_group <- plot_sp_group_all[1:2]
-    trend_group <- plot_sp_group_all[[3]]
+  if(is.list(group_dfa)){
+    if(length(group_dfa[[3]])>1){
+      plot_sp_group_all <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
+                                           centroids = group_dfa[[2]],
+                                           kmeans_res = group_dfa[[1]],
+                                           sdrep = sdRep, nT = nT,
+                                           min_year = min_year,
+                                           stability_cluster_final = group_dfa[[3]], 
+                                           mean_dist_clust = group_dfa[[4]])
+      plot_sp_group <- plot_sp_group_all[1:2]
+      trend_group <- plot_sp_group_all[[3]]
+    }
+    if(length(group_dfa[[3]])==1){
+      plot_sp_group_all <- plot_group_boot(nb_group = 1,
+                                           centroids = group_dfa[[2]],
+                                           kmeans_res = group_dfa[[1]],
+                                           sdrep = sdRep, nT = nT,
+                                           min_year = min_year,
+                                           stability_cluster_final = group_dfa[[3]], 
+                                           mean_dist_clust = group_dfa[[4]])
+      plot_sp_group <- plot_sp_group_all[1:2]
+      trend_group <- plot_sp_group_all[[3]]
+    }
   }
-  if(is.list(group_dfa) & length(group_dfa[[3]])==1){
-    plot_sp_group_all <- plot_group_boot(nb_group = 1,
-                                         centroids = group_dfa[[2]],
-                                         kmeans_res = group_dfa[[1]],
-                                         sdrep = sdRep, nT = nT,
-                                         min_year = min_year,
-                                         stability_cluster_final = group_dfa[[3]], 
-                                         mean_dist_clust = group_dfa[[4]])
-    plot_sp_group <- plot_sp_group_all[1:2]
-    trend_group <- plot_sp_group_all[[3]]
-  }
+  
   if(!is.list(group_dfa)){
     plot_sp_group_all <- NA
     plot_sp_group <- NA
@@ -1118,7 +1122,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
                            sd_rand = 0.01, # observation error on data
                            sd_rand2 = 0.5, # random noise on ts
                            sd_ci = 0.1, # standard deviation of the loading factors
-                           nboot = 100, # number of bootstrap for clustering
+                           nboot = 500, # number of bootstrap for clustering
                            equi = TRUE, # equal size of cluster
                            seed = 1 # set seed for simulation data
 ){

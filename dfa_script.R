@@ -134,7 +134,7 @@ for(i in 1:nrow(table_res_farm)){
   table_res_farm$st_error[i] <- res_lm[2,2]
   table_res_farm$pvalue[i] <- res_lm[2,4]
 }
-table_res_farm[,3:9] <- round(table_res_farm[,3:9],4)
+table_res_farm[,3:(ncol(table_res_farm)-1)] <- round(table_res_farm[,3:(ncol(table_res_farm)-1)],4)
 
 summary(lm(Estimate~year, data=farm_nfac[[11]][farm_nfac[[11]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_farmland))$coef
@@ -152,7 +152,7 @@ for(i in 1:nrow(table_res_forest)){
   table_res_forest$st_error[i] <- res_lm[2,2]
   table_res_forest$pvalue[i] <- res_lm[2,4]
 }
-table_res_forest[,3:9] <- round(table_res_forest[,3:9],4)
+table_res_forest[,3:(ncol(table_res_forest)-1)] <- round(table_res_forest[,3:(ncol(table_res_forest)-1)],4)
 
 summary(lm(Estimate~year, data=forest_nfac[[11]][forest_nfac[[11]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_forest))$coef
