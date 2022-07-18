@@ -551,9 +551,9 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   # Starting values for the optimisation
   
-  optList = vector(con$nstart * length(con$method), mode = 'list')
-  names(optList) = rep(con$method, con$nstart)
-  
+  optList <- vector(con$nstart * length(con$method), mode = 'list')
+  names(optList) <- rep(con$method, con$nstart)
+  tmbObjList <- list()
   
   for (i in 1:length(optList)) {
     log_re_sp <- runif(ny, -1, 0)
@@ -573,6 +573,7 @@ core_dfa <- function(data_ts, # Dataset of time series
     
     # Make DFA
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se", silent = silent)
+    tmbObjList[[i]] <- tmbObj
     optList[[i]] = switch(names(optList)[i],
                           NLMINB = nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = con$maxit, eval.max  =2*con$maxit, rel.tol =  con$reltol)),
                           BFGS = optim(tmbObj$par, tmbObj$fn, tmbObj$gr, method = 'BFGS', control = list(maxit = con$maxit, reltol = con$reltol)),
@@ -594,8 +595,9 @@ core_dfa <- function(data_ts, # Dataset of time series
       eligible = abs(nll - min(nll)) < con$nlldeltatol
   } 
   
-  ind.best =  which.min((nll - 1e6 * sign(min(nll)) * !eligible)) # Return the smallest loglikelihood fit that meets other convergence criteria
-  tmbOpt = optList[[ind.best]] 
+  ind.best <-  which.min((nll - 1e6 * sign(min(nll)) * !eligible)) # Return the smallest loglikelihood fit that meets other convergence criteria
+  tmbOpt <- optList[[ind.best]] 
+  tmbObj <- tmbObjList[[ind.best]] 
   
   # Jonas: I suggest we return the full nll, convergence, and maxgrad vectors at the end of the function. It's useful to have for checking stability of the model.
   

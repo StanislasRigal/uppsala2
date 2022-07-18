@@ -90,25 +90,25 @@ ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clea
 RES_farmland1 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
 ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="4"])],])
+                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="3"])],])
 RES_farmland2 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
-ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="2"])],])
-RES_farmland3 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
+#ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+#                                                        species_farm$code_sp[!(species_farm$code_sp %in% table_res_farmb$code_sp[table_res_farmb$group=="2"])],])
+#RES_farmland3 <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
 
-RES_farmland_all <- rbind(RES_farmland,RES_farmland1,RES_farmland2,RES_farmland3)
+RES_farmland_all <- rbind(RES_farmland,RES_farmland1,RES_farmland2)#,RES_farmland3)
 RES_farmland_all$group <- c(rep("All",23),rep("Without cluster 1",23),
-                            rep("Without cluster 2",23),rep("Without cluster 3",23))
+                            rep("Without cluster 2",23))#,rep("Without cluster 3",23))
 
 ggplot(RES_farmland_all, aes(x=year, y=MSI, fill=group))+
-  ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  ylim(68, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
   geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
   geom_line(aes(y=Trend, col=group), size=1)+ theme_modern() +
   scale_fill_manual(values=c("All"="black", "Without cluster 1"="#f7756cff",
-                      "Without cluster 2"="#00b0f6ff","Without cluster 3"="#a2a500ff")) +
+                      "Without cluster 2"="#00b0f6ff"))+#,"Without cluster 3"="#a2a500ff")) +
   scale_color_manual(values=c("All"="black", "Without cluster 1"="#f7756cff",
-                             "Without cluster 2"="#00b0f6ff","Without cluster 3"="#a2a500ff")) +
+                             "Without cluster 2"="#00b0f6ff"))+#,"Without cluster 3"="#a2a500ff")) +
   theme(legend.title = element_blank())
 
 ggsave("output/farm_msi_compare.png",
