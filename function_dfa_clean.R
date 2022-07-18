@@ -203,7 +203,8 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
                  index = "alllong", alphaBeale = 0.1)
   
   nb_group_best <- max(nb$Best.partition)
-  all_partition <- nb$Best.partition
+  all_partition <- kmeans(mat_loading,centers = 3, nstart = 1000)$cluster
+  #all_partition <- nb$Best.partition
   
   # Check cluster stability
 
@@ -343,14 +344,9 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
                                        y <- max(table(x))/length(x)
                                        return(y)
                                      })
-  all_partition_group <- apply(all_partition2, 2,
-                               FUN = function(x){
-                                 xmax <- as.numeric(names(which.max(table(x))))
-                                 return(xmax)
-                               })
-  if(length(unique(all_partition_group))!=nb_group){
-    all_partition_group <- all_partition2[1,]
-  }
+
+  all_partition_group <- all_partition2[1,]
+  
   
   # Compute PCA to get axes of the graph
   
@@ -636,15 +632,15 @@ core_dfa <- function(data_ts, # Dataset of time series
 # III) Main function for the DFA-clust analysis
 
 make_dfa <- function(data_ts, # Dataset of time series
-                     data_ts_se, # Dataset of standard error of time series 
+                     data_ts_se, # Dataset of observation error of time series 
                      nfac=0, # Number of trends for the DFA, 0 to estimate the best number of trends
                      mintrend=1, # Minimum number of trends to test
                      maxtrend=5, # Maximum number of trends to test
                      AIC=TRUE, # Display AIC
                      species_sub,  # Species names
                      nboot=500, # Number of bootstrap for clustering
-                     silent = TRUE,
-                     control = list()
+                     silent = TRUE, # Silence optimisation
+                     control = list() # Specify changes for DFA control options
                      )
 {
   
