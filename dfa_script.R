@@ -170,11 +170,70 @@ for(i in 1:nrow(table_res_all)){
   table_res_all$st_error[i] <- res_lm[2,2]
   table_res_all$pvalue[i] <- res_lm[2,4]
 }
-table_res_all[,3:7] <- round(table_res_all[,3:7],4)
+table_res_all[,3:25] <- round(table_res_all[,3:25],4)
 
 summary(lm(Estimate~year, data=all_nfac[[11]][all_nfac[[11]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_all))$coef
 cor.test(all_nfac[[11]][all_nfac[[11]]$group=="g1","Estimate"],RES_all$MSI)
+
+all_farm_for <- rbind(data.frame(all_nfac[[2]],group="all"),
+                      data.frame(farm_nfac[[2]],group="farm"),
+                      data.frame(forest_nfac[[2]],group="forest"))
+
+lt1 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X1" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X8" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X1",]$value,
+                                                      all_nfac[[2]][all_nfac[[2]]$variable=="X8",]$value),3))), x=2010, y=1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt2 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X2" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X10" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X2",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X10",]$value),3))), x=2010, y=-1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt3 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X3" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X18" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X3",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X18",]$value),3))), x=2010, y=1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt4 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X1" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X11" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X1",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X11",]$value),3))), x=2010, y=1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt5 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X2" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X8" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X2",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X8",]$value),3))), x=2010, y=1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt6 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X3" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X5" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X3",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X5",]$value),3))), x=2010, y=-1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+lt7 <- ggplot(all_farm_for,aes(Year,value)) +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X4" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X18" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X4",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X18",]$value),3))), x=2010, y=1) +
+  theme_modern() + theme(axis.title.x = element_blank())
+
+png(file="output/saving_plot.png", width=3000, height=2200,res = 300)
+multiplot(lt1, lt2, lt3, lt4,
+          lt5, lt6, lt7, cols=2)
+dev.off()
+
 
 
 # test simulation function
