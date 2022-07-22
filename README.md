@@ -799,4 +799,86 @@ all_nfac[[7]]
 
 ```
 
+#### Compute the MSI to compare
+
+##### Farmland birds
+
+```{r}
+
+# Select species
+
+ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                             c( "FALTIN","VANVAN","ALAARV","HIRRUS","CORFRU",
+                                                "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
+                                                "STUVUL","LINCAN","EMBCIT","EMBHOR","PASMON"),])
+                                                
+# Run MSI
+                                                
+RES_farmland <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
+
+# Plot MSI
+                     
+ggplot(RES_farmland, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+  
+```
+
+##### Woodland birds
+                                                
+```{r}                            
+
+# Select species
+                                                
+ts_forest <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                      c("ACCNIS","TETBON","TRIOCH","COLOEN",
+                                                        "DENMAJ","DRYMAR","PICVIR","JYNTOR",
+                                                        "DRYMIN","PICTRI","NUCCAR","GARGLA",
+                                                        "PERATE","LOPCRI","POEPAL","POEMON",
+                                                        "SITEUR","CERFAM","TURVIS","PHOPHO",
+                                                        "PHYCOL","PHYSIB","REGREG","FICHYP",
+                                                        "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
+
+# Run MSI
+                                                        
+RES_forest <- MSI_MC_func(ts_forest,SEbaseyear=1998, plotbaseyear=1998)
+
+# Plot MSI
+
+ggplot(RES_forest, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+
+```
+
+##### Common birds
+
+```{r}
+
+# Select species
+
+ts_all <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
+                                                   species_all$code_sp,])
+
+# Run MSI
+
+RES_all <- MSI_MC_func(ts_all,SEbaseyear=1998, plotbaseyear=1998)
+
+# Plot MSI
+
+ggplot(RES_all, aes(x=year, y=MSI))+
+  geom_point(size=3)+
+  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
+  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
+  geom_line(aes(y=Trend), size=1)+ theme_modern() +
+  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+
+```
+
 

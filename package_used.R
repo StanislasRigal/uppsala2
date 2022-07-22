@@ -1,3 +1,5 @@
+# Minimal packages for the main function
+
 library(TMB)
 library(mvtnorm)
 library(reshape2)
@@ -12,6 +14,8 @@ library(maditr)
 library(see)
 library(scales)
 library(ggrepel)
+
+# Other packages used in the README.md
 
 library(rstan)
 library(sf)
