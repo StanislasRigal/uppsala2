@@ -27,11 +27,17 @@ source('function_dfa_clean.R')
 ```{r}
 
 seed_id <- 0 # starting seed
+
 id_vec <- c() # vactor of species id
+
 n_sp_init <- 15 # number of species time series
+
 nb_group_exp <- 2 # number of expected clusters
+
 cum_perc <- c(10,5) # distribution of species among clusters
+
 n_y <- 20 # number of time steps
+
 n_lt <- 4 # number of latent trends
 
 ```
@@ -41,20 +47,29 @@ n_lt <- 4 # number of latent trends
 ```{r}
 
 y_init <- data.frame(t(rep(NA,n_y))) 
+
 for(i in 1:n_lt){
+
     set.seed(i+10)
+
     y_ts <- c()
+
     y_ts[1] <- rnorm(n = 1, mean = 0, sd = 1)
+
     for (t in 2:n_y) {
+
         r.w <- rnorm(n = 1, mean = 0, sd = 1)
+
         y_ts[t] <- y_ts[t - 1] + r.w
+
     }
+
     y_ts <- y_ts + abs(min(y_ts))+1
+
     y_ts <- exp(scale(log(y_ts)))
-    #max_new <- max(y_ts) - mean(y_ts)/4
-    #min_new <- min(y_ts) + mean(y_ts)/4
-    #y_ts <- scales::rescale(y_ts, to=c(min_new, max_new))
+
     y_init[i,] <- y_ts
+
 }
 
 ```
@@ -64,19 +79,30 @@ for(i in 1:n_lt){
 ```{r}
 
 for(g in 1:nb_group_exp){
+    
     nb_sp_g <- cum_perc[g]
+    
     assign(paste0("nb_sp_g",g),nb_sp_g)
+    
     id_vec <- c(id_vec,rep(g,nb_sp_g))
+    
     for(lt in 1:n_sp_init){
+    
         seed_id <- seed_id + 1
+    
         set.seed(seed_id)
+    
         mean_u_g <- runif(1, -1, 1)
+    
         lf_u_g <- rnorm(nb_sp_g, mean_u_g, 0.1)
+    
         assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
+        
         assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
 
     }
 }
+
 id_vec <- id_vec[1:n_sp_init]
 
 ```
@@ -86,27 +112,46 @@ id_vec <- id_vec[1:n_sp_init]
 ```{r}
 
 y <- data.frame(t(rep(NA,(n_y+2))))
+
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
 
 for(i in 1:n_sp_init){ # get simulated ts from loadings
+    
     set.seed(i)
+    
     noise <- rnorm(n_y,0,0.01)
+    
     y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
+    
     y_ts <- rep(0,n_y)
+    
     g <- id_vec[i]
+    
     i_g <- which(which(id_vec==g)==i) # new index for i in group g
+    
     for(lt in 1:n_lt){
+    
         lf_u_g <- get(paste0("lf_u",lt,"_g",g))
+    
         y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
+    
     }
+    
     y_ts <- y_ts + noise
+    
     y_ts <- y_ts + abs(min(y_ts)) + 1
+    
     y_ts <- exp(scale(log(y_ts)))
+    
     y[i,2:(n_y+1)] <- y_ts
+    
     y[i,(n_y+2)] <- id_vec[i]
+    
     obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0,0.1))
+    
     obs_se[obs_se>1] <- 1
 }  
+
 
 ```
 
@@ -115,9 +160,13 @@ for(i in 1:n_sp_init){ # get simulated ts from loadings
 ```{r}
 
 y_ex <- data.table(y[,1:(n_y+1)]) # species time series
+
 obs_se_ex <- data.table(obs_se) # observation error on time series
+
 names(y_ex) <- names(obs_se_ex) <- c("code_sp",1995:(1995+n_y-1)) # add years as column name
+
 y_ex$code_sp <- obs_se_ex$code_sp <- sprintf("SP%03d",1:nrow(y_ex)) # add species code
+
 species_ex <- data.frame(name_long=sprintf("species %03d",1:nrow(y_ex)), code_sp=y_ex$code_sp) # species names and code
 
 ```
@@ -126,7 +175,7 @@ species_ex <- data.frame(name_long=sprintf("species %03d",1:nrow(y_ex)), code_sp
 
 Three datasets should be given as input for the main function 'make_dfa':
 
-- 'data_ts' contains species time-series and should be provided as a 'data.table' with species time-series in row and the first column for species names'codes and years as column names :
+- `data_t` contains species time-series and should be provided as a 'data.table' with species time-series in row and the first column for species names'codes and years as column names :
 
 ```{r}
 
