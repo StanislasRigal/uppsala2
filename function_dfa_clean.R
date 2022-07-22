@@ -204,7 +204,6 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   
   nb_group_best <- max(nb$Best.partition)
   all_partition <- kmeans(mat_loading,centers = 3, nstart = 1000)$cluster
-  #all_partition <- nb$Best.partition
   
   # Check cluster stability
 
@@ -643,10 +642,6 @@ make_dfa <- function(data_ts, # Dataset of time series
                      control = list() # Specify changes for DFA control options
                      )
 {
-  
-  # data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list()
-  # data_ts=y_all;data_ts_se=obs_se_all;nfac=15;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_all;nboot=100;silent = TRUE;control = list()
-  # data_ts=y_rand;data_ts_se=obs_se_rand;nfac=0;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_rand;nboot=100;silent = TRUE;control = list()
   
   # Save first year for plot
   
@@ -1151,15 +1146,7 @@ simul_rand_dfa <- function(n_y = 20, # number of year
 }
 
 # Multiple plot function
-#
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
+
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
   
