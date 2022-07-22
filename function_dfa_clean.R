@@ -23,7 +23,8 @@ template<class Type>
   DATA_MATRIX(Z_pred);
   DATA_UPDATE(Z_pred);
   
-  DATA_INTEGER(rwOrder);
+  DATA_MATRIX(W); // Weighting matrix to compute mean trends over species.
+  DATA_UPDATE(W);
   
   // Parameters
   PARAMETER_VECTOR(log_re_sp); // log of sd for random effect by species
@@ -36,6 +37,9 @@ template<class Type>
   
   // Cluster center
   matrix<Type> x_pred(Z_pred.rows(), nT);
+  matrix<Type> x_pred2(W.rows(), nT);
+  matrix<Type> WZ(W.rows(), Z.cols());
+  
 
   // Mean of latent trends
   matrix<Type> x_sum(x.rows(), 1);
@@ -49,7 +53,6 @@ template<class Type>
   // Optimization target: negative log-likelihood (nll)
   Type nll = 0.0;
   
-  if (rwOrder == 1) {
     // Latent random walk model. x(0) = 0. 
     for(int t = 1; t < x.cols(); ++t){
       for(int f = 0; f < x.rows(); ++f){
@@ -62,15 +65,7 @@ template<class Type>
       }
       }
     }
-  } 
-  if (rwOrder == 2) { // Experimental
-    for(int t = 2; t < x.cols(); ++t){ // Define prior for x(f, 1) ??
-      for(int f = 0; f < x.rows(); ++f) {
-        nll -= dnorm(x(f, t), -2 * x(f, t-1) + x(f, t-2), Type(1), true);
-      }
-    }
-  }
-
+  
   for (int f = 0; f < x.rows(); ++f) {
     x_sum(f) = x.row(f).sum();
     SIMULATE {
@@ -87,10 +82,14 @@ template<class Type>
   }  
   
   // Cluster center
+  WZ = W * Z;
   x_pred.col(0) = Z_pred * (-x_sum);
+  x_pred2.col(0) = WZ * (-x_sum);
   for (int t=1; t < nT; ++t) {
     x_pred.col(t) = Z_pred * (x.col(t));
+    x_pred2.col(t) = WZ * (x.col(t));
   } 
+  
   
   
   // Observation model
@@ -122,6 +121,7 @@ template<class Type>
   ADREPORT(re_sp);
   ADREPORT(x_sp);
   ADREPORT(x_pred);
+  ADREPORT(x_pred2);
   ADREPORT(Z_pred);
   
   // Report simulated values
@@ -980,12 +980,13 @@ core_dfa <- function(data_ts, # Dataset of time series
   # Initialise Z_pred, actual values will be provided by group_from_dfa2
   
   Z_predinit <- matrix(rep(0, 10 * nfac), ncol = nfac)
-  
+  W_init <- rbind(1/nrow(data_ts),       # Overall mean, useful to get geometric mean trend across all species
+                  rep(0, nrow(data_ts))) # Two mean trends can currently computed, add more rows to W_init to compute more mean trends.
   # SE is on log-scale, so no transformation needed
-  
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se),
-                  Z_pred = Z_predinit, rwOrder = 1)
+                  Z_pred = Z_predinit, 
+                  W = W_init)
   
   # Prepare parameters for DFA
   
@@ -1012,6 +1013,9 @@ core_dfa <- function(data_ts, # Dataset of time series
   optList = vector(con$nstart * length(con$method), mode = 'list')
   names(optList) = rep(con$method, con$nstart)
 
+  tmbList = vector(con$nstart * length(con$method), mode = 'list')
+  names(tmbList) = rep(con$method, con$nstart)
+  
   
   for (i in 1:length(optList)) {
     log_re_sp <- runif(ny, -1, 0)
@@ -1038,6 +1042,7 @@ core_dfa <- function(data_ts, # Dataset of time series
     )
     if (names(optList)[i] == 'NLMINB')
       optList[[i]]$value = optList[[i]]$objective
+    tmbList[[i]] = tmbObj
   }
   convergence = sapply(optList, FUN = `[[`, 'convergence')
   print(convergence)
@@ -1054,12 +1059,13 @@ core_dfa <- function(data_ts, # Dataset of time series
 
   ind.best =  which.min((nll - 1e6 * sign(min(nll)) * !eligible)) # Return the smallest loglikelihood fit that meets other convergence criteria
   tmbOpt = optList[[ind.best]] 
+  tmbObj = tmbList[[ind.best]]
   
   # Jonas: I suggest we return the full nll, convergence, and maxgrad vectors at the end of the function. It's useful to have for checking stability of the model.
   
   sdRep_test_all <- sdreport(tmbObj)
   sdRep_test <- summary(sdRep_test_all)
-  
+  browser()
   # Check convergence
   conv <- tmbOpt$convergence
   if(tmbOpt$convergence != 0){warning(paste0("Convergence issue:", tmbOpt$message))}
