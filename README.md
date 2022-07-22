@@ -239,15 +239,15 @@ control = list()) # Specify changes for DFA control options
 
 The columns are set as follows:
 
-'code_sp': code for species names
-'Year': year
-'value_orig': input values for species time-series
-'se_orig': input values for observation error of species time-series
-'value': back transformed values for species time-series (should be identical to 'value_orig')
-'se.value':  back transformed values for species time-series (should be identical to 'se_orig')
-'pred.value': predicted values for species time-series from DFA
-'pred_se.value': predicted values for standard error of species time-series from DFA
-'name_long': species names
+- `code_sp`: code for species names
+- `Year`: year
+- `value_orig`: input values for species time-series
+- `se_orig`: input values for observation error of species time-series
+- `value`: back transformed values for species time-series (should be identical to `value_orig`)
+- `se.value`:  back transformed values for species time-series (should be identical to `se_orig`)
+- `pred.value`: predicted values for species time-series from DFA
+- `pred_se.value`: predicted values for standard error of species time-series from DFA
+- `name_long`: species names
 
 ```{r}
 
