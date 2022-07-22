@@ -173,9 +173,9 @@ species_ex <- data.frame(name_long=sprintf("species %03d",1:nrow(y_ex)), code_sp
 
 ### Data specification
 
-Three datasets should be given as input for the main function 'make_dfa':
+Three datasets should be given as input for the main function `make_dfa`:
 
-- `data_t` contains species time-series and should be provided as a 'data.table' with species time-series in row and the first column for species names'codes and years as column names :
+- `data_t` contains species time-series and should be provided as a `data.table` with species time-series in row and the first column for species names' codes and years as column names :
 
 ```{r}
 
@@ -185,7 +185,7 @@ head(data_ts)
 
 ```
 
-- 'data_ts_se' contains observation errors of species time-series. It should be provided as a 'data.table' with species time-series in row and the first column for species names'codes and years as column names:
+- `data_ts_se` contains observation errors of species time-series. It should be provided as a `data.table` with species time-series in row and the first column for species names' codes and years as column names:
 
 ```{r}
 
@@ -195,7 +195,7 @@ head(data_ts_se)
 
 ```
 
-'species_sub' contains species names. It should be provided as a 'data.frame' with species in row, the first column for complete species names and the second column for species names'codes:
+- `species_sub` contains species names. It should be provided as a `data.frame` with species in row, the first column for complete species names and the second column for species names' codes:
 
 ```{r}
 
@@ -210,15 +210,25 @@ head(species_sub)
 ```{r}
 
 ex_dfa_clust <- make_dfa(data_ts = data_ts, # Dataset of time series
+
 data_ts_se = data_ts_se, # Dataset of observation error of time series 
+
 species_sub = species_sub, # Species names
+
 # optional variables
+
 nfac=0, # Number of trends for the DFA, 0 to estimate the best number of trends
+
 mintrend=1, # Minimum number of trends to test
+
 maxtrend=5, # Maximum number of trends to test
+
 AIC=TRUE, # Display AIC
+
 nboot=500, # Number of bootstrap for clustering
+
 silent = TRUE, # Silence optimisation
+
 control = list()) # Specify changes for DFA control options
 
 ```
