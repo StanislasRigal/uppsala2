@@ -11,25 +11,36 @@
 source("package_used.R")
 
 # Load functions for time-series
+
 source("function_ts.R")
 
 # Load functions for Dynamic Factor Analysis (DFA) with TMB
+
 source('function_dfa_clean.R')
 
 ```
 
-### Reproducible data
+### Reproducible time series
+
+#### Set parameters
 
 ```{r}
-seed_id <- 0
-id_vec <- c()
-n_sp_init <- 15
-nb_group_exp <-2
-cum_perc <- c(10,5)
-n_y <- 20
-n_lt <- 4
 
-y_init <- data.frame(t(rep(NA,n_y))) # latent trends
+seed_id <- 0 # starting seed
+id_vec <- c() # vactor of species id
+n_sp_init <- 15 # number of species time series
+nb_group_exp <- 2 # number of expected clusters
+cum_perc <- c(10,5) # distribution of species among clusters
+n_y <- 20 # number of time steps
+n_lt <- 4 # number of latent trends
+
+```
+
+#### Simulate latent trends
+
+```{r}
+
+y_init <- data.frame(t(rep(NA,n_y))) 
 for(i in 1:n_lt){
     set.seed(i+10)
     y_ts <- c()
@@ -46,6 +57,12 @@ for(i in 1:n_lt){
     y_init[i,] <- y_ts
 }
 
+```
+
+#### Simulate cluster barycentres
+
+```{r}
+
 for(g in 1:nb_group_exp){
     nb_sp_g <- cum_perc[g]
     assign(paste0("nb_sp_g",g),nb_sp_g)
@@ -61,6 +78,12 @@ for(g in 1:nb_group_exp){
     }
 }
 id_vec <- id_vec[1:n_sp_init]
+
+```
+
+#### Simulate species time series
+
+```{r}
 
 y <- data.frame(t(rep(NA,(n_y+2))))
 obs_se <- data.frame(t(rep(NA,(n_y+1))))
@@ -85,12 +108,17 @@ for(i in 1:n_sp_init){ # get simulated ts from loadings
     obs_se[obs_se>1] <- 1
 }  
 
+```
 
-y_ex <- data.table(y[,1:(n_y+1)])
-obs_se_ex <- data.table(obs_se)
-names(y_ex) <- names(obs_se_ex) <- c("code_sp",1995:(1995+n_y-1))
-y_ex$code_sp <- obs_se_ex$code_sp <- sprintf("SP%03d",1:nrow(y_ex))
-species_ex <- data.frame(name_long=sprintf("species %03d",1:nrow(y_ex)), code_sp=y_ex$code_sp)
+#### Specify data in the riht format
+
+```{r}
+
+y_ex <- data.table(y[,1:(n_y+1)]) # species time series
+obs_se_ex <- data.table(obs_se) # observation error on time series
+names(y_ex) <- names(obs_se_ex) <- c("code_sp",1995:(1995+n_y-1)) # add years as column name
+y_ex$code_sp <- obs_se_ex$code_sp <- sprintf("SP%03d",1:nrow(y_ex)) # add species code
+species_ex <- data.frame(name_long=sprintf("species %03d",1:nrow(y_ex)), code_sp=y_ex$code_sp) # species names and code
 
 ```
 
@@ -148,19 +176,62 @@ control = list()) # Specify changes for DFA control options
 
 ### Display results
 
+#### Species time-series
+
+The columns are set as follows:
+
+'code_sp': code for species names
+'Year': year
+'value_orig': input values for species time-series
+'se_orig': input values for observation error of species time-series
+'value': back transformed values for species time-series (should be identical to 'value_orig')
+'se.value':  back transformed values for species time-series (should be identical to 'se_orig')
+'pred.value': predicted values for species time-series from DFA
+'pred_se.value': predicted values for standard error of species time-series from DFA
+'name_long': species names
+
 ```{r}
 
-# Species time-series
+head(ex_dfa_clust[[1]])
 
-head(ex_dfa_clust[[1]]) # code_sp: species names'code; Year: year; value_orig: input values for species time-series; se_orig: input values for observation error of species time-series; value: back transformed values for species time-series (should be identical to value_orig); se.value:  back transformed values for species time-series (should be identical to value_orig); pred.value: predictided values for species time-series from DFA, pred_se.value: predictided values for standard error of species time-series from DFA; name_long: species names.
+```
 
-# DFA latent trends
+#### DFA latent trends
 
-head(ex_dfa_clust[[2]]) # Year: year; variable: latent trend id; value: latent trend values; se.value: standard error of latent trends; rot_tr.value: rotated values for latent trends.
+The columns are set as follows:
 
-# DFA loading factors
+'Year': year
+'variable': latent trend id
+'value': latent trend values
+'se.value': standard error of latent trends
+'rot_tr.value': rotated values for latent trends
 
-head(ex_dfa_clust[[3]]) # code_sp: species names'code; variable: latent trend id; value: loading factors; se.value: standard error of loading factors; name_long: species names.
+
+```{r}
+
+head(ex_dfa_clust[[2]])
+
+```
+
+#### DFA loading factors
+
+The columns are set as follows:
+
+'code_sp': code for species names
+'variable': latent trend id
+'value': loading factors
+'se.value': standard error of loading factors
+'name_long': species names
+
+```{r}
+
+head(ex_dfa_clust[[3]])
+
+```
+
+#### Plots
+
+```{r}
 
 # Plot species time-series
 
@@ -183,6 +254,12 @@ ex_dfa_clust[[7]][[1]]
 ex_dfa_clust[[7]][[2]]$g1
 ex_dfa_clust[[7]][[2]]$g2
 
+```
+
+#### Detailed information on DFA
+
+```{r}
+
 # Akaike information criterion (AIC) of DFA
 
 ex_dfa_clust$aic # or ex_dfa_clust[[8]]
@@ -191,9 +268,29 @@ ex_dfa_clust$aic # or ex_dfa_clust[[8]]
 
 head(ex_dfa_clust$sdRep) # or head(ex_dfa_clust[[9]])
 
-# Results of species clustering
+```
 
-head(ex_dfa_clust$group[[1]][[1]]) # code_sp: species names'code; PC1: coordinate on PCA first axis; PC2: coordinate on PCA second axis; group: cluster id; Xn: rotated loading factors for each latent trend n; uncert: species stability into its cluster; name_long: species names.
+#### Main results of species clustering
+
+The columns are set as follows:
+
+'code_sp': code for species names
+'PC1': coordinate on PCA first axis
+'PC2': coordinate on PCA second axis
+'group': cluster id
+'Xn': rotated loading factors for each latent trend n
+'uncert': species stability into its cluster
+'name_long': species names
+
+```{r}
+
+head(ex_dfa_clust$group[[1]][[1]])
+
+```
+
+#### Detail information on clustering
+
+```{r}
 
 # Cluster barycentres
 
@@ -219,7 +316,6 @@ ex_dfa_clust$group[[4]]
 
 head(ex_dfa_clust[[11]])
 
-
 ```
 
 
@@ -227,8 +323,11 @@ head(ex_dfa_clust[[11]])
 
 ### Load and prepare data
 
+#### Bird data
+
 ```{r}
-# Download extract and load data from https://www.gbif.org/occurrence/download?dataset_key=91fa1a0d-a208-40aa-8a6e-f2c0beb9b253 (an free account is necessary) (Type: Darwin Core Archive)
+
+# Download and extract data from https://www.gbif.org/occurrence/download?dataset_key=91fa1a0d-a208-40aa-8a6e-f2c0beb9b253 (an free account is necessary) (Type: Darwin Core Archive)
 
 bird_se_raw <- read.csv("raw_data/occurrence.txt", header = T, sep="\t")
 
@@ -240,7 +339,7 @@ bird_se_clean <- bird_se_raw[bird_se_raw$class=="Aves",c("class","order","family
                                                             "day","month","year","taxonKey","speciesKey","countryCode",
                                                             "level1Gid","level2Gid","iucnRedListCategory")]
 
-# add a code by species from species name
+# Add a code by species from species name
 
 species_data <- data.frame(name_long = unique(bird_se_clean$species[bird_se_clean$taxonRank != "GENUS"]))
 species_data$code_sp <- paste0(toupper(substr(species_data$name_long, 1, 3)),
@@ -259,9 +358,13 @@ species_data$order <- bird_se_clean$order[match(species_data$code_sp, bird_se_cl
 species_data$family <- bird_se_clean$family[match(species_data$code_sp, bird_se_clean$code_sp)]
 species_data$iucnRedListCategory <- bird_se_clean$iucnRedListCategory[match(species_data$code_sp, bird_se_clean$code_sp)]
 
+```
 
+#### Geographical coordinates and routes
 
-# create route number from coordinate
+```{r}
+
+# Create route numbers from coordinates
 
 route_data <- paste0(bird_se_clean$decimalLatitude, sep="_", bird_se_clean$decimalLongitude)
 
@@ -271,13 +374,7 @@ route_data <- data.frame(code_route = paste0("R",str_pad(1:length(unique(route_d
 route_data$lat <- as.numeric(sub("_.*", "", route_data$coordinate_chr))
 route_data$lon <- as.numeric(sub(".*_", "", route_data$coordinate_chr))
 
-# view route on map, need to know the projection
-
-require(sf)
-require(rnaturalearth)
-require(ggplot2)
-require(sp)
-require(rgdal)
+# View routes on the map
 
 worldmap <- ne_countries(scale = 'medium', type = 'countries',returnclass = 'sf')
 sweden_map_wgs84 <- worldmap[worldmap$sovereign=="Sweden",]
@@ -303,7 +400,7 @@ route_data <- merge(route_data, route_data_swe, by="code_route", all=T)
 names(route_data)[3:8] <- c("lat_wgs", "lon_wgs", "lon_moll", "lat_moll", "lon_swe", "lat_swe")
 route_data$coordinate_chr <- NULL
 
-# associate routes with the main dataset
+# Associate routes with the main dataset
 
 bird_se_clean <- merge(bird_se_clean, route_data[,c("code_route", "lat_wgs", "lon_wgs")],
                        by.x = c("decimalLatitude", "decimalLongitude"), by.y = c("lat_wgs", "lon_wgs"), all.x = T)
@@ -311,12 +408,13 @@ bird_se_clean <- merge(bird_se_clean, route_data[,c("code_route", "lat_wgs", "lo
 route_data$level1Gid <- bird_se_clean$level1Gid[match(route_data$code_route, bird_se_clean$code_route)]
 route_data$level2Gid <- bird_se_clean$level2Gid[match(route_data$code_route, bird_se_clean$code_route)]
 
+```
 
-# associate route and region
+#### Ecoregions
 
-# require(remotes)
-# remotes::install_github("filipwastberg/swemaps2")
-require(swemaps2)
+````{r}
+
+# Associate routes and regions
 
 municip_data <- municipality
 municip_data <- sf::st_transform(municip_data, "+init=epsg:3006")
@@ -333,7 +431,7 @@ equival <- data.frame(ln_kod2 = as.character(levels(as.factor(route_data$ln_kod)
 route_data <- merge(route_data,equival, by="level1Gid", all.x=T)
 route_data$ln_kod[is.na(route_data$ln_kod)] <- route_data$ln_kod2[is.na(route_data$ln_kod)]
 
-# ecoregion from https://doi.org/10.1016/j.landurbplan.2020.103838
+# Add ecoregions from https://doi.org/10.1016/j.landurbplan.2020.103838
 
 equival2 <- data.frame(ln_kod = as.character(levels(as.factor(route_data$ln_kod))),
                        ecoreg = c(rep("south",12),"north",rep("south",2),rep("north",6)),
@@ -343,8 +441,8 @@ equival2 <- data.frame(ln_kod = as.character(levels(as.factor(route_data$ln_kod)
 
 route_data <- merge(route_data,equival2, by="ln_kod", all.x=T)
 
-# check
-require(viridis)
+# Plot map of regions and ecoregions
+
 ggplot() + geom_sf(data=sweden_map_swe) +
   geom_tile(data = route_data, aes(x=lon_swe, y=lat_swe, fill=ln_kod),
             width=25000, height=25000, alpha=0.5) + scale_fill_viridis(discrete = T) +
@@ -358,9 +456,14 @@ ggplot() + geom_sf(data=sweden_map_swe) +
             width=25000, height=25000, alpha=0.5) + scale_fill_viridis(discrete = T) +
   theme_void() + coord_sf(datum=NA)
 
-# incorporate 0 in the data (species not present while the route is sample this given year)
+```
 
-require(maditr)
+#### Finalise bird dataset
+
+```{r}
+
+# Incorporate 0 in the dataset (species not present while the route was sampled a given year)
+
 bird_se_clean_tot <- dcast(bird_se_clean, countryCode+code_route+year~code_sp,
                            fun.aggregate = sum, value.var="organismQuantity")
 
@@ -382,15 +485,14 @@ bird_se$iucnRedListCategory <- species_data$iucnRedListCategory[match(bird_se$co
 
 ### Compute species time-series
 
-```{r}
-# look at abundance for each species
+#### Check species abundance
 
-bird_se <- readRDS("output/bird_se.rds")
+```{r}
+# Look at abundance for each species
 
 # Use data from 1998 because low number of routes monitored in 1996 and 1997: https://doi.org/10.34080/os.v17.22684 )
 
 bird_se_1998 <- droplevels(bird_se[bird_se$year>1997,])
-saveRDS(bird_se_1998,"output/bird_se_1998.rds")
 
 ab_sp <- as.data.frame(bird_se_1998 %>% group_by(code_sp) %>% summarize(ab_tot=sum(abund)))
 
@@ -401,359 +503,20 @@ ggplot(ab_sp, aes(x=reorder(code_sp, -ab_tot, sum), y=ab_tot)) +
 
 ab_sp2 <- ab_sp[order(ab_sp$ab_tot, decreasing = T),]
 ab_sp2$perc_cum <- cumsum(ab_sp2$ab_tot)/sum(ab_sp2$ab_tot)
-saveRDS(ab_sp2,"output/ab_sp2.rds")
 
-# time-series from the SBBS
+```
 
-## example for one species
+#### Compute species time series
 
-data_ex <- droplevels(bird_se_1998[bird_se_1998$code_sp=="CORFRU",])
-timestep <- length(levels(as.factor(data_ex$year)))-1
+```{r}
 
-glm1 <- glm(abund~as.factor(code_route)+as.factor(year), data=data_ex, family = quasipoisson)
-sglm1 <- summary(glm1)
-
-## as link function is log, estimates need to be back transformed
-
-coef_yr <- tail(matrix(sglm1$coefficients[,1]), timestep)
-coef_yr <- rbind(1, exp(coef_yr))
-
-error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-error_yr <- rbind(0, error_yr)
-
-## CIs
-
-require(arm)
-glm1.sim <- sim(glm1)
-lc_inf_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .025), timestep)))
-lc_sup_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .975), timestep)))
-
-## plot
-
-require(see)
-
-tab_plot <- data.frame(year=as.numeric(as.character(levels(as.factor(data_ex$year)))),
-                       value=coef_yr, error=error_yr, LL=lc_inf_sim, UL=lc_sup_sim)
-ggplot(tab_plot, aes(year, value)) + geom_line() +
-  geom_line(aes(y=LL), linetype="dashed") +
-  geom_line(aes(y=UL), linetype="dashed") +
-  ylab("Relative abundance") + xlab("Years") +
-  theme_modern()
-
-## for all species
-
-### for loop from French birds analysis
-
-listSp<-levels(as.factor(bird_se_1998$code_sp))
-  
-i<-0
-for (sp in listSp) {
-    print(i)
-  
-    i <- i + 1
-    
-    ## d data for species i
-    sp<-listSp[i]
-    d <- droplevels(bird_se_1998[bird_se_1998$code_sp==sp,])
-    
-    ## Occurrence
-    ## number of route followed by year
-    nb_route <- tapply(rep(1,nrow(d)),d$year,sum)
-    ## number of route with species i by year
-    nb_route_presence <- tapply(ifelse(d$abund>0,1,0),d$year,sum)
-    year <- as.numeric(as.character(levels(as.factor(d$year))))
-    firstY <- min(year)
-    lastY <- max(year)
-    timestep <- length(year)-1
-    
-    ## table for analysis result
-    threshold_occurrence <- 3
-    tab_ana <- data.frame(year=rep(year,2),val=c(nb_route,nb_route_presence),LL = NA,UL=NA,
-                       catPoint=NA,pval=NA,
-                       curve=rep(c("route","presence"),each=length(year)))
-    tab_ana$catPoint <- ifelse(tab_ana$val == 0,"0", ifelse(tab_ana$val < threshold_occurrence,
-                                                           "inf_threshold",NA))
-    
-    ## raw abundance
-    ## abundance by year
-    abund <- tapply(d$abund,d$year,sum)
-    ## table for figure
-    threshold_abundance <- 5
-    tab_fig <- data.frame(year=year,val=abund,LL = NA,UL=NA,catPoint=NA,pval=NA)
-    tab_fig$catPoint <- ifelse(tab_fig$val == 0,"0",ifelse(tab_fig$val < threshold_abundance,
-                                                           "inf_threshold",NA))
-    
-    # remove criteria
-    remove_sp <- FALSE
-    
-    ## if first year empty
-    if(tab_fig$val[1]==0){remove_sp <- TRUE}
-    
-    ## if four consecutive years empty
-    ab_vec <- paste(tab_fig$val,collapse="")
-    if(str_detect(ab_vec, "0000")){remove_sp <- TRUE}
-    
-    ## if less than consecutive years
-    ab_vec2 <- paste(sign(tab_fig$val),collapse="")
-    if(!str_detect(ab_vec2, "111")){remove_sp <- TRUE}
-    
-    if(anyNA(tab_fig$catPoint) & anyNA(tab_ana$catPoint[tab_ana$curve=="presence"]) & remove_sp==F){
-      
-      ## GLM abundance variation
-      glm1 <- glm(abund~as.factor(code_route)+as.factor(year),data=d,family=quasipoisson)
-      sglm1 <- summary(glm1)
-      
-      ## as link function is log, estimates need to be back transformed
-      coef_yr <- tail(matrix(sglm1$coefficients[,1]), timestep)
-      coef_yr <- rbind(1, exp(coef_yr))
-      error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-      error_yr <- rbind(0, error_yr)
-      pval <- c(1,tail(matrix(coefficients(sglm1)[,4]),timestep))
-      
-      ## CIs
-      glm1.sim <- sim(glm1)
-      ci_inf_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .025), timestep)))
-      ci_sup_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .975), timestep)))
-
-      ## table for result and figures
-      thresold_signif <- 0.05
-      tab_res <- data.frame(year,val=coef_yr,
-                         LL=ci_inf_sim,UL=ci_sup_sim,
-                         catPoint=ifelse(pval<thresold_signif,"significatif",NA),pval)
-      ## cleaning out of range CIs			   
-      tab_res$UL <- ifelse(nb_route_presence==0,NA,tab_res$UL)
-      tab_res$UL <-  ifelse(tab_res$UL == Inf, NA,tab_res$UL)
-      tab_res$UL <-  ifelse(tab_res$UL > 1.000000e+20, NA,tab_res$UL)
-      tab_res$UL[1] <- 1
-      tab_res$val <-  ifelse(tab_res$val > 1.000000e+20,1.000000e+20,tab_res$val)
-      
-      ## overdispersion index
-      dispAn <- sglm1$deviance/sglm1$null.deviance
-      
-      ## class uncertainity
-      if(dispAn > 2 | (median(nb_route_presence)<threshold_occurrence & median(abund)<threshold_abundance)) catIncert <- "Uncertain" else catIncert <-"Good"
-      vecLib <-  NULL
-      if(dispAn > 2 | median(nb_route_presence)<threshold_occurrence) {
-        if(median(nb_route_presence)<threshold_occurrence) {
-          vecLib <- c(vecLib,"too rare species")
-        }
-        if(dispAn > 2) {
-          vecLib <- c(vecLib,"deviance")
-        }
-      }
-      reason_uncert <-  paste(vecLib,collapse=" and ")
-      
-      ## table for saving results      
-      tab_tot <- data.frame(code_sp=sp, year = tab_res$year, nb_year=timestep,
-                          firstY=firstY, lastY=lastY,
-                          relative_abundance=round(tab_res$val,3),
-                          CI_inf = round(tab_res$LL,3), CI_sup = round(tab_res$UL,3),
-                          Standard_error = round(error_yr,4),
-                          p_value = round(tab_res$pval,3), signif = !is.na(tab_res$catPoint),
-                          nb_route,nb_route_presence,abundance=abund,
-                          mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
-                          valid = catIncert, uncertanity_reason = reason_uncert)
-      
-    }
-    else{
-      tab_tot <- data.frame(code_sp=sp, year = tab_res$year, nb_year=timestep,
-                            firstY=firstY, lastY=lastY,
-                            relative_abundance=NA,
-                            CI_inf = NA, CI_sup = NA,
-                            Standard_error = NA,
-                            p_value = NA, signif = NA,
-                            nb_route,nb_route_presence,abundance=abund,
-                            mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
-                            valid = NA, uncertanity_reason = NA)
-    }
-    
-    
-    if(sp==listSp[1]) {
-      glm_res <- tab_tot
-    } else  {
-      glm_res <- rbind(glm_res,tab_tot)
-    }
-} 
-
-# compare with https://www.fageltaxering.lu.se/resultat/trender/allatrendertillsammans
-ggplot(glm_res[glm_res$code_sp==levels(as.factor(glm_res$code_sp))[1],], aes(year, relative_abundance)) +
-  geom_line() + geom_line(aes(y=CI_inf), linetype="dashed") + geom_line(aes(y=CI_sup), linetype="dashed") +
-  ylab("Relative abundance") + xlab("Years") + theme_modern()
-
-
-# function for Swedish data
-
-get_ts <- function(data_bird_input){
-  
-    ## d data for species i
-    d <- droplevels(data_bird_input)
-    sp <- levels(as.factor(d$code_sp))
-    
-    ## Occurrence
-    ## number of route followed by year
-    nb_route <- tapply(rep(1,nrow(d)),d$year,sum)
-    ## number of route with species i by year
-    nb_route_presence <- tapply(ifelse(d$abund>0,1,0),d$year,sum)
-    year<-as.numeric(as.character(levels(as.factor(d$year))))
-    firstY <- min(year)
-    lastY <- max(year)
-    timestep <- length(year)-1
-    
-    ## table for analysis result
-    threshold_occurrence <- 3
-    tab_ana <- data.frame(year=rep(year,2),val=c(nb_route,nb_route_presence),LL = NA,UL=NA,
-                          catPoint=NA,pval=NA,
-                          curve=rep(c("route","presence"),each=length(year)))
-    tab_ana$catPoint <- ifelse(tab_ana$val == 0,"0", ifelse(tab_ana$val < threshold_occurrence,
-                                                            "inf_threshold",NA))
-    
-    ## raw abundance
-    ## abundance by year
-    abund <- tapply(d$abund,d$year,sum)
-    ## table for figure
-    threshold_abundance <- 5
-    tab_fig <- data.frame(year=year,val=abund,LL = NA,UL=NA,catPoint=NA,pval=NA)
-    tab_fig$catPoint <- ifelse(tab_fig$val == 0,"0",ifelse(tab_fig$val < threshold_abundance,
-                                                           "inf_threshold",NA))
-    
-    # remove criteria
-    remove_sp <- FALSE
-    
-    ## if first year empty
-    if(tab_fig$val[1]==0){remove_sp <- TRUE}
-    
-    ## if four consecutive years empty
-    ab_vec <- paste(tab_fig$val,collapse="")
-    if(str_detect(ab_vec, "0000")){remove_sp <- TRUE}
-    
-    ## if less than consecutive years
-    ab_vec2 <- paste(sign(tab_fig$val),collapse="")
-    if(!str_detect(ab_vec2, "111")){remove_sp <- TRUE}
-    
-    if(anyNA(tab_fig$catPoint) & anyNA(tab_ana$catPoint[tab_ana$curve=="presence"]) & remove_sp==F){
-      
-      ## GLM abundance variation
-      glm1 <- glm(abund~as.factor(code_route)+as.factor(year),data=d,family=quasipoisson)
-      sglm1 <- summary(glm1)
-      
-      ## mean-centered values
-      con.mat <- diag(length(year)) - 1/length(year)
-      colnames(con.mat) <- year#firstY:lastY
-      rg <- ref_grid(glm1, nuisance = 'code_route')
-      sglm2 <- summary(contrast(rg, as.data.frame(con.mat)))
-      
-      ## as link function is log, estimates need to be back transformed
-      # from sglm1 (first year set to 1 and se to 0)
-      coef_yr <- tail(matrix(sglm1$coefficients[,1]), timestep)
-      coef_yr <- rbind(1, exp(coef_yr))
-      error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-      error_yr <- rbind(0, error_yr)*coef_yr # approximated se values
-      log_error_yr <- tail(matrix(sglm1$coefficients[,2]), timestep)
-      log_error_yr <- rbind(0, log_error_yr)
-      pval <- c(1,tail(matrix(coefficients(sglm1)[,4]),timestep))
-      
-      # from sglm2 (mean value to 0)
-      coef_yr_m0 <- exp(sglm2$estimate)
-      error_yr_m0 <- sglm2$SE*coef_yr_m0 # approximated se values
-      log_error_yr_m0 <- sglm2$SE
-      pval_m0 <- sglm2$p.value
-      
-      ## CIs
-      glm1.sim <- sim(glm1)
-      ci_inf_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .025), timestep)))
-      ci_sup_sim <- c(1, exp(tail(apply(coef(glm1.sim),2, quantile, .975), timestep)))
-      
-      ## table for result and figures
-      thresold_signif <- 0.05
-      tab_res <- data.frame(year,val=coef_yr,val_m0=coef_yr_m0,
-                            LL=ci_inf_sim,UL=ci_sup_sim,
-                            catPoint=ifelse(pval<thresold_signif,"significatif",NA),pval)
-      ## cleaning out of range CIs			   
-      tab_res$UL <- ifelse(nb_route_presence==0,NA,tab_res$UL)
-      tab_res$UL <-  ifelse(tab_res$UL == Inf, NA,tab_res$UL)
-      tab_res$UL <-  ifelse(tab_res$UL > 1.000000e+20, NA,tab_res$UL)
-      tab_res$UL[1] <- 1
-      tab_res$val <-  ifelse(tab_res$val > 1.000000e+20,1.000000e+20,tab_res$val)
-      tab_res$val_m0 <-  ifelse(tab_res$val_m0 > 1.000000e+20,1.000000e+20,tab_res$val_m0)
-      
-      ## overdispersion index
-      dispAn <- sglm1$deviance/sglm1$null.deviance
-      
-      ## class uncertainity
-      if(dispAn > 2 | (median(nb_route_presence)<threshold_occurrence & median(abund)<threshold_abundance)) catIncert <- "Uncertain" else catIncert <-"Good"
-      vecLib <-  NULL
-      if(dispAn > 2 | median(nb_route_presence)<threshold_occurrence) {
-        
-        if(median(nb_route_presence)<threshold_occurrence) {
-          vecLib <- c(vecLib,"too rare species")
-        }
-        if(dispAn > 2) {
-          vecLib <- c(vecLib,"deviance")
-        }
-      }
-      reason_uncert <-  paste(vecLib,collapse=" and ")
-      
-      ## table for saving results      
-      tab_tot <- data.frame(code_sp=sp, year = tab_res$year, nb_year=timestep,
-                            firstY = firstY, lastY = lastY,
-                            relative_abundance = tab_res$val,
-                            CI_inf = tab_res$LL, CI_sup = tab_res$UL,
-                            Standard_error = error_yr,
-                            Log_SE = log_error_yr,
-                            p_value = tab_res$pval,
-                            relative_abundance_m0 = tab_res$val_m0,
-                            Standard_error_m0 = error_yr_m0,
-                            Log_SE_m0 = log_error_yr_m0,
-                            p_value_m0 = pval_m0, signif = !is.na(tab_res$catPoint),
-                            nb_route,nb_route_presence,abundance=abund,
-                            mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
-                            valid = catIncert, uncertanity_reason = reason_uncert)
-      
-    }
-    else{
-      tab_tot <- data.frame(code_sp=sp, year = year, nb_year=timestep,
-                            firstY=firstY, lastY=lastY,
-                            relative_abundance=NA,
-                            CI_inf = NA, CI_sup = NA,
-                            Standard_error = NA,
-                            p_value = NA, 
-                            relative_abundance_m0 = NA,
-                            Standard_error_m0 = NA,
-                            Log_SE_m0 = NA,
-                            p_value_m0 = NA,signif = NA,
-                            nb_route,nb_route_presence,abundance=abund,
-                            mediane_occurrence=median(nb_route_presence), mediane_ab=median(abund) ,
-                            valid = NA, uncertanity_reason = NA)
-    }
-    
-    return(tab_tot)
-} 
-
-# require(plyr) but need to be done before loading dplyr, see package script
-
-ts_test <- ddply(droplevels(bird_se_1998[bird_se_1998$code_sp %in% levels(as.factor(bird_se$code_sp))[1:5]]),
-                 .(code_sp), .fun=get_ts, .progress="text")
+# Compute time-series from the SBBS
 
 ts_bird_se_allcountry <- ddply(bird_se_1998, .(code_sp), .fun=get_ts, .progress="text")
 
-ts_bird_se_byreg <- ddply(droplevels(bird_se_1998[!is.na(bird_se_1998$ln_kod),]), .(code_sp, ln_kod), .fun=get_ts, .progress="text")
-ts_bird_se_byreg_clean <- ts_bird_se_byreg[which(!is.na(ts_bird_se_byreg$relative_abundance)),]
 
-ts_bird_se_byecoreg <- ddply(bird_se_1998, .(code_sp, ecoreg), .fun=get_ts, .progress="text")
-ts_bird_se_byecoreg_clean <- ts_bird_se_byecoreg[which(!is.na(ts_bird_se_byecoreg$relative_abundance)),]
+# Plot time-series for each species
 
-ts_bird_se_bysubecoreg <- ddply(bird_se_1998, .(code_sp, subecoreg), .fun=get_ts, .progress="text")
-ts_bird_se_bysubecoreg_clean <- ts_bird_se_bysubecoreg[which(!is.na(ts_bird_se_bysubecoreg$relative_abundance)),]
-
-
-# save outputs
-saveRDS(ts_bird_se_allcountry, file = "output/ts_bird_se_allcountry.rds")
-saveRDS(ts_bird_se_byreg, file = "output/ts_bird_se_byreg.rds")
-saveRDS(ts_bird_se_byecoreg, file = "output/ts_bird_se_byecoreg.rds")
-saveRDS(ts_bird_se_bysubecoreg, file = "output/ts_bird_se_bysubecoreg.rds")
-saveRDS(glm_res, file = "output/glm_res.rds")
-
-# plot
 for(i in 1:length(levels(as.factor(bird_se$code_sp)))){
   sp <- levels(as.factor(ts_bird_se_allcountry$code_sp))[i]
   gp <- ggplot(ts_bird_se_allcountry[ts_bird_se_allcountry$code_sp==sp,],
@@ -766,5 +529,159 @@ for(i in 1:length(levels(as.factor(bird_se$code_sp)))){
 }
 ```
 
+### DFA cluster analysis for Swedish birds
+
+#### Complete data
+
+```{r}
+
+# Species names with Swedish and English names
+
+species_data_en_se <- read.csv("output/species_data_en_se.csv", header = T)
+
+# Clean data 
+
+ts_bird_se_allcountry_data <- ts_bird_se_allcountry[which(!is.na(ts_bird_se_allcountry$relative_abundance) & ts_bird_se_allcountry$CI_inf!=0),]
+
+```
+
+#### Farmland birds
+
+```{r}
+
+# Species names and selection
+
+species_sub <- species_farm <-  droplevels(species_data[species_data$code_sp %in% c(
+  "FALTIN","VANVAN","ALAARV","HIRRUS","CORFRU",
+  "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
+  "STUVUL","LINCAN","EMBCIT","EMBHOR","PASMON"),])
+
+# Observation data for farmland birds
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+# Species time series
+
+y_farm <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+           
+# Observation error on species time series
+
+obs_se_farm <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+             code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
+
+```
+
+
+#### Woodland birds
+
+```{r}
+
+# Species names and selection
+
+species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %in% c(
+  "ACCNIS","TETBON","TRIOCH","COLOEN","DENMAJ","DRYMAR","PICVIR","JYNTOR",
+  "DRYMIN","PICTRI","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
+  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP",
+  "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
+
+# Observation data for woodland birds
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+# Species time series
+
+y_forest <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+           
+# Observation error on species time series
+
+obs_se_forest <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
+                
+```
+
+#### All common birds
+
+```{r}
+
+# Species names and selection (107 species in the SBS report)
+
+species_sub <- species_all <- droplevels(species_data[species_data$code_sp %in% c("ACCNIS","TETBON","TRIOCH","COLOEN", # forest
+                                                                                  "DENMAJ","DRYMAR","PICVIR","JYNTOR",
+                                                                                  "DRYMIN","PICTRI","NUCCAR","GARGLA",
+                                                                                  "PERATE","LOPCRI","POEPAL","POEMON",
+                                                                                  "SITEUR","CERFAM","TURVIS","PHOPHO",
+                                                                                  "PHYCOL","PHYSIB","REGREG","FICHYP",
+                                                                                  "ANTTRI","COCCOC","SPISPI","PYRPYR",
+                                                                                  "EMBRUS",
+                                                                                  "VANVAN","FALTIN","ALAARV","HIRRUS", # farmland
+                                                                                  "MOTFLA","SAXRUB","SYLCOM",
+                                                                                  "LANCOL","STUVUL","LINCAN","EMBCIT",
+                                                                                  "PASMON","CORFRU","ANTPRA","EMBHOR",
+                                                                                  "PODCRI","ARDCIN","ANAPLA","TADTAD", # others
+                                                                                  "CYGOLO","BUTBUT","CIRAER","LYRTET",
+                                                                                  "PHACOL","GRUGRU","GALCHL","FULATR",
+                                                                                  "HAEOST","PLUAPR","GALGAL","NUMARQ",
+                                                                                  "TRIGLA","ACTHYP","TRITOT","TRINEB",
+                                                                                  "CHRRID","COLPAL","STRDEC","CUCCAN",
+                                                                                  "APUAPU","JYNTOR","LULARB","DELURB",
+                                                                                  "CORCOX","CORCOR","COLMON","PICPIC",
+                                                                                  "AEGCAU","PARMAJ","CYACAE","TROTRO",
+                                                                                  "TURPIL","TURPHI","TURILI","TURMER",
+                                                                                  "OENOEN","LUSLUS","ERIRUB","LOCNAE",
+                                                                                  "ACRSCI","ACRPAL","ACRSCH","HIPICT",
+                                                                                  "SYLATR","SYLBOR","SYLCUR","PHYTRO",
+                                                                                  "MUSSTR","PRUMOD","MOTALB","MOTCIN",
+                                                                                  "CHLCHL","CARCAR","ACAFLA","CARERY",
+                                                                                  "FRICOE","FRIMON","EMBSCH","PASDOM"),])
+
+# Observation data for common birds
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+# Reselect species (104) as some are not in the estimated time series
+
+species_all <- droplevels(species_data[species_data$code_sp %in%
+                                         levels(as.factor(Obs$code_sp)),])
+                                         
+# Species time series
+
+y_all <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+           code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+           
+# Observation error on species time series
+           
+obs_se_all <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
+
+```
+
+#### Run the DFA-clustering analysis
+
+```{r}
+
+farm_nfac <- make_dfa(data_ts = y_farm, data_ts_se = obs_se_farm,
+                       species_sub = species_farm)
+                       
+forest_nfac <- make_dfa(data_ts = y_forest, data_ts_se = obs_se_forest,
+                         species_sub = species_forest)
+                         
+all_nfac <- make_dfa(data_ts = y_all, data_ts_se = obs_se_all,
+                       species_sub = species_all)
+                       
+```
+
+#### Display results
+
+```{r}
+
+farm_nfac[[7]]
+
+forest_nfac[[7]]
+
+all_nfac[[7]]
+
+```
 
 
