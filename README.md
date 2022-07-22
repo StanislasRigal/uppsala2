@@ -497,7 +497,7 @@ route_data$level2Gid <- bird_se_clean$level2Gid[match(route_data$code_route, bir
 
 #### Ecoregions
 
-````{r}
+```{r}
 
 # Associate routes and regions
 
