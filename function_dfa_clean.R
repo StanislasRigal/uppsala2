@@ -202,8 +202,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
                  index = "alllong", alphaBeale = 0.1)
   
   nb_group_best <- max(nb$Best.partition)
-  all_partition <- kmeans(mat_loading,centers = 3, nstart = 1000)$cluster
-  
+
   # Check cluster stability
 
   stability_cluster_gr <- list()
@@ -237,7 +236,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
       
       nb_group <- gr
       
-      all_partition2_all <- kmeans(mat_loading, nb_group, iter.max = 100)
+      all_partition2_all <- kmeans(mat_loading, nb_group, iter.max = 1000, nstart = 10)
       all_partition2 <- all_partition2_all$cluster
       all_partition2_centers <- all_partition2_all$centers
       
@@ -448,11 +447,11 @@ plot_group_boot <- function(nb_group, # Number of clusters
     test <- data_trend_group[data_trend_group$group==paste0("g",i),]
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
-    min1 <- min(test$Index-test$Index_SE) + (max(test$Index+test$Index_SE)-min(test$Index-test$Index_SE))/10
-    min2 <- min(test$Index-test$Index_SE)
+    min1 <- min(test$Index-1.96*test$Index_SE) + (max(test$Index+1.96*test$Index_SE)-min(test$Index-1.96*test$Index_SE))/10
+    min2 <- min(test$Index-1.96*test$Index_SE)
     ggplot(test, aes(x=year, y=Index)) +
       geom_line(col=hex_codes1[i], size=2) +
-      geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes1[i])+
+      geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill=hex_codes1[i])+
       xlab(NULL) + 
       ylab(NULL) + 
       annotate("text", x=mean(test$year), y=min1, label= paste0("Stability = ", round(stability_cluster_final[i],3))) +
@@ -489,11 +488,6 @@ plot_group_boot <- function(nb_group, # Number of clusters
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
                                  sdrep[grepl("x_pred2",row.names(sdrep)),])
   
-  # Set colour code by group
-  
-  n2 <- (length(unique(data_trend_group$group)) + 1)                                   
-  hex_codes2 <- hue_pal()(n2)
-  
   # Plot time-series of barycentres
   
   graph2 <- setNames(lapply(1:(nb_group+1), function(i){
@@ -504,20 +498,20 @@ plot_group_boot <- function(nb_group, # Number of clusters
     }
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
-    min1 <- min(test$Index-test$Index_SE) + (max(test$Index+test$Index_SE)-min(test$Index-test$Index_SE))/10
-    min2 <- min(test$Index-test$Index_SE)
+    min1 <- min(test$Index-1.96*test$Index_SE) + (max(test$Index+1.96*test$Index_SE)-min(test$Index-1.96*test$Index_SE))/10
+    min2 <- min(test$Index-1.96*test$Index_SE)
     if(i==1){
       ggplot(test, aes(x=year, y=Index)) +
-        geom_line(col=hex_codes2[length(hex_codes2)], size=2) +
-        geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes2[length(hex_codes2)])+
+        geom_line(col="black", size=2) +
+        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
         xlab(NULL) + 
         ylab(NULL) + 
         theme_modern() + 
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
     }else{
       ggplot(test, aes(x=year, y=Index)) +
-        geom_line(col=hex_codes2[(i-1)], size=2) +
-        geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes2[(i-1)])+
+        geom_line(col=hex_codes1[(i-1)], size=2) +
+        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill=hex_codes1[(i-1)])+
         xlab(NULL) + 
         ylab(NULL) + 
         annotate("text", x=mean(test$year), y=min1, label= paste0("Stability = ", round(stability_cluster_final[(i-1)],3))) +
@@ -699,7 +693,7 @@ make_dfa <- function(data_ts, # Dataset of time series
                      control = list() # Specify changes for DFA control options
                      )
 {
-  
+  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list()
   # Save first year for plot
   
   min_year <- as.numeric(colnames(data_ts)[2])
