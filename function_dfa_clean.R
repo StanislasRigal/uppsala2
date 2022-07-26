@@ -20,7 +20,8 @@ template<class Type>
   DATA_MATRIX(Z_pred);
   DATA_UPDATE(Z_pred);
   
-  DATA_INTEGER(rwOrder);
+  DATA_MATRIX(W); // Weighting matrix to compute mean trends over species.
+  DATA_UPDATE(W);
   
   // Parameters
   PARAMETER_VECTOR(log_re_sp); // log of sd for random effect by species
@@ -33,6 +34,8 @@ template<class Type>
   
   // Cluster center
   matrix<Type> x_pred(Z_pred.rows(), nT);
+  matrix<Type> x_pred2(W.rows(), nT);
+  matrix<Type> WZ(W.rows(), Z.cols());
 
   // Mean of latent trends
   matrix<Type> x_sum(x.rows(), 1);
@@ -46,7 +49,7 @@ template<class Type>
   // Optimization target: negative log-likelihood (nll)
   Type nll = 0.0;
   
-  if (rwOrder == 1) {
+  
     // Latent random walk model. x(0) = 0. 
     for(int t = 1; t < x.cols(); ++t){
       for(int f = 0; f < x.rows(); ++f){
@@ -59,15 +62,7 @@ template<class Type>
       }
       }
     }
-  } 
-  if (rwOrder == 2) { // Experimental
-    for(int t = 2; t < x.cols(); ++t){ // Define prior for x(f, 1) ??
-      for(int f = 0; f < x.rows(); ++f) {
-        nll -= dnorm(x(f, t), -2 * x(f, t-1) + x(f, t-2), Type(1), true);
-      }
-    }
-  }
-
+  
   for (int f = 0; f < x.rows(); ++f) {
     x_sum(f) = x.row(f).sum();
     SIMULATE {
@@ -84,10 +79,13 @@ template<class Type>
   }  
   
   // Cluster center
+  WZ = W * Z;
   x_pred.col(0) = Z_pred * (-x_sum);
+  x_pred2.col(0) = WZ * (-x_sum);
   for (int t=1; t < nT; ++t) {
     x_pred.col(t) = Z_pred * (x.col(t));
-  } 
+    x_pred2.col(t) = WZ * (x.col(t));
+  }  
   
   
   // Observation model
@@ -119,6 +117,7 @@ template<class Type>
   ADREPORT(re_sp);
   ADREPORT(x_sp);
   ADREPORT(x_pred);
+  ADREPORT(x_pred2);
   ADREPORT(Z_pred);
   
   // Report simulated values
@@ -436,7 +435,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
   
   data_trend_group <- data.frame(group=rep(paste0("g",1:nb_group),nT),
                                  year=sort(rep(c(min_year:(nT+min_year-1)), nb_group)),
-                                 sdrep[grepl("x_pred",row.names(sdrep)),])
+                                 sdrep[grepl("x_pred",row.names(sdrep)) & !grepl("x_pred2",row.names(sdrep)),])
   
   # Set colour code by group
   
@@ -483,13 +482,63 @@ plot_group_boot <- function(nb_group, # Number of clusters
     ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
     theme(legend.position='none')
   
+  
+  # Combine all data 
+  
+  data_trend_group2 <- data.frame(group=rep(c("all",paste0("g",1:nb_group)),nT),
+                                 year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
+                                 sdrep[grepl("x_pred2",row.names(sdrep)),])
+  
+  # Set colour code by group
+  
+  n2 <- (length(unique(data_trend_group$group)) + 1)                                   
+  hex_codes2 <- hue_pal()(n2)
+  
+  # Plot time-series of barycentres
+  
+  graph2 <- setNames(lapply(1:(nb_group+1), function(i){
+    if(i==1){
+      test <- data_trend_group2[data_trend_group2$group=="all",]
+    }else{
+      test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
+    }
+    test$Index_SE <- test$Std..Error
+    test$Index <- test$Estimate
+    min1 <- min(test$Index-test$Index_SE) + (max(test$Index+test$Index_SE)-min(test$Index-test$Index_SE))/10
+    min2 <- min(test$Index-test$Index_SE)
+    if(i==1){
+      ggplot(test, aes(x=year, y=Index)) +
+        geom_line(col=hex_codes2[length(hex_codes2)], size=2) +
+        geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes2[length(hex_codes2)])+
+        xlab(NULL) + 
+        ylab(NULL) + 
+        theme_modern() + 
+        theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
+    }else{
+      ggplot(test, aes(x=year, y=Index)) +
+        geom_line(col=hex_codes2[(i-1)], size=2) +
+        geom_ribbon(aes(ymin=Index-Index_SE,ymax=Index+Index_SE),alpha=0.2,fill=hex_codes2[(i-1)])+
+        xlab(NULL) + 
+        ylab(NULL) + 
+        annotate("text", x=mean(test$year), y=min1, label= paste0("Stability = ", round(stability_cluster_final[(i-1)],3))) +
+        annotate("text", x=mean(test$year), y=min2, label= paste0("Mean distance = ", round(mean_dist_clust[(i-1),1],3))) +
+        theme_modern() + 
+        theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
+    }
+    
+    
+  }), levels(as.factor(data_trend_group2$group)))
+  
+  
   return(list(final_plot, # Plot of species clusters
               graph, # Plot of time-series of cluster barycentres 
-              data_trend_group # Data of time-series of cluster barycentres 
+              data_trend_group, # Data of time-series of cluster barycentres 
+              graph2, # Plot of time-series of cluster barycentres from sdRep
+              data_trend_group2 # Data of time-series of cluster barycentres from sdRep
               ))
 }
 
-## 4) Core function runing the DFA and find the best number of latent trends
+## 4) Core function running the DFA and find the best number of latent trends
 
 core_dfa <- function(data_ts, # Dataset of time series
                      data_ts_se, # Dataset of standard error of time series 
@@ -520,12 +569,19 @@ core_dfa <- function(data_ts, # Dataset of time series
   # Initialise Z_pred, actual values will be provided by group_from_dfa2
   
   Z_predinit <- matrix(rep(0, 10 * nfac), ncol = nfac)
+  W_init <- rbind(1/nrow(data_ts),       # Overall mean, useful to get geometric mean trend across all species
+                  rep(0, nrow(data_ts)),rep(0, nrow(data_ts)),
+                  rep(0, nrow(data_ts)),rep(0, nrow(data_ts)),
+                  rep(0, nrow(data_ts)),rep(0, nrow(data_ts)),
+                  rep(0, nrow(data_ts)),rep(0, nrow(data_ts)),
+                  rep(0, nrow(data_ts)),rep(0, nrow(data_ts))) # Two mean trends can currently computed, add more rows to W_init to compute more mean trends.
   
   # SE is on log-scale, so no transformation needed
   
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se),
-                  Z_pred = Z_predinit, rwOrder = 1)
+                  Z_pred = Z_predinit,
+                  W = W_init)
   
   # Prepare parameters for DFA
   
@@ -548,7 +604,8 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   optList <- vector(con$nstart * length(con$method), mode = 'list')
   names(optList) <- rep(con$method, con$nstart)
-  tmbObjList <- list()
+  tmbList <- vector(con$nstart * length(con$method), mode = 'list')
+  names(tmbList) <- rep(con$method, con$nstart)
   
   for (i in 1:length(optList)) {
     log_re_sp <- runif(ny, -1, 0)
@@ -568,14 +625,14 @@ core_dfa <- function(data_ts, # Dataset of time series
     
     # Make DFA
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se", silent = silent)
-    tmbObjList[[i]] <- tmbObj
     optList[[i]] = switch(names(optList)[i],
                           NLMINB = nlminb(tmbObj$par, tmbObj$fn, tmbObj$gr, control = list(iter.max = con$maxit, eval.max  =2*con$maxit, rel.tol =  con$reltol)),
                           BFGS = optim(tmbObj$par, tmbObj$fn, tmbObj$gr, method = 'BFGS', control = list(maxit = con$maxit, reltol = con$reltol)),
                           LBFGS = optim(tmbObj$par, tmbObj$fn, tmbObj$gr, method = 'L-BFGS-B', control = list(maxit = con$maxit, factr = con$factr))
     )
     if (names(optList)[i] == 'NLMINB')
-      optList[[i]]$value = optList[[i]]$objective
+      optList[[i]]$value <- optList[[i]]$objective
+      tmbList[[i]] <- tmbObj
   }
   convergence = sapply(optList, FUN = `[[`, 'convergence')
   print(convergence)
@@ -592,7 +649,7 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   ind.best <-  which.min((nll - 1e6 * sign(min(nll)) * !eligible)) # Return the smallest loglikelihood fit that meets other convergence criteria
   tmbOpt <- optList[[ind.best]] 
-  tmbObj <- tmbObjList[[ind.best]] 
+  tmbObj <- tmbList[[ind.best]] 
   
   # Jonas: I suggest we return the full nll, convergence, and maxgrad vectors at the end of the function. It's useful to have for checking stability of the model.
   
@@ -727,10 +784,16 @@ make_dfa <- function(data_ts, # Dataset of time series
     
     if(length(group_dfa[[3]])>1){
       Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
+      W_from_kmeans <- t(matrix(rep(t(as.matrix(group_dfa[[1]][[1]][grepl("uncert",names(group_dfa[[1]][[1]]))])),(1+length(group_dfa[[3]]))), nrow=nrow(data_ts)))
+      for(wg in 1:length(group_dfa[[3]])){
+        W_from_kmeans[(wg+1),][group_dfa[[1]][[1]]$group!=wg] <- 0
+      }                       
       
     }else{
       
       Z_pred_from_kmeans <- t(as.matrix(group_dfa[[1]][[2]][grepl("kmeans_center",names(group_dfa[[1]][[2]]))]))
+      W_from_kmeans <- rbind(rep(1, nrow(data_ts)),
+                             rep(1, nrow(data_ts)))
       
     }
     
@@ -738,11 +801,13 @@ make_dfa <- function(data_ts, # Dataset of time series
     group_dfa <- 1
     
     Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
+    W_from_kmeans <- rbind(1/nrow(data_ts), rep(0, nrow(data_ts)))
   }
   
   # Update z_pred with actual values after clustering
   
   tmbObj$env$data$Z_pred <- Z_pred_from_kmeans
+  tmbObj$env$data$W <- W_from_kmeans
   
   # Recalcul sdreport
   
@@ -866,8 +931,11 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            min_year = min_year,
                                            stability_cluster_final = group_dfa[[3]], 
                                            mean_dist_clust = group_dfa[[4]])
-      plot_sp_group <- plot_sp_group_all[1:2]
+      plot_sp_group <- plot_sp_group_all[[1]]
+      plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
+      plot_group_ts2 <- plot_sp_group_all[[4]]
+      trend_group2 <- plot_sp_group_all[[5]]
     }
     if(length(group_dfa[[3]])==1){
       plot_sp_group_all <- plot_group_boot(nb_group = 1,
@@ -877,15 +945,21 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            min_year = min_year,
                                            stability_cluster_final = group_dfa[[3]], 
                                            mean_dist_clust = group_dfa[[4]])
-      plot_sp_group <- plot_sp_group_all[1:2]
+      plot_sp_group <- plot_sp_group_all[[1]]
+      plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
+      plot_group_ts2 <- plot_sp_group_all[[4]]
+      trend_group2 <- plot_sp_group_all[[5]]
     }
   }
   
   if(!is.list(group_dfa)){
     plot_sp_group_all <- NA
     plot_sp_group <- NA
+    plot_group_ts <- NA
     trend_group <- NA
+    plot_group_ts2 <- NA
+    trend_group2 <- NA
   }
   
   return(list(data_to_plot_sp, # Data on species time-series and fit
@@ -894,11 +968,14 @@ make_dfa <- function(data_ts, # Dataset of time series
               plot_sp, # Plot of species time-series and fit
               plot_tr, # Plot of latent trends
               plot_ld, # Plot of factor loadings
-              plot_sp_group, # Plot clusters and cluster time-series
+              plot_sp_group, # Plot clusters in factorial plan
+              plot_group_ts, # Plot clustertime-series
+              plot_group_ts2, # Plot clustertime-series from sdRep
               aic = aic, # Best AIC
               sdRep = sdRep, # Optimisation output
               group = group_dfa, # Cluster results
-              trend_group # Cluster barycentre times-series
+              trend_group, # Cluster barycentre times-series
+              trend_group2 # Cluster barycentre times-series from sdRep
               ))
 }
 
