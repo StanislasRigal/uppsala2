@@ -373,6 +373,13 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   
   kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
   
+  # PCA centres
+  
+  pca_centre <- myPCA$rotation[,1:2] %*% matrix(data = c(0,min(kmeans_1$PC2),
+                                                         0,max(kmeans_1$PC2),
+                                                         min(kmeans_1$PC1),0,
+                                                         max(kmeans_1$PC1),0),nrow=2)
+  
   # Get weigthed centroid of groups
   
   centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) 
@@ -412,7 +419,8 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   return(list(kmeans_res, # Results of clustering
               centroids, # Position of cluster barycentres
               stability_cluster_final, # Stability of clusters
-              mean_dist_clust # Average distance between species and barycentre
+              mean_dist_clust, # Average distance between species and barycentre
+              pca_centre # Coordinates to plot trends of PCA axes
   ))
 }
 
@@ -427,10 +435,13 @@ plot_group_boot <- function(nb_group, # Number of clusters
                             nT, # Number of time step
                             min_year, # Oldest year in time-series
                             stability_cluster_final,  # Stability of clusters
-                            mean_dist_clust # Average distance between species and barycentre
+                            mean_dist_clust, # Average distance between species and barycentre
+                            pca_centre, # Coordinates to plot trends of PCA axes
+                            Z_hat, # Factor loadings
+                            x_hat # Latent trends
                             ){
   
-  # Combine all data 
+  # Combine all data for x_pred
   
   data_trend_group <- data.frame(group=rep(paste0("g",1:nb_group),nT),
                                  year=sort(rep(c(min_year:(nT+min_year-1)), nb_group)),
@@ -461,28 +472,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
   
     }), levels(as.factor(data_trend_group$group)))
   
-  # Plot species cluster in the first factorial plane
   
-  res_to_plot <- kmeans_res[[1]]
-  res_to_plot$group2 <- res_to_plot$group
-  res_to_plot$group2 <- as.factor(res_to_plot$group2)
-  
-  # Add some space between species name and dot
-  width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
-  
-  # Species latin name in italic
-  res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
-
-  final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
-    geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
-    geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
-    geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15)+
-    theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
-    ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
-    theme(legend.position='none')
-  
-  
-  # Combine all data 
+  # Combine all data for x_pred2
   
   data_trend_group2 <- data.frame(group=rep(c("all",paste0("g",1:nb_group)),nT),
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
@@ -522,6 +513,61 @@ plot_group_boot <- function(nb_group, # Number of clusters
     
     
   }), levels(as.factor(data_trend_group2$group)))
+  
+  
+  # Combine data for PCA centres
+  
+  mat_tr_rot <- t(solve(varimax(Z_hat)$rotmat) %*% x_hat)
+    
+  ts_pca <- apply(pca_centre, 2, function(x){mat_tr_rot %*% matrix(x)})
+  
+  graph3 <- setNames(lapply(1:4, function(i){
+    test <- data.frame(Index=ts_pca[,i], year=1:length(ts_pca[,i]))
+    ggplot(test, aes(x=year, y=Index)) +
+      geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
+      theme_modern() + theme_transparent() +
+      theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
+            axis.title = element_blank(),
+            axis.text = element_blank(),
+            axis.text.x = element_blank())
+    }), paste0("pca centre ", 1:4))
+  
+  
+  # Plot species cluster in the first factorial plane
+  
+  res_to_plot <- kmeans_res[[1]]
+  res_to_plot$group2 <- res_to_plot$group
+  res_to_plot$group2 <- as.factor(res_to_plot$group2)
+  
+  # Add some space between species name and dot
+  width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
+  
+  # Species latin name in italic
+  res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
+  
+  pca_centre_data <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
+                                       0,max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
+                                       min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0,
+                                       max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0),nrow=2))
+  
+  pca_centre_data2 <- tibble(x=pca_centre_data[,1],
+                           y=pca_centre_data[,2],
+                           width=0.08,
+                           pie = graph3)
+  
+  final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
+    geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+    geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+    geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15) +
+    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2) +
+    theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
+    ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
+    xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
+           max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5))+
+    ylim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
+           max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
+    theme(legend.position='none')
+  
   
   
   return(list(final_plot, # Plot of species clusters
@@ -854,6 +900,8 @@ make_dfa <- function(data_ts, # Dataset of time series
                              se=melt(data_to_plot_tr_se, id.vars = "Year")[,3], # This SE is ok as it comes directly from TMB
                              rot_tr=melt(data_to_plot_tr_rot, id.vars = "Year")[,3])
     
+    data_to_plot_tr$variable <- as.character(data_to_plot_tr$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
+    
     # Data for species loadings
     
     data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
@@ -861,22 +909,26 @@ make_dfa <- function(data_ts, # Dataset of time series
                            se.value = NA)
     
     data_loadings <- merge(data_loadings, species_sub[,c("name_long","code_sp")],by="code_sp")
+    data_loadings <- merge(data_loadings, group_dfa[[1]][[1]][,c("code_sp","PC1")],by="code_sp")
+    data_loadings$name_long <- fct_reorder(data_loadings$name_long,data_loadings$PC1)
 
+    data_loadings$variable <- as.character(data_loadings$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
+    
+    
     # Plots
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
       geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
       geom_line(aes(y=exp(pred.value))) +
       geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
-      facet_wrap(name_long ~ ., ncol=4, scales = "free", labeller = label_bquote(col = italic(.(name_long)))) +
+      facet_wrap(name_long ~ ., ncol=round(sqrt(length(unique(data_to_plot_sp$code_sp)))), scales = "free", labeller = label_bquote(col = italic(.(name_long)))) +
       theme_modern() + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
       geom_line(aes(colour=variable))+ylab("Rotated value") +
-      geom_ribbon(aes(ymax = (value+1.96*se.value), ymin=(value-1.96*se.value), fill=variable), alpha=0.1) +
-      scale_color_discrete(labels=paste0('Latent trend ',1:length(unique(data_to_plot_tr$variable))))+
-      theme_modern() + theme(legend.title = element_blank()) +
-      guides(fill = "none")
+      geom_ribbon(aes(ymax = (rot_tr.value+1.96*se.value), ymin=(rot_tr.value-1.96*se.value), fill=variable), alpha=0.1) +
+      facet_wrap(variable ~ ., ncol=min(3,length(unique(data_to_plot_tr$variable)))) +
+      theme_modern() + theme(legend.position = "none")
     
     plot_ld <- ggplot(data_loadings) + 
       geom_col(aes(value, name_long, fill=variable)) +
@@ -924,7 +976,10 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            sdrep = sdRep, nT = nT,
                                            min_year = min_year,
                                            stability_cluster_final = group_dfa[[3]], 
-                                           mean_dist_clust = group_dfa[[4]])
+                                           mean_dist_clust = group_dfa[[4]],
+                                           pca_centre = group_dfa[[5]],
+                                           Z_hat = Z_hat,
+                                           x_hat = x_hat)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
@@ -938,7 +993,10 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            sdrep = sdRep, nT = nT,
                                            min_year = min_year,
                                            stability_cluster_final = group_dfa[[3]], 
-                                           mean_dist_clust = group_dfa[[4]])
+                                           mean_dist_clust = group_dfa[[4]],
+                                           pca_centre = group_dfa[[5]],
+                                           Z_hat = Z_hat,
+                                           x_hat = x_hat)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]

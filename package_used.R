@@ -14,6 +14,7 @@ library(maditr)
 library(see)
 library(scales)
 library(ggrepel)
+library(forcats)
 
 # Other packages used in the README.md
 
