@@ -347,12 +347,13 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   
   # Compute PCA to get axes of the graph
   
-  myPCA <- prcomp(mat_loading, scale. = F, center = F)
+  myPCA <- prcomp(mat_loading, scale. = F, center = T)
   
   # Group all info as output
   
   kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
-                               myPCA$x[,1:2],
+                               PC1 = myPCA$x[,1],
+                               PC2 = myPCA$x[,2],
                                group = all_partition_group,
                                dfa_res_val[,-1],
                                uncert = all_partition_uncertainty),species_sub[,c("name_long","code_sp")],by="code_sp")
@@ -367,7 +368,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   }
   kmeans_center <- kmeans_center[-1,]
   kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
-                         kmeans_center %*% myPCA$rotation[,1:2])
+                         (t(apply(kmeans_center, 1, function(x){x - myPCA$center})) %*% myPCA$rotation)[,1:2])
   
   kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
   
@@ -375,10 +376,12 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   
   # PCA centres
   
-  pca_centre <- myPCA$rotation[,1:2] %*% matrix(data = c(0,min(kmeans_1$PC2),
-                                                         0,max(kmeans_1$PC2),
-                                                         min(kmeans_1$PC1),0,
-                                                         max(kmeans_1$PC1),0),nrow=2)
+  pca_centre <- myPCA$rotation[,1:2] %*% matrix(data = c(0,min(myPCA$x[,2]),
+                                                         0,max(myPCA$x[,2]),
+                                                         min(myPCA$x[,1]),0,
+                                                         max(myPCA$x[,1]),0),nrow=2)
+  
+  pca_centre <- apply(pca_centre,2,function(x){x + myPCA$center})
   
   # Get weigthed centroid of groups
   
@@ -520,12 +523,15 @@ plot_group_boot <- function(nb_group, # Number of clusters
   mat_tr_rot <- t(solve(varimax(Z_hat)$rotmat) %*% x_hat)
     
   ts_pca <- apply(pca_centre, 2, function(x){mat_tr_rot %*% matrix(x)})
+  min_y_graph3 <- min(apply(ts_pca, 2, min))
+  max_y_graph3 <- max(apply(ts_pca, 2, max))
   
   graph3 <- setNames(lapply(1:4, function(i){
     test <- data.frame(Index=ts_pca[,i], year=1:length(ts_pca[,i]))
     ggplot(test, aes(x=year, y=Index)) +
       geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
       theme_modern() + theme_transparent() +
+      ylim(c(min_y_graph3,max_y_graph3)) +
       theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
             axis.title = element_blank(),
             axis.text = element_blank(),
