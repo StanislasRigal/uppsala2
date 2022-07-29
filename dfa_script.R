@@ -139,6 +139,7 @@ table_res_farm[,3:(ncol(table_res_farm)-1)] <- round(table_res_farm[,3:(ncol(tab
 summary(lm(Estimate~year, data=farm_nfac[[14]][farm_nfac[[14]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_farmland))$coef
 cor.test(farm_nfac[[14]][farm_nfac[[14]]$group=="g1","Estimate"],RES_farmland$MSI)
+cor.test(farm_nfac[[14]][farm_nfac[[14]]$group=="g1","Estimate"],farm_nfac[[14]][farm_nfac[[14]]$group=="all","Estimate"])
 
 
 table_res_foresta <- dcast(data=forest_nfac[[3]], name_long~variable, id.vars="value")
@@ -157,6 +158,7 @@ table_res_forest[,3:(ncol(table_res_forest)-1)] <- round(table_res_forest[,3:(nc
 summary(lm(Estimate~year, data=forest_nfac[[14]][forest_nfac[[14]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_forest))$coef
 cor.test(forest_nfac[[14]][forest_nfac[[14]]$group=="g1","Estimate"],RES_forest$MSI)
+cor.test(forest_nfac[[14]][forest_nfac[[14]]$group=="g1","Estimate"],forest_nfac[[14]][forest_nfac[[14]]$group=="all","Estimate"])
 
 
 table_res_alla <- dcast(data=all_nfac[[3]], name_long~variable, id.vars="value")

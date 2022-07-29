@@ -496,8 +496,10 @@ plot_group_boot <- function(nb_group, # Number of clusters
     min2 <- min(test$Index-1.96*test$Index_SE)
     if(i==1){
       ggplot(test, aes(x=year, y=Index)) +
-        geom_line(col="black", size=2) +
-        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
+        #geom_line(col="black", size=2) +
+        #geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
+        geom_point(col="black", size=2) +
+        geom_pointrange(aes(min=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE)) +
         xlab(NULL) + 
         ylab(NULL) + 
         theme_modern() + 
