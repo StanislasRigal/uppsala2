@@ -162,7 +162,7 @@ cor.test(forest_nfac[[14]][forest_nfac[[14]]$group=="g1","Estimate"],forest_nfac
 
 
 table_res_alla <- dcast(data=all_nfac[[3]], name_long~variable, id.vars="value")
-table_res_allb <- all_nfac[[10]][[1]][[1]]
+table_res_allb <- all_nfac[[12]][[1]][[1]]
 table_res_all <- merge(table_res_allb[,c("name_long", "group", "uncert")], table_res_alla, by="name_long", all.x=T )
 table_res_all$pvalue <- table_res_all$st_error <- table_res_all$slope <-  NA
 for(i in 1:nrow(table_res_all)){
@@ -174,62 +174,72 @@ for(i in 1:nrow(table_res_all)){
 }
 table_res_all[,3:25] <- round(table_res_all[,3:25],4)
 
-summary(lm(Estimate~year, data=all_nfac[[11]][all_nfac[[11]]$group=="g1",]))$coef
+summary(lm(Estimate~year, data=all_nfac[[13]][all_nfac[[13]]$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_all))$coef
-cor.test(all_nfac[[11]][all_nfac[[11]]$group=="g1","Estimate"],RES_all$MSI)
+cor.test(all_nfac[[13]][all_nfac[[13]]$group=="g1","Estimate"],RES_all$MSI)
+cor.test(all_nfac[[13]][all_nfac[[13]]$group=="g1","Estimate"],all_nfac[[14]][all_nfac[[14]]$group=="all","Estimate"])
+
 
 all_farm_for <- rbind(data.frame(all_nfac[[2]],group="all"),
                       data.frame(farm_nfac[[2]],group="farm"),
                       data.frame(forest_nfac[[2]],group="forest"))
 
 lt1 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X1" & all_farm_for$group=="farm",], col="red") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X8" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X1",]$value,
-                                                      all_nfac[[2]][all_nfac[[2]]$variable=="X8",]$value),3))), x=2010, y=1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 1" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 8" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="Latent trend 1",]$value,
+                                                      all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 8",]$value),3))), x=2010, y=-1) +
+  ggtitle("FB latent trend 1 and CB latent trend 8") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt2 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X2" & all_farm_for$group=="farm",], col="red") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X10" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X2",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X10",]$value),3))), x=2010, y=-1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 2" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 10" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="Latent trend 2",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 10",]$value),3))), x=2010, y=-1) +
+  ggtitle("FB latent trend 2 and CB latent trend 10") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt3 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X3" & all_farm_for$group=="farm",], col="red") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X18" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="X3",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X18",]$value),3))), x=2010, y=1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 3" & all_farm_for$group=="farm",], col="red") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 17" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(farm_nfac[[2]][farm_nfac[[2]]$variable=="Latent trend 3",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 17",]$value),3))), x=2010, y=-1) +
+  ggtitle("FB latent trend 3 and CB latent trend 17") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt4 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X1" & all_farm_for$group=="forest",], col="green") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X11" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X1",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X11",]$value),3))), x=2010, y=1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 1" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 11" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="Latent trend 1",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 11",]$value),3))), x=2010, y=-1) +
+  ggtitle("WB latent trend 1 and CB latent trend 11") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt5 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X2" & all_farm_for$group=="forest",], col="green") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X8" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X2",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X8",]$value),3))), x=2010, y=1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 2" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 7" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="Latent trend 2",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 7",]$value),3))), x=2010, y=1) +
+  ggtitle("WB latent trend 2 and CB latent trend 7") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt6 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X3" & all_farm_for$group=="forest",], col="green") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X5" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X3",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X5",]$value),3))), x=2010, y=-1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 3" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 18" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="Latent trend 3",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 18",]$value),3))), x=2010, y=1) +
+  ggtitle("WB latent trend 3 and CB latent trend 18") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
 
 lt7 <- ggplot(all_farm_for,aes(Year,value)) +
-  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="X4" & all_farm_for$group=="forest",], col="green") +
-  geom_line(aes(y=-scale(value)),data=all_farm_for[all_farm_for$variable=="X18" & all_farm_for$group=="all",], col="black") +
-  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="X4",]$value,
-                                                          all_nfac[[2]][all_nfac[[2]]$variable=="X18",]$value),3))), x=2010, y=1) +
-  theme_modern() + theme(axis.title.x = element_blank())
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 4" & all_farm_for$group=="forest",], col="green") +
+  geom_line(aes(y=scale(value)),data=all_farm_for[all_farm_for$variable=="Latent trend 9" & all_farm_for$group=="all",], col="black") +
+  annotate("text", label = paste0("rho = ", abs(round(cor(forest_nfac[[2]][forest_nfac[[2]]$variable=="Latent trend 4",]$value,
+                                                          all_nfac[[2]][all_nfac[[2]]$variable=="Latent trend 9",]$value),3))), x=2010, y=1) +
+  ggtitle("WB latent trend 4 and CB latent trend 9") +
+  theme_modern() + theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))
+
 
 png(file="output/saving_plot.png", width=3000, height=2200,res = 300)
 multiplot(lt1, lt2, lt3, lt4,
