@@ -367,8 +367,15 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     kmeans_center <- rbind(kmeans_center,kmeans_center_row)
   }
   kmeans_center <- kmeans_center[-1,]
-  kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
-                         (t(apply(kmeans_center, 1, function(x){x - myPCA$center})) %*% myPCA$rotation)[,1:2])
+  if(is.null(nrow(kmeans_center))){
+    kmeans_2 <- data.frame(group=as.factor(1:nb_group),t(kmeans_center),
+                           PC1=((kmeans_center - myPCA$center) %*% myPCA$rotation)[,1],
+                           PC2=((kmeans_center - myPCA$center) %*% myPCA$rotation)[,2]) 
+    
+  }else{
+    kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                           (t(apply(kmeans_center, 1, function(x){x - myPCA$center})) %*% myPCA$rotation)[,1:2])
+  }
   
   kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
   
@@ -839,9 +846,8 @@ make_dfa <- function(data_ts, # Dataset of time series
       
     }else{
       
-      Z_pred_from_kmeans <- t(as.matrix(group_dfa[[1]][[2]][grepl("kmeans_center",names(group_dfa[[1]][[2]]))]))
-      W_from_kmeans <- rbind(rep(1, nrow(data_ts)),
-                             rep(1, nrow(data_ts)))
+      Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
+      W_from_kmeans <- rbind(1/nrow(data_ts), rep(0, nrow(data_ts)))
       
     }
     
