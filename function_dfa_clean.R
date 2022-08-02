@@ -495,7 +495,11 @@ plot_group_boot <- function(nb_group, # Number of clusters
     if(i==1){
       test <- data_trend_group2[data_trend_group2$group=="all",]
     }else{
-      test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
+      if(nb_group==1){
+        test <- data_trend_group[data_trend_group$group==paste0("g",(i-1)),]
+      }else{
+        test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
+      }
     }
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
