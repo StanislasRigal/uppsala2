@@ -107,6 +107,22 @@ obs_se_all <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
                 code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
 
 
+
+# mountain birds (with 0)
+
+species_sub <- species_rock <- droplevels(species_data[species_data$code_sp %in% c("LAGMUT","PLUAPR","STELON","OENOEN",
+                                                                                   "ANTPRA","CALLAP","PLENIV","LAGLAG",
+                                                                                   "TURILI","PHOPHO","LUSSVE","PHYTRO",
+                                                                                   "ACAFLA","FRIMON"),])
+
+Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
+
+y_rock <- dcast(Obs[,c("code_sp","relative_abundance_m0","year")],
+                code_sp~year, fun.aggregate = sum, value.var = "relative_abundance_m0")
+obs_se_rock <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
+                     code_sp~year, fun.aggregate = sum, value.var = "Log_SE_m0")
+
+
 # DFA
 
 # if number of trends unknown

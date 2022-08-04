@@ -155,7 +155,7 @@ AIC.tmb <- function(obj) {
   
   # AIC
   
-  as.numeric(2 * obj$env$value.best + 2*(sum(obj$env$lfixed()) - 0))
+  as.numeric(2 * obj$env$value.best + 2*(sum(obj$env$lfixed())))
 }
 
 
@@ -197,11 +197,29 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     )
   }
   
-  nb <- NbClust2(mat_loading, diss=NULL, distance = "euclidean",
-                 method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
-                 index = "alllong", alphaBeale = 0.1)
+  if(min(max(c(2,round(ny/3))),10)>4){
+    nb <- NbClust2(mat_loading, diss=NULL, distance = "euclidean",
+                   method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                   index = "alllong", alphaBeale = 0.1)
+    nb_group_best <- max(nb$Best.partition)
+  }else{
+    idx <- 0
+    nb_group_best_part <- c()
+    for(index in c("kl", "ch", "hartigan", "ccc", "scott", "marriot", "trcovw", "tracew",
+                   "friedman", "rubin", "cindex", "db", "silhouette", "duda",
+                   "ratkowsky", "ball", "ptbiserial", "gap", "mcclain", "gamma",
+                   "gplus", "tau", "dunn", "hubert", "sdindex", "dindex", "sdbw")){
+      nb_part <- NbClust(mat_loading, diss=NULL, distance = "euclidean",
+                    method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                    index = index, alphaBeale = 0.1)
+      idx <- idx + 1
+      nb_group_best_part[idx] <- max(nb_part$Best.partition)
+    }
+    which.max(table(nb_group_best_part))
+    nb_group_best <- as.numeric(which.max(table(nb_group_best_part)))
+  }
   
-  nb_group_best <- max(nb$Best.partition)
+
 
   # Check cluster stability
 
@@ -352,8 +370,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   # Group all info as output
   
   kmeans_1 <- merge(data.frame(code_sp = dfa_res_val[,1],
-                               PC1 = myPCA$x[,1],
-                               PC2 = myPCA$x[,2],
+                               myPCA$x,
                                group = all_partition_group,
                                dfa_res_val[,-1],
                                uncert = all_partition_uncertainty),species_sub[,c("name_long","code_sp")],by="code_sp")
@@ -369,20 +386,19 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   kmeans_center <- kmeans_center[-1,]
   if(is.null(nrow(kmeans_center))){
     kmeans_2 <- data.frame(group=as.factor(1:nb_group),t(kmeans_center),
-                           PC1=((kmeans_center - myPCA$center) %*% myPCA$rotation)[,1],
-                           PC2=((kmeans_center - myPCA$center) %*% myPCA$rotation)[,2]) 
+                           ((kmeans_center - myPCA$center) %*% myPCA$rotation))
     
   }else{
     kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
-                           (t(apply(kmeans_center, 1, function(x){x - myPCA$center})) %*% myPCA$rotation)[,1:2])
+                           (t(apply(kmeans_center, 1, function(x){x - myPCA$center})) %*% myPCA$rotation))
   }
   
-  kmeans_3 <- c(myPCA$sdev[1]/sum(myPCA$sdev),myPCA$sdev[2]/sum(myPCA$sdev))
+  kmeans_3 <- myPCA$sdev/sum(myPCA$sdev)
   
   kmeans_res <- list(kmeans_1,kmeans_2,kmeans_3)
   
   # PCA centres
-  
+  # PC1 and PC2
   pca_centre <- myPCA$rotation[,1:2] %*% matrix(data = c(0,min(myPCA$x[,2]),
                                                          0,max(myPCA$x[,2]),
                                                          min(myPCA$x[,1]),0,
@@ -390,9 +406,31 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   
   pca_centre <- apply(pca_centre,2,function(x){x + myPCA$center})
   
+  if(length(kmeans_3)>2){
+    # PC1 and PC3
+    pca_centre2 <- myPCA$rotation[,c(1,3)] %*% matrix(data = c(0,min(myPCA$x[,3]),
+                                                               0,max(myPCA$x[,3]),
+                                                               min(myPCA$x[,1]),0,
+                                                               max(myPCA$x[,1]),0),nrow=2)
+    
+    pca_centre2 <- apply(pca_centre2,2,function(x){x + myPCA$center})
+    
+    # PC2 and PC3
+    pca_centre3 <- myPCA$rotation[,2:3] %*% matrix(data = c(0,min(myPCA$x[,3]),
+                                                            0,max(myPCA$x[,3]),
+                                                            min(myPCA$x[,2]),0,
+                                                            max(myPCA$x[,2]),0),nrow=2)
+    
+    pca_centre3 <- apply(pca_centre3,2,function(x){x + myPCA$center})
+  }else{
+    pca_centre2 <- pca_centre3 <- NA
+  }
+  
+  pca_centre_list <- list(pca_centre, pca_centre2, pca_centre3)
+  
   # Get weigthed centroid of groups
   
-  centroids <- as.data.frame(kmeans_2[,c("group","PC1","PC2")]) 
+  centroids <- as.data.frame(kmeans_2[,c("group",names(kmeans_2)[grepl("PC",names(kmeans_2))])]) 
   
   # Average distance between species and cluster centres
   
@@ -430,7 +468,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
               centroids, # Position of cluster barycentres
               stability_cluster_final, # Stability of clusters
               mean_dist_clust, # Average distance between species and barycentre
-              pca_centre # Coordinates to plot trends of PCA axes
+              pca_centre_list # Coordinates to plot trends of PCA axes
   ))
 }
 
@@ -448,7 +486,9 @@ plot_group_boot <- function(nb_group, # Number of clusters
                             mean_dist_clust, # Average distance between species and barycentre
                             pca_centre, # Coordinates to plot trends of PCA axes
                             Z_hat, # Factor loadings
-                            x_hat # Latent trends
+                            x_hat, # Latent trends
+                            data_ts,
+                            data_ts_se
                             ){
   
   # Combine all data for x_pred
@@ -489,6 +529,10 @@ plot_group_boot <- function(nb_group, # Number of clusters
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
                                  sdrep[grepl("x_pred2",row.names(sdrep)),])
   
+  geom_mean <- data.frame(Index = apply(data_ts, 2, function(x){ exp(sum(log(x))/length(x)) }),
+                          Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
+                          year = as.numeric(names(data_ts)))
+
   # Plot time-series of barycentres
   
   graph2 <- setNames(lapply(1:(nb_group+1), function(i){
@@ -506,11 +550,14 @@ plot_group_boot <- function(nb_group, # Number of clusters
     min1 <- min(test$Index-1.96*test$Index_SE) + (max(test$Index+1.96*test$Index_SE)-min(test$Index-1.96*test$Index_SE))/10
     min2 <- min(test$Index-1.96*test$Index_SE)
     if(i==1){
+      
+      geom_mean$Index <- rescale(geom_mean$Index, to(min(test$Index),max(test$Index)))
+      
       ggplot(test, aes(x=year, y=Index)) +
-        #geom_line(col="black", size=2) +
-        #geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
-        geom_point(col="black", size=2) +
-        geom_pointrange(aes(min=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE)) +
+        geom_line(col="black", size=2) +
+        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
+        geom_point(data=geom_mean, col="black", size=2) +
+        #geom_pointrange(data=geom_mean, aes(min=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE)) +
         xlab(NULL) + 
         ylab(NULL) + 
         theme_modern() + 
@@ -535,7 +582,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
   
   mat_tr_rot <- t(solve(varimax(Z_hat)$rotmat) %*% x_hat)
     
-  ts_pca <- apply(pca_centre, 2, function(x){mat_tr_rot %*% matrix(x)})
+  ts_pca <- apply(pca_centre[[1]], 2, function(x){mat_tr_rot %*% matrix(x)})
   min_y_graph3 <- min(apply(ts_pca, 2, min))
   max_y_graph3 <- max(apply(ts_pca, 2, max))
   
@@ -550,6 +597,40 @@ plot_group_boot <- function(nb_group, # Number of clusters
             axis.text = element_blank(),
             axis.text.x = element_blank())
     }), paste0("pca centre ", 1:4))
+  
+  if(length(kmeans_res[[3]])>2){
+    ts_pca2 <- apply(pca_centre[[2]], 2, function(x){mat_tr_rot %*% matrix(x)})
+    min_y_graph32 <- min(apply(ts_pca2, 2, min))
+    max_y_graph32 <- max(apply(ts_pca2, 2, max))
+    
+    graph32 <- setNames(lapply(1:4, function(i){
+      test <- data.frame(Index=ts_pca2[,i], year=1:length(ts_pca2[,i]))
+      ggplot(test, aes(x=year, y=Index)) +
+        geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
+        theme_modern() + theme_transparent() +
+        ylim(c(min_y_graph32,max_y_graph32)) +
+        theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
+              axis.title = element_blank(),
+              axis.text = element_blank(),
+              axis.text.x = element_blank())
+    }), paste0("pca centre ", 1:4))
+    
+    ts_pca3 <- apply(pca_centre[[3]], 2, function(x){mat_tr_rot %*% matrix(x)})
+    min_y_graph33 <- min(apply(ts_pca3, 2, min))
+    max_y_graph33 <- max(apply(ts_pca3, 2, max))
+    
+    graph33 <- setNames(lapply(1:4, function(i){
+      test <- data.frame(Index=ts_pca3[,i], year=1:length(ts_pca3[,i]))
+      ggplot(test, aes(x=year, y=Index)) +
+        geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
+        theme_modern() + theme_transparent() +
+        ylim(c(min_y_graph33,max_y_graph33)) +
+        theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
+              axis.title = element_blank(),
+              axis.text = element_blank(),
+              axis.text.x = element_blank())
+    }), paste0("pca centre ", 1:4))
+  }
   
   
   # Plot species cluster in the first factorial plane
@@ -574,6 +655,31 @@ plot_group_boot <- function(nb_group, # Number of clusters
                            width=0.08,
                            pie = graph3)
   
+  if(length(kmeans_res[[3]])>2){
+    
+    pca_centre_datab <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                         0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                         min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0,
+                                         max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0),nrow=2))
+    
+    pca_centre_data2b <- tibble(x=pca_centre_datab[,1],
+                               y=pca_centre_datab[,2],
+                               width=0.08,
+                               pie = graph32)
+    
+    
+    pca_centre_datac <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                          0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                          min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0,
+                                          max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0),nrow=2))
+    
+    pca_centre_data2c <- tibble(x=pca_centre_datac[,1],
+                                y=pca_centre_datac[,2],
+                                width=0.08,
+                                pie = graph33)
+  }
+  
+  
   final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
     geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
     geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
@@ -587,9 +693,41 @@ plot_group_boot <- function(nb_group, # Number of clusters
            max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
     theme(legend.position='none')
   
+  if(length(kmeans_res[[3]])>2){
+    
+    final_plot2 <- ggplot(res_to_plot, aes(PC1,PC3)) +
+      geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+      geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+      geom_point(data=centroids,aes(x=PC1,y=PC3), shape=15) +
+      geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2b) +
+      theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
+      ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
+      xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
+             max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5))+
+      ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
+             max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
+      theme(legend.position='none')
+    
+    final_plot3 <- ggplot(res_to_plot, aes(PC2,PC3)) +
+      geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+      geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+      geom_point(data=centroids,aes(x=PC2,y=PC3), shape=15) +
+      geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2c) +
+      theme_modern() + xlab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
+      ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
+      xlim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
+             max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
+      ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
+             max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
+      theme(legend.position='none')
+    
+  }else{
+    final_plot2 <- final_plot3 <- NA
+  }
   
+  final_plot_list <- list(final_plot, final_plot2, final_plot3)
   
-  return(list(final_plot, # Plot of species clusters
+  return(list(final_plot_list, # Plot of species clusters
               graph, # Plot of time-series of cluster barycentres 
               data_trend_group, # Data of time-series of cluster barycentres 
               graph2, # Plot of time-series of cluster barycentres from sdRep
@@ -680,7 +818,7 @@ core_dfa <- function(data_ts, # Dataset of time series
     tmbPar <-  list(log_re_sp=log_re_sp, Z = Zinit,
                     x=matrix(c(rep(0, nfac), rnorm(nfac * (nT - 1))),
                              ncol = nT, nrow = nfac))
-    #tmbPar$x_sum = matrix(rep(0, nfac), ncol = 1)
+   
     
     # Make DFA
     tmbObj <- MakeADFun(data = dataTmb, parameters = tmbPar, map = tmbMap, random= c("x"), DLL= "dfa_model_se", silent = silent)
@@ -710,9 +848,7 @@ core_dfa <- function(data_ts, # Dataset of time series
   tmbOpt <- optList[[ind.best]] 
   tmbObj <- tmbList[[ind.best]] 
   
-  # Jonas: I suggest we return the full nll, convergence, and maxgrad vectors at the end of the function. It's useful to have for checking stability of the model.
-  
-  sdRep_test_all <- sdreport(tmbObj)
+   sdRep_test_all <- sdreport(tmbObj)
   sdRep_test <- summary(sdRep_test_all)
   
   # Check convergence
@@ -726,7 +862,7 @@ core_dfa <- function(data_ts, # Dataset of time series
   if(AIC){
     aic <- AIC.tmb(tmbObj) 
     writeLines(paste('AIC: ', aic))
-  } else {aic <- NA}
+  } else {aic <- bic <- NA}
   
   return(list(tmbObj, # TMB output
               tmbOpt, # Optimisation from TMB
@@ -748,36 +884,70 @@ core_dfa <- function(data_ts, # Dataset of time series
 
 make_dfa <- function(data_ts, # Dataset of time series
                      data_ts_se, # Dataset of observation error of time series 
-                     nfac=0, # Number of trends for the DFA, 0 to estimate the best number of trends
-                     mintrend=1, # Minimum number of trends to test
-                     maxtrend=5, # Maximum number of trends to test
-                     AIC=TRUE, # Display AIC
+                     nfac = 0, # Number of trends for the DFA, 0 to estimate the best number of trends
+                     mintrend = 1, # Minimum number of trends to test
+                     maxtrend = 5, # Maximum number of trends to test
+                     AIC = TRUE, # Display AIC
                      species_sub,  # Species names
-                     nboot=500, # Number of bootstrap for clustering
+                     nboot = 500, # Number of bootstrap for clustering
                      silent = TRUE, # Silence optimisation
-                     control = list() # Specify changes for DFA control options
+                     control = list(), # Specify changes for DFA control options
+                     se_log = TRUE
                      )
 {
-  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list()
+  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE
+  
   # Save first year for plot
   
   min_year <- as.numeric(colnames(data_ts)[2])
+  
+  # Log transformed standard errors if they are not 
+  
+  if(se_log == FALSE){
+    data_ts_se <- as.data.frame(data_ts_se)
+    data_ts_se[,-1] <- t(apply(data_ts_se[,-1], 1, function(x){x <- log(x); return(x)}))
+    data_ts_se <- as.data.table(data_ts_se)
+  }
+  
+  # Handle 0 values in time-series (replacing 0 by 1 % of the reference year value)
+  
+  if(length(which(data_ts==0))>0){
+      warning("At least one zero in time-series")
+      data_ts <- as.data.frame(data_ts)
+      zero_index <- which(data_ts==0, arr.ind = T)
+      data_ts[,-1] <- t(apply(data_ts[,-1], 1, function(x){if(length(which(x==0))>0){x[which(x==0)] <- mean(x,na.rm=T)/100}; return(x)}))
+      data_ts <- as.data.table(data_ts)
+
+      data_ts_se <- as.data.frame(data_ts_se)
+      if(anyNA(data_ts_se[zero_index[,1],zero_index[,2]])){
+        data_ts_se[zero_index[,1],zero_index[,2]] <- 0
+      }
+    }
+  
+  
   
   # Run the core_dfa function to find the best number of latent trend if not specified
 
   if(nfac==0){
     aic_best <- c()
+    bic_best <- c()
     for(i in mintrend:maxtrend){
       core_dfa_res <- assign(paste0("core_dfa",i), core_dfa(data_ts=data_ts, data_ts_se=data_ts_se, nfac=i, silent = silent, control = control))
       
       if(core_dfa_res[[11]]==0){
         aic_best <- c(aic_best, core_dfa_res[[10]])
       } else {
-        aic_best <- c(aic_best, NA)
+        warning(paste0("Convergence issue:", core_dfa_res[[2]]$message))
+        aic_best <- c(aic_best, core_dfa_res[[10]])
       }
     }
     if(length(which.min(aic_best))==0){stop("Convergence issues")}
-    nfac <- which.min(aic_best)
+    aic_min <- min(aic_best)
+    delta_aic <- c()
+    for(aic_ind in 1:length(aic_best)){
+      delta_aic[aic_ind] <- aic_best[aic_ind] - aic_min
+    }
+    nfac <- min(which(delta_aic<2)) # which.min(aic_best)
     
     core_dfa_res <- get(paste0("core_dfa",nfac))
   }else{
@@ -997,7 +1167,9 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            mean_dist_clust = group_dfa[[4]],
                                            pca_centre = group_dfa[[5]],
                                            Z_hat = Z_hat,
-                                           x_hat = x_hat)
+                                           x_hat = x_hat,
+                                           data_ts = data_ts,
+                                           data_ts_se = data_ts_se)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
@@ -1014,7 +1186,9 @@ make_dfa <- function(data_ts, # Dataset of time series
                                            mean_dist_clust = group_dfa[[4]],
                                            pca_centre = group_dfa[[5]],
                                            Z_hat = Z_hat,
-                                           x_hat = x_hat)
+                                           x_hat = x_hat,
+                                           data_ts = data_ts,
+                                           data_ts_se = data_ts_se)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
