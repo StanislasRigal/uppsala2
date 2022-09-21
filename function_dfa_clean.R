@@ -331,7 +331,10 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
           all_partition <- rbind(all_partition,all_partition2[2,])
           all_partition_gr[[gr]] <- all_partition
         }
-      }
+      }else{if(i == 1){
+        stability_cluster_gr[[gr]]<-1
+        all_partition_gr[[gr]] <- rep(1,nrow(species_sub))
+      }}
     }
   }
   
@@ -361,6 +364,12 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
                                      })
 
   all_partition_group <- all_partition2[1,]
+  num_row <- 1
+  while(length(unique(all_partition_group))!=nb_group){
+    num_row <- num_row + 1
+    all_partition_group <- all_partition2[num_row,]
+    
+  }
   
   
   # Compute PCA to get axes of the graph
@@ -541,21 +550,31 @@ plot_group_boot <- function(nb_group, # Number of clusters
     }else{
       if(nb_group==1){
         test <- data_trend_group[data_trend_group$group==paste0("g",(i-1)),]
+        min_scale <- min(data_trend_group$Estimate)-2*data_trend_group$Std..Error[which.min(data_trend_group$Estimate)]
+        max_scale <- max(data_trend_group$Estimate)+2*data_trend_group$Std..Error[which.max(data_trend_group$Estimate)]
+        min1 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error) + (max(data_trend_group$Estimate+1.96*data_trend_group$Std..Error)-min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error))/10
+        min2 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error)
       }else{
         test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
+        min_scale <- min(data_trend_group2$Estimate)-2*data_trend_group2$Std..Error[which.min(data_trend_group2$Estimate)]
+        max_scale <- max(data_trend_group2$Estimate)+2*data_trend_group2$Std..Error[which.max(data_trend_group2$Estimate)]
+        min1 <- min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error) + (max(data_trend_group2$Estimate+1.96*data_trend_group2$Std..Error)-min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error))/10
+        min2 <- min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error)
       }
     }
     test$Index_SE <- test$Std..Error
     test$Index <- test$Estimate
-    min1 <- min(test$Index-1.96*test$Index_SE) + (max(test$Index+1.96*test$Index_SE)-min(test$Index-1.96*test$Index_SE))/10
-    min2 <- min(test$Index-1.96*test$Index_SE)
+    test$Index_scal <- (test$Estimate-mean(test$Estimate))/sd(test$Estimate)
+    test$Index_SE_scal <- test$Std..Error/sd(test$Estimate)
+    
+
     if(i==1){
       
-      geom_mean$Index <- rescale(geom_mean$Index, to(min(test$Index),max(test$Index)))
+      geom_mean$Index_scal <- scale(geom_mean$Index)
       
-      ggplot(test, aes(x=year, y=Index)) +
+      ggplot(test, aes(x=year, y=Index_scal)) +
         geom_line(col="black", size=2) +
-        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill="black")+
+        geom_ribbon(aes(ymin=Index_scal-1.96*Index_SE_scal,ymax=Index_scal+1.96*Index_SE_scal),alpha=0.2,fill="black")+
         geom_point(data=geom_mean, col="black", size=2) +
         #geom_pointrange(data=geom_mean, aes(min=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE)) +
         xlab(NULL) + 
@@ -568,6 +587,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
         geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill=hex_codes1[(i-1)])+
         xlab(NULL) + 
         ylab(NULL) + 
+        ylim(c(min_scale,max_scale)) +
         annotate("text", x=mean(test$year), y=min1, label= paste0("Stability = ", round(stability_cluster_final[(i-1)],3))) +
         annotate("text", x=mean(test$year), y=min2, label= paste0("Mean distance = ", round(mean_dist_clust[(i-1),1],3))) +
         theme_modern() + 
@@ -1277,10 +1297,14 @@ simul_rand_dfa_intern <- function(cum_perc,
     id_vec <- c()
     seednum <- 0
     dist_clust <- thres
-    coord_clust <- t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # distance between summit of a tetrahedron
-                              -dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
-                              dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
-                              0,-dist_clust/(2*sqrt(6)),sqrt(3)/3*dist_clust), ncol=4))
+    coord_clust <- t(matrix(c(dist_clust/sqrt(2),0,0, # distance between summit of a tetrahedron
+                              dist_clust/sqrt(2),dist_clust/sqrt(2),dist_clust/sqrt(2),
+                              0,dist_clust/sqrt(2),0,
+                              0,0,dist_clust/sqrt(2)), ncol=4))
+    # t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # distance between summit of a tetrahedron
+    # -dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
+    # dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
+    # 0,-dist_clust/(2*sqrt(6)),sqrt(3)/3*dist_clust), ncol=4))
     mat_dist <- matrix(NA, ncol=n_sp_init, nrow=nb_group_exp)
     for(g in 1:nb_group_exp){
       nb_sp_g <- round(cum_perc[g]*n_sp/100)

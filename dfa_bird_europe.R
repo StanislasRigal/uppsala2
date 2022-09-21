@@ -155,27 +155,13 @@ df_all_country <- rbind.fill(droplevels(df[!(df$CountryGroup %in% c("Belgium-Bru
 # United Kingdom     
 # https://www.rspb.org.uk/our-work/conservation/conservation-and-sustainability/farming/near-you/farmland-bird-indicator/
 
-Tree sparrow
-Corn bunting
-Turtle dove
-Grey partridge
-Yellow wagtail
-Starling 
-Linnet  -58%
-Lapwing  -58%
-Yellowhammer  -54%
-Skylark  -51%
-Kestrel  -35%
-Reed bunting  -27%
-Whitethroat  +5%
-Greenfinch  +23%
-Rook  +41%
-Stock dove  +55%
-Goldfinch  +64%
-Woodpigeon  +125%
-Jackdaw 
 
-species_sub <- species_uk_farm <- 
+
+species_sub <- species_uk_farm <- c("Passer montanus", "Emberiza calandra", "Streptopelia turtur", "Perdix perdix",
+                                    "Motacilla flava", "Sturnus vulgaris", "Linaria cannabina", "Vanellus vanellus", 
+                                    "Emberiza citrinella", "Alauda arvensis", "Falco tinnunculus", "Emberiza schoeniclus",
+                                    "Curruca communis", "Chloris chloris", "Corvus frugilegus", "Columba oenas",  
+                                    "Carduelis carduelis", "Columba palumbus", "Coloeus monedula")
 
 
 
