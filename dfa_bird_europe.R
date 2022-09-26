@@ -205,10 +205,66 @@ species_sub <- species_den_forest <- c("Accipiter nisus","Columba oenas","Dryoco
 
 
 # Estonia
+# https://www.sciencedirect.com/science/article/pii/S0167880901002122#TBL2
+
+species_sub <- species_est_farm <- c("Ciconia ciconia","Crex crex","Tringa totanus","Delichon urbicum",
+                                     "Anthus pratensis","Locustella fluviatilis","Sylvia nisoria","Muscicapa striata",
+                                     "Carpodacus erythrinus","Acrocephalus dumetorum","Corvus corone", "Turdus pilaris",
+                                     "Carduelis carduelis","Locustella naevia","Carduelis chloris","Falco subbuteo",
+                                     "Vanellus vanellus","Carduelis cannabina","Pica pica","Circus aeruginosus",
+                                     "Acrocephalus palustris","Emberiza hortulana","Perdix perdix","Phasianus colchicus",
+                                     "Coturnix coturnix","Lanius collurio","Emberiza schoeniclus","Acrocephalus scirpaceus",
+                                     "Acrocephalus schoenobaenus","Alauda arvensis","Sturnus vulgaris","Columba oenas",
+                                     "Passer montanus","Oenanthe oenanthe","Saxicola rubetra","Motacilla alba",
+                                     "Sylvia communis","Columba palumbus","Motacilla flava","Emberiza citrinella")
+
+
+species_sub <- species_est_forest <- c("Luscinia luscinia","Dryocopus martius","Dendrocopos minor","Phylloscopus sibilatrix",
+                                       "Ficedula parva","Parus montanus","Parus cristatus","Certhia familiaris",
+                                       "Oriolus oriolus","Nucifraga caryocatactes","Pyrrhula pyrrhula","Coccothraustes coccothraustes",
+                                       "Turdus merula","Parus caeruleus","Fringilla coelebs","Cuculus canorus",
+                                       "Prunella modularis","Sylvia borin","Regulus regulus","Dendrocopus major",
+                                       "Parus major","Hippolais icterina","Sylvia curruca","Parus palustris",
+                                       "Sitta europaea","Ficedula hypoleuca","Corvus corax","Turdus iliacus",
+                                       "Erithacus rubecula",	"Carduelis spinus",	"Turdus philomelos","Anthus trivialis",
+                                       "Phylloscopus trochilus","Lullula arborea")
+
+
 
 # Finland
+#https://www.biodiversity.fi/ext/en/data-pages/fa8_backgroundinfo.html
+#https://www.biodiversity.fi/en/habitats/forests/fo10-forest-birds
+
+species_sub <- species_fin_farm <- c("Crex crex","Vanellus vanellus","Numenius arquata","Alauda arvensis",
+                                     "Hirundo rustica","Delichon urbica","Anthus pratensis","Saxicola rubertra",
+                                     "Turdus pilaris","Sylvia communis","Corvus monedula","Sturnus vulgaris",
+                                     "Passer montanus","Emberiza hortulana")
+
+species_sub <- species_fin_forest <- c("Cuculus canorus","Jynx torquilla","Dendrocopos major","Anthus trivialis",
+                                       "Troglodytes troglodytes","Prunella modularis","Luscinia luscinia","Turdus merula",
+                                       "Turdus philomelos","Turdus iliacus","Sylvia curruca","Sylvia borin",
+                                       "Sylvia atricapilla","Phylloscopus trochilus","Muscicapa striata","Ficedula hypoleuca",
+                                       "Corvus corax","Fringilla coelebs","Fringilla montifringilla","Carduelis flammea")
+
 
 # France
+# https://www.vigienature.fr/fr/produire-indicateurs-partir-indices-especes-habitat-2819
+# et naturefrance.fr/sites/default/files/2020-08/160513_note_methodologique_indice_stoc.pdf
+
+species_sub <- species_fra_farm <- c("Vanellus vanellus","Buteo buteo","Falco tinnunculus","Alectoris rufa",
+                                     "Perdix perdix","Coturnix coturnix","Upupa epops","Alauda arvensis",
+                                     "Lullula arborea","Galerida cristata","Anthus pratensis","Anthus campestris",
+                                     "Motacilla flava","Curruca communis","Saxicola torquatus","Saxicola rubetra",
+                                     "Oenanthe oenanthe","Lanius collurio","Corvus frugilegus","Linaria cannabina",
+                                     "Emberiza citrinella","Emberiza cirlus","Emberiza calandra","Emberiza hortulana")
+
+species_sub <- species_fra_forest <- c("Dendrocopos major","Dendrocoptes medius","Picus canus","Dryocopus martius",
+                                       "Curruca melanocephala","Phylloscopus bonelli","Phylloscopus sibilatrix","Phylloscopus collybita",
+                                       "Phylloscopus trochilus","Regulus regulus","Regulus ignicapilla","Sitta europaea",
+                                       "Certhia brachydactyla","Certhia familiaris","Troglodytes troglodytes","Turdus philomelos",
+                                       "Turdus viscivorus","Erithacus rubecula","Lophophanes cristatus","Periparus ater",
+                                       "Poecile palustris","Poecile montanus","Coccothraustes coccothraustes","Pyrrhula pyrrhula")
+
 
 # Germany
 
