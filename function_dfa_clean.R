@@ -900,10 +900,15 @@ core_dfa <- function(data_ts, # Dataset of time series
               ))
 }
 
+test<-t(apply(y_farm2[,-1],1,function(x){return(exp(scale(log(as.numeric(x)), scale = F)))}))
+
+
+
+
 # III) Main function for the DFA-clust analysis
 
 make_dfa <- function(data_ts, # Dataset of time series
-                     data_ts_se, # Dataset of observation error of time series 
+                     data_ts_se, # Dataset of log observation error of time series 
                      nfac = 0, # Number of trends for the DFA, 0 to estimate the best number of trends
                      mintrend = 1, # Minimum number of trends to test
                      maxtrend = 5, # Maximum number of trends to test
@@ -912,7 +917,8 @@ make_dfa <- function(data_ts, # Dataset of time series
                      nboot = 500, # Number of bootstrap for clustering
                      silent = TRUE, # Silence optimisation
                      control = list(), # Specify changes for DFA control options
-                     se_log = TRUE
+                     se_log = TRUE,
+                     is_mean_centred = TRUE
                      )
 {
   #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE
@@ -921,11 +927,31 @@ make_dfa <- function(data_ts, # Dataset of time series
   
   min_year <- as.numeric(colnames(data_ts)[2])
   
-  # Log transformed standard errors if they are not 
+  # Mean-centre values if they are not
+  
+  if(is_mean_centred == FALSE){
+    data_ts_prov <- t(apply(data_ts,1,function(x){return(exp(scale(log(as.numeric(x[-1])), scale = F)))}))
+    data_ts_prov <- data.table(data_ts[,1],data_ts_prov)
+    colnames(data_ts_prov) <- colnames(data_ts)
+    
+    data_ts_se_prov <- as.matrix(data_ts_se[,-1]) # from Taylor expansion
+    for(i in 1:nrow(data_ts_se)){
+      data_ts_se_prov[i,] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_prov[i,-1])*as.numeric(data_ts_se[1,-1])
+    }
+    data_ts_se_prov <- data.table(data_ts_se[,1],data_ts_se_prov)
+    
+    data_ts <- data_ts_prov
+    data_ts_se <- data_ts_se_prov
+    
+  }
+  
+  # Log transformed standard errors if they are not (from Taylor expansion)
   
   if(se_log == FALSE){
     data_ts_se <- as.data.frame(data_ts_se)
-    data_ts_se[,-1] <- t(apply(data_ts_se[,-1], 1, function(x){x <- log(x); return(x)}))
+    for(i in 1:nrow(data_ts_se)){
+      data_ts_se[i,-1] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_se[1,-1])
+    }
     data_ts_se <- as.data.table(data_ts_se)
   }
   
@@ -1288,7 +1314,7 @@ simul_rand_dfa_intern <- function(cum_perc,
     assign(paste0("nb_sp_g",g),nb_sp_g)
     id_vec <- c(id_vec,rep(g,nb_sp_g))
     for(lt in 1:n_sp_init){
-      mean_u_g <- 0#runif(1, -1, 1)
+      mean_u_g <- 0 
       lf_u_g <- rnorm(nb_sp_g, mean_u_g, sd_ci)
       assign(paste0("mean_u",lt,"_g",g),mean_u_g) # mean of loading factors in group g for latend trend lt
       assign(paste0("lf_u",lt,"_g",g),lf_u_g) # loading factors for each ts of group g for latend trend lt
@@ -1301,7 +1327,7 @@ simul_rand_dfa_intern <- function(cum_perc,
                               dist_clust/sqrt(2),dist_clust/sqrt(2),dist_clust/sqrt(2),
                               0,dist_clust/sqrt(2),0,
                               0,0,dist_clust/sqrt(2)), ncol=4))
-    # t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # distance between summit of a tetrahedron
+    # t(matrix(c(0,sqrt(3)/(2*sqrt(2))*dist_clust,0, # also distance between summit of a tetrahedron
     # -dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
     # dist_clust/2,-dist_clust/(2*sqrt(6)),-sqrt(3)/6*dist_clust,
     # 0,-dist_clust/(2*sqrt(6)),sqrt(3)/3*dist_clust), ncol=4))

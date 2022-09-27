@@ -406,4 +406,8 @@ res_tot_l2_sum <- data.frame(res_tot_l2 %>% group_by(proximity) %>% summarize(me
                                                                             sd_similarity = sd(similarity, na.rm=T),
                                                                             mean_stability = mean(stability, na.rm=T),
                                                                             sd_stability = sd(stability, na.rm=T)))
+### Complementary test with life history traits
+
+trait <- read.table("raw_data/Life-history characteristics of European birds.txt", header = T, sep = "\t")
+
 

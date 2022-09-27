@@ -159,7 +159,23 @@ species_sub <- species_bul_forest <- c("Columba palumbus","Dendrocopos major","E
                                        "Turdus philomelos")
 
 # Cyprus
-# asked
+# https://www.ebcc.info/wp-content/uploads/2020/06/bcn-30-1.pdf#page=33
+
+species_sub <- species_cyp_farm <- c("Falco tinnunculus","Alectoris chukar","Francolinus francolinus","Coturnix coturnix",
+                                     "Columba palumbus","Streptopelia turtur","Clamator glandarius","Athene noctua",
+                                     "Coracias garrulus","Galerida cristata","Hirundo rustica","Oenanthe cypriaca",
+                                     "Cisticola juncidis","Iduna pallida","Sylvia conspicillata","Sylvia melanocephala",
+                                     "Parus major","Pica pica","Corvus corone","Passer hispaniolensis",
+                                     "Chloris chloris","Carduelis carduelis","Linaria cannabina","Emberiza melanocephala",
+                                     "Emberiza calandra")
+
+species_sub <- species_cyp_forest <- c("Columba palumbus","Streptopelia turtur","Troglodytes troglodytes","Oenanthe cypriaca",
+                                       "Cettia cetti","Hippolais pallida","Sylvia melanothorax","Periparus ater",
+                                       "Parus major","Certhia brachydactyla","Lanius nubicus","Garrulus glandarius",
+                                       "Fringilla coelebs","Serinus serinus","Chloris chloris","Carduelis carduelis",
+                                       "Emberiza caesia")
+
+
 
 # Czech Republic
 # https://www.tandfonline.com/doi/abs/10.1080/00063657.2015.1048423
