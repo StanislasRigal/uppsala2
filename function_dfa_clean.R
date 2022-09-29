@@ -900,7 +900,6 @@ core_dfa <- function(data_ts, # Dataset of time series
               ))
 }
 
-test<-t(apply(y_farm2[,-1],1,function(x){return(exp(scale(log(as.numeric(x)), scale = F)))}))
 
 
 

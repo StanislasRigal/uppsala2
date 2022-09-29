@@ -283,6 +283,27 @@ species_sub <- species_fra_forest <- c("Dendrocopos major","Dendrocoptes medius"
 
 
 # Germany
+# https://link.springer.com/article/10.1007/s10336-020-01830-4#additional-information
+
+species_sub <- species_fra_farm <- c("Buteo buteo","Falco tinnunculus","Phasianus colchicus","Coturnix coturnix",
+                                     "Sturnus vulgaris","Curruca communis","Emberiza calandra","Alauda arvensis",
+                                     "Passer montanus","Streptopelia turtur","Turdus pilaris","Perdix perdix",
+                                     "Anthus pratensis","Vanellus vanellus","Milvus milvus","Lanius collurio",
+                                     "Saxicola rubetra","Motacilla flava","Emberiza citrinella")
+
+
+
+Black Woodpecker, Blackcap, Blue Tit, Coal Tit,
+Common Chiffchaff,Common Raven, Crested Tit, Eurasian Bullfinch,
+Eurasian Chaffinch,Eurasian Golden Oriole, Eurasian Jay, Eurasian Treecreeper,
+European Pied Flycatcher,European Robin, Firecrest, Garden Warbler,
+Goldcrest Great Crested,Great Spotted Woodpecker, Grey-faced Woodpecker, Hawfinch,
+Lesser Spotted Woodpecker,Long-tailed Tit, Marsh Tit, Middle Spotted Woodpecker,
+Mistle Thrush,Short-toed Treecreeper, Song Thrush, Stock Dove,
+Tree Pipit, Willow Tit,Willow Warbler, Eurasian Wren, Wood Nuthatch,
+Wood Warbler
+
+
 
 # Greece
 

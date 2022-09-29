@@ -410,4 +410,50 @@ res_tot_l2_sum <- data.frame(res_tot_l2 %>% group_by(proximity) %>% summarize(me
 
 trait <- read.table("raw_data/Life-history characteristics of European birds.txt", header = T, sep = "\t")
 
+data_for_trait <- merge(farm_nfac[[12]][[1]][[1]],
+                        trait[,c("Species","LengthU_MEAN","WeightU_MEAN","Clutch_MEAN",
+                                 "Nest.type","Life.span","Long.distance.migrant",
+                                 "Broods.per.year","Incubation.period",
+                                 "Age.of.first.breeding","Sedentary",
+                                 "Folivore_Y", "Frugivore_Y", "Granivore_Y", "Arthropods_Y",
+                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B")],
+                        by.x="name_long", by.y="Species", all.x=T)
+#data_for_trait <- data_for_trait[data_for_trait$group!=3,]
+data_for_trait$group <- as.character(data_for_trait$group)
+summary(lm(WeightU_MEAN~group,data_for_trait))
+summary(lm(Clutch_MEAN~group,data_for_trait))
+summary(lm(Life.span~group,data_for_trait))
+summary(lm(Broods.per.year~group,data_for_trait))
+summary(lm(Incubation.period~group,data_for_trait))
+summary(lm(Age.of.first.breeding~group,data_for_trait))
+table(data_for_trait$Nest.type,data_for_trait$group)
+table(data_for_trait$Long.distance.migrant,data_for_trait$group)
+table(data_for_trait$Sedentary,data_for_trait$group)
+table(data_for_trait$Frugivore_Y,data_for_trait$group)
+table(data_for_trait$Granivore_Y,data_for_trait$group)
+table(data_for_trait$Arthropods_Y,data_for_trait$group)
+table(data_for_trait$Granivore_B,data_for_trait$group)
+table(data_for_trait$Arthropods_B,data_for_trait$group)
 
+summary(lm(PC2~WeightU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
+  Broods.per.year+Incubation.period+Age.of.first.breeding+Sedentary+
+  Frugivore_Y+Granivore_Y+Arthropods_Y,data_for_trait))
+
+library(RVAideMemoire)
+
+m1 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
+     Broods.per.year+Incubation.period+Age.of.first.breeding+Sedentary+
+     Granivore_B+Arthropods_B,data_for_trait)
+
+Anova(m1)
+
+m2 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
+           Broods.per.year+Incubation.period+Age.of.first.breeding+
+           Granivore_B+Arthropods_B,data_for_trait)
+
+m3 <- lm(PC2~LengthU_MEAN+Life.span+Long.distance.migrant+
+           Age.of.first.breeding+
+           Granivore_B+Arthropods_B,data_for_trait)
+
+m4 <- lm(PC2~LengthU_MEAN+Life.span+Long.distance.migrant+
+           Granivore_B,data_for_trait)
