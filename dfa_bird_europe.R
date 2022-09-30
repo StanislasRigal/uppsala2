@@ -285,39 +285,150 @@ species_sub <- species_fra_forest <- c("Dendrocopos major","Dendrocoptes medius"
 # Germany
 # https://link.springer.com/article/10.1007/s10336-020-01830-4#additional-information
 
-species_sub <- species_fra_farm <- c("Buteo buteo","Falco tinnunculus","Phasianus colchicus","Coturnix coturnix",
+species_sub <- species_ger_farm <- c("Buteo buteo","Falco tinnunculus","Phasianus colchicus","Coturnix coturnix",
                                      "Sturnus vulgaris","Curruca communis","Emberiza calandra","Alauda arvensis",
                                      "Passer montanus","Streptopelia turtur","Turdus pilaris","Perdix perdix",
                                      "Anthus pratensis","Vanellus vanellus","Milvus milvus","Lanius collurio",
                                      "Saxicola rubetra","Motacilla flava","Emberiza citrinella")
 
-
-
-Black Woodpecker, Blackcap, Blue Tit, Coal Tit,
-Common Chiffchaff,Common Raven, Crested Tit, Eurasian Bullfinch,
-Eurasian Chaffinch,Eurasian Golden Oriole, Eurasian Jay, Eurasian Treecreeper,
-European Pied Flycatcher,European Robin, Firecrest, Garden Warbler,
-Goldcrest Great Crested,Great Spotted Woodpecker, Grey-faced Woodpecker, Hawfinch,
-Lesser Spotted Woodpecker,Long-tailed Tit, Marsh Tit, Middle Spotted Woodpecker,
-Mistle Thrush,Short-toed Treecreeper, Song Thrush, Stock Dove,
-Tree Pipit, Willow Tit,Willow Warbler, Eurasian Wren, Wood Nuthatch,
-Wood Warbler
-
+species_sub <- species_ger_forest <- c("Dryocopus martius","Sylvia atricapilla","Cyanistes caeruleus","Periparus ater",
+                                       "Phylloscopus collybita","Corvus corax","Lophophanes cristatus","Pyrrhula pyrrhula",
+                                       "Fringilla coelebs","Oriolus oriolus","Garrulus glandarius","Certhia familiaris",
+                                       "Ficedula hypoleuca","Erithacus rubecula","Regulus ignicapilla","Sylvia borin",
+                                       "Regulus regulus","Dendrocopos major","Picus canus","Coccothraustes coccothraustes",
+                                       "Dryobates minor","Aegithalos caudatus","Poecile palustris","Dendrocoptes medius",
+                                       "Turdus viscivorus","Certhia brachydactyla","Turdus philomelos","Columba oenas",
+                                       "Anthus trivialis","Poecile montanus","Phylloscopus trochilus","Troglodytes troglodytes",
+                                       "Sitta europaea","Phylloscopus sibilatrix")
 
 
 # Greece
+# same as EU, https://www.ornithologiki.gr/en/our-work/conservation-scientific-research/bird-monitoring/1298-programma-parakoloythisis-ton-koinon-eidon-poulion-tis-elladas
+
 
 # Hungary
+# https://www.mme.hu/tovabbra-csokken-hazai-mezogazdasagi-teruletek-madarvilaga
+
+species_sub <- species_hun_farm <- c("Falco tinnunculus","Perdix perdix","Coturnix coturnix","Vanellus vanellus",
+                                     "Merops apiaster","Galerida cristata","Alauda arvensis","Anthus campestris",
+                                     "Motacilla flava","Locustella naevia","Curruca nisoria","Curruca communis",
+                                     "Lanius collurio","Lanius minor","Sturnus vulgaris","Emberiza calandra")
+
+species_sub <- species_hun_forest <- c("Columba oenas","Dryocopus martius","Dendrocopos major","Dendrocoptes medius",
+                                       "Dryobates minor","Lullula arborea","Troglodytes troglodytes","Prunella modularis",
+                                       "Erithacus rubecula","Turdus philomelos","Turdus viscivorus","Phylloscopus sibilatrix",
+                                       "Phylloscopus collybita","Ficedula albicollis","Poecile palustris","Periparus ater",
+                                       "Cyanistes caeruleus","Sitta europaea","Certhia brachydactyla","Garrulus glandarius",
+                                       "Fringilla coelebs","Coccothraustes coccothraustes")
+
+
 
 # Italy
+# https://www.reterurale.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/15032
+
+species_sub <- species_ita_farm <- c("Alauda arvensis","Lanius collurio","Motacilla alba","Melanocorypha calandra",
+                                     "Calandrella brachydactyla","Anthus campestris","Galerida cristata","Carduelis carduelis",
+                                     "Corvus cornix","Motacilla flava","Pica pica","Falco tinnunculus",
+                                     "Emberiza hortulana","Passer italiae","Passer montanus","Passer hispaniolensis",
+                                     "Oriolus oriolus","Hirundo rustica","Saxicola torquatus","Sturnus vulgaris",
+                                     "Sturnus unicolor","Emberiza calandra","Jynx torquilla","Streptopelia turtur",
+                                     "Upupa epops","Luscinia megarhynchos","Carduelis chloris","Serinus serinus")
+
+species_sub <- species_ita_forest <- c("Poecile montanus","Poecile palustris","Lophophanes cristatus","Periparus ater",
+                                       "Cyanistes caeruleus","Pyrrhula pyrrhula","Aegithalos caudatus","Regulus ignicapilla",
+                                       "Fringilla coelebs","Garrulus glandarius","Phylloscopus bonelli","Phylloscopus collybita",
+                                       "Nucifraga caryocatactes","Erithacus rubecula","Sitta europaea","Dryocopus martius",
+                                       "Dendrocopos major","Certhia familiaris","Certhia brachydactyla","Regulus regulus",
+                                       "Troglodytes troglodytes","Turdus viscivorus","Turdus philomelos")
+
 
 # Latvia
+# https://www.researchgate.net/profile/Oskars-Keiss/publication/268363185_Experiences_with_a_Baseline_Indicator_Farmland_Bird_Index_in_Latvia/links/55097a2f0cf26ff55f859259/Experiences-with-a-Baseline-Indicator-Farmland-Bird-Index-in-Latvia.pdf
+# https://www.lu.lv/fileadmin/user_upload/LU.LV/Apaksvietnes/Konferences/Comm_ForestBirds_Trends_LV_AuninsA_20181205.pdf
+
+species_sub <- species_lat_farm <- c("Ciconia ciconia","Crex crex","Vanellus vanellus","Alauda arvensis",
+                                     "Anthus pratensis","Locustella naevia","Acrocephalus palustris","Saxicola rubetra",
+                                     "Carduelis carduelis","Linaria cannabina","Carpodacus erythrinus","Emberiza citrinella")
+
+
+species_sub <- species_lat_forest <- c("Accipiter gentilis","Accipiter nisus","Bonasa bonasia","Picus canus",
+                                       "Dryocopus martius","Dryobates minor","Dendrocopos leucotos","Picoides tridactylus",
+                                       "Turdus viscivorus","Phylloscopus sibilatrix","Regulus regulus","Ficedula parva",
+                                       "Ficedula hypoleucos","Aegithalos caudatus","Poecile palustris","Poecile montanus",
+                                       "Lophophanes cristatus","Periparus ater","Certhia familiaris","Nucifraga caryocatactes",
+                                       "Loxia curvirostra","Pyrrhula pyrrhula","Coccothraustes coccothraustes")
+
 
 # Lithuania
 
 # Luxembourg
 
 # Netherlands
+# https://stats.sovon.nl/pub/publicatie/18092
+
+Patrijs
+Zomertortel
+Kievit
+Grutto
+Spreeuw
+Scholekster 
+Wulp 
+Tureluur
+Kuifeend
+Zomertaling
+Torenvalk 
+Kwartel
+Ringmus
+Slobeend
+Geelgors
+Wintertaling
+Watersnip 
+Grote
+Lijster 
+Grauwe
+Gors
+Veldleeuwerik 
+Gele
+Kwikstaart 
+Spotvogel 
+Boerenzwaluw
+Roodborsttapuit
+Krakeend 
+Grasmus
+Putter
+
+
+
+Spreeuw 
+Wilde Eend 
+Fitis 
+Merel
+Houtduif
+Zwarte
+Kraai
+Groenling
+Heggenmus
+Oeverzwaluw
+Tuinfluiter 
+Witte Kwikstaart
+Zanglijster 
+Meerkoet
+Pimpelmees 
+Rietgors 
+Bosrietzanger 
+Koolmees 
+Tjiftjaf 
+Vink
+Kleine Karekiet
+Winterkoning 
+Grote Bonte Specht 
+Grasmus 
+Zwartkop 
+Kerkuil 
+Putter 
+Grauwe Gans
+
+
 
 # Norway
 
@@ -330,6 +441,8 @@ Wood Warbler
 # Romania
 
 # Slovakia
+# https://www.enviroportal.sk/indicator/detail?id=4041&print=yes
+Alauda arvensis, Carduelis cannabina, Carduelis carduelis, Emberiza calandra, Emberiza citrinella, Falco tinnunculus, Hirundo rustica, Chloris chloris, Lanius collurio, Locustella naevia, Motacilla flava, Passer montanus, Saxicola rubetra, Saxicola torquata, Serinus serinus, Streptopelia turtur, Sturnus vulgaris, Sylvia communis, Sylvia nisoria, Vanellus vanellus.
 
 # Slovenia
 
