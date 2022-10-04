@@ -110,25 +110,8 @@ species_sub <- species_aus_farm <- c("Falco tinnunculus","Perdix perdix","Vanell
                                      "Sturnus vulgaris","Passer montanus","Serinus serinus","Carduelis citrinella",
                                      "Carduelis carduelis","Linaria cannabina","Emberiza citrinella","Emberiza calandra")
 
-species_sub <- species_aus_forest <- c("Bonasa bonasia","Tetrao tetrix","Tetrao urogallus","Ciconia nigra",
-                                       "Pernis apivorus","Accipiter gentilis","Accipiter nisus","Buteo buteo",
-                                       "Scolopax rusticola","Columba oenas","Columba palumbus","Cuculus canorus",
-                                       "Bubo bubo","Glaucidium passerinum","Strix aluco","Aegolius funereus",
-                                       "Caprimulgus europaeus","Jynx torquilla","Picus canus","Picus viridis",
-                                       "Dryocopus martius","Dendrocopos major","Dendrocopos medius","Dendrocopos leucotos",
-                                       "Dendrocopos minor","Picoides tridactylus","Lullula arborea","Anthus trivialis",
-                                       "Troglodytes troglodytes","Prunella modularis","Erithacus rubecula","Luscinia megarhynchos",
-                                       "Phoenicurus phoenicurus","Turdus torquatus","Turdus merula","Turdus pilaris",
-                                       "Turdus philomelos","Turdus viscivorus","Locustella fluviatilis","Hippolais icterina",
-                                       "Sylvia curruca","Sylvia borin","Sylvia atricapilla","Phylloscopus bonelli",
-                                       "Phylloscopus sibilatrix","Phylloscopus collybita","Phylloscopus trochilus","Regulus regulus",
-                                       "Regulus ignicapilla","Muscicapa striata","Ficedula parva","Ficedula albicollis",
-                                       "Ficedula hypoleuca","Aegithalos caudatus","Parus palustris","Parus montanus",
-                                       "Parus cristatus","Parus ater","Parus caeruleus","Parus major",
-                                       "Sitta europaea","Certhia familiaris","Certhia brachydactyla","Oriolus oriolus",
-                                       "Garrulus glandarius","Nucifraga caryocatactes","Fringilla coelebs","Serinus serinus",
-                                       "Carduelis chloris","Carduelis spinus","Carduelis flammea","Loxia curvirostra",
-                                       "Pyrrhula pyrrhula","Coccothraustes coccothraustes")
+species_sub <- species_aus_forest <- c("Jynx torquilla","Lullula arborea","Anthus trivialis","Turdus pilaris",
+                                       "Serinus serinus")
 
 
 # Belgium
@@ -304,7 +287,7 @@ species_sub <- species_ger_forest <- c("Dryocopus martius","Sylvia atricapilla",
 
 # Greece
 # same as EU, https://www.ornithologiki.gr/en/our-work/conservation-scientific-research/bird-monitoring/1298-programma-parakoloythisis-ton-koinon-eidon-poulion-tis-elladas
-
+# asked
 
 # Hungary
 # https://www.mme.hu/tovabbra-csokken-hazai-mezogazdasagi-teruletek-madarvilaga
@@ -360,97 +343,237 @@ species_sub <- species_lat_forest <- c("Accipiter gentilis","Accipiter nisus","B
 
 
 # Lithuania
+# asked
 
 # Luxembourg
+# asked
+
+species_sub <- species_lux_farm <- c("Alauda arvensis","Saxicola torquata ","Sylvia communis","Lanius collurio",
+                                     "Passer montanus","Carduelis cannabina","Emberiza citrinella")
+
+
+species_sub <- species_lux_forest <- c("Columba oenas","Dryocopus martius","Leiopicus medius","Anthus trivialis",
+                                       "Turdus viscivorus","Phylloscopus sibilatrix","Regulus regulus","Regulus ignicapillus",
+                                       "Sitta europaea","Certhia familiaris","Coccothraustes coccothraustes")
+
 
 # Netherlands
 # https://stats.sovon.nl/pub/publicatie/18092
+# asked
 
-Patrijs
-Zomertortel
-Kievit
-Grutto
-Spreeuw
-Scholekster 
-Wulp 
-Tureluur
-Kuifeend
-Zomertaling
-Torenvalk 
-Kwartel
-Ringmus
-Slobeend
-Geelgors
-Wintertaling
-Watersnip 
-Grote
-Lijster 
-Grauwe
-Gors
-Veldleeuwerik 
-Gele
-Kwikstaart 
-Spotvogel 
-Boerenzwaluw
-Roodborsttapuit
-Krakeend 
-Grasmus
-Putter
+species_sub <- species_net_farm <- c("Perdix perdix","Streptopelia turtur","Vanellus vanellus","Limosa limosa",
+                                     "Sturnus vulgaris","Haematopus ostralegus","Numenius arquata ","Tringa totanus",
+                                     "Aythya fuligula","Spatula querquedula","Falco tinnunculus ","Coturnix coturnix",
+                                     "Passer montanus","Spatula clypeata","Emberiza citrinella","Anas crecca",
+                                     "Gallinago gallinago","Turdus viscivorus ","Emberiza calandra","Alauda arvensis ",
+                                     "Motacilla flava ","Hippolais icterina ","Hirundo rustica","Saxicola rubicola",
+                                     "Mareca strepera ","Curruca communis","Carduelis carduelis")
 
 
 
-Spreeuw 
-Wilde Eend 
-Fitis 
-Merel
-Houtduif
-Zwarte
-Kraai
-Groenling
-Heggenmus
-Oeverzwaluw
-Tuinfluiter 
-Witte Kwikstaart
-Zanglijster 
-Meerkoet
-Pimpelmees 
-Rietgors 
-Bosrietzanger 
-Koolmees 
-Tjiftjaf 
-Vink
-Kleine Karekiet
-Winterkoning 
-Grote Bonte Specht 
-Grasmus 
-Zwartkop 
-Kerkuil 
-Putter 
-Grauwe Gans
+
+Sturnus vulgaris 
+Anas platyrhynchos
+Phylloscopus trochilus 
+Turdus merula
+Columba palumbus
+Corvus corone
+Chloris chloris
+Prunella modularis
+Riparia riparia
+Sylvia borin 
+Motacilla alba
+Turdus philomelos
+Fulica atra
+Cyanistes caeruleus
+Emberiza schoeniclus 
+Acrocephalus palustris 
+Parus major 
+Phylloscopus collybita 
+Fringilla coelebs
+Acrocephalus scirpaceus
+Troglodytes troglodytes 
+Dendrocopos major
+Curruca communis 
+Sylvia atricapilla 
+Tyto alba 
+Carduelis carduelis 
+Anser anser
 
 
 
 # Norway
+# https://onlinelibrary.wiley.com/doi/full/10.1111/ibi.12896
+# https://www.naturindeks.no/Themes/28
+
+species_sub <- species_nor_farm <- c("Vanellus vanellus","Numenius arquata","Larus canus","Columba palumbus",
+                                     "Turdus pilaris","Pica pica","Corvus cornix","Alauda arvensis",
+                                     "Hirundo rustica","Delichon urbicum","Sylvia communis","Sylvia curruca",
+                                     "Sturnus vulgaris","Saxicola rubetra","Passer domesticus","Motacilla alba",
+                                     "Emberiza citrinella")
+
+
+species_sub <- species_nor_forest <- c("Turdus viscivorus","Poecile montanus","Accipiter gentilis","Sylvia atricapilla",
+                                       "Ficedula hypoleuca","Lophophanes cristatus","Hippolais icterina","Lyrurus tetrix",
+                                       "Dendrocopos major","Dryocopus martius","Picus viridis","Turdus iliacus",
+                                       "Garrulus glandarius","Certhia familiaris","Phoenicurus phoenicurus","Regulus regulus",
+                                       "Sylvia borin","Muscicapa striata")
+
+
 
 # Poland
+# https://sdg.gov.pl/en/statistics_nat/15-1-a/
+# https://agro.icm.edu.pl/agro/element/bwmeta1.element.agro-7c2d9bb3-978e-4620-bd07-62df7e877dc2
+
+species_sub <- species_pol_farm <- c("Ciconia ciconia", "Falco tinnunculus", "Vanellus vanellus", "Limosa limosa",
+                                     "Upupa epops", "Streptopelia turtur", "Alauda arvensis", "Galerida cristata",
+                                     "Anthus pratensis", "Motacilla flava", "Hirundo rustica", "Saxicola rubetra",
+                                     "Saxicola rubicola", "Curruca communis", "Lanius collurio", "Passer montanus",
+                                     "Sturnus vulgaris", "Linaria cannabina", "Serinus serinus", "Emberiza calandra",
+                                     "Emberiza citrinella", "Emberiza hortulana")
+
+species_sub <- species_pol_forest <- c("Periparus ater", "Lophophanus cristatus", "Regulus regulus", "Erithacus rubecula",
+                                       "Pyrrhula pyrrhula", "Phyloscopus sibilatrix", "Dendrocopos major", "Troglodytes troglodytes",
+                                       "Certhia familiaris", "Phylloscopus colybita", "Regulus ignicapillus", "Anthus trivialis", 
+                                       "Turdus philomelos", "Dryocopus martius", "Garrulus glandarius", "Turdus viscivorus",
+                                       "Fringilla coelebs", "Ficedula parva", "Ficedula hypoleuca", "Sitta europea", 
+                                       "Prunella modularis", "Carduelis spinus", "Phylloscopus trochulus", "Poecile montanus",
+                                       "Parus major", "Poecile palustris", "Turdus merula", "Lullula arborea",
+                                       "Sylvia atricapilla", "Certhia brachydactyla", "Aegithalos caudatus", "Coccothraustes coccothraustes",
+                                       "Columba oenas", "Phoenicurus phoenicurus")
+
 
 # Portugal
+# https://www.spea.pt/wp-content/uploads/2021/06/relatorio_cac_2021_vf3.pdf
+
+species_sub <- species_por_farm <- c("Athene noctua","Bubulcus ibis","Carduelis carduelis","Chloris chloris",
+                                     "Ciconia ciconia","Cisticola juncidis","Coturnix coturnix","Delichon urbica",
+                                     "Emberiza cirlus","Falco tinnunculus","Galerida cristata","Hirundo rustica",
+                                     "Lanius meridionalis","Linaria cannabina","Merops apiaster","Miliaria calandra",
+                                     "Milvus migrans","Passer domesticus","Pica pica","Saxicola rubicola",
+                                     "Serinus serinus","Sturnus unicolor","Upupa epops")
+
+species_sub <- species_por_forest <- c("Aegithalos caudatus","Certhia brachydactyla","Columba palumbus","Cuculus canorus",
+                                       "Cyanistes caeruleus","Dendrocopos major","Erithacus rubecula","Fringilla coelebs",
+                                       "Garrulus glandarius","Lanius senator","Lophophanes cristatus","Lullula arborea",
+                                       "Oriolus oriolus","Parus major","Periparus ater","Picus viridis",
+                                       "Sitta europaea","Streptopelia turtur","Sylvia atricapilla","Troglodytes troglodytes"
+)
+
 
 # Republic of Ireland
+# https://birdwatchireland.ie/our-work/surveys-research/research-surveys/countryside-bird-survey/countryside-bird-population-indicators/
+# no forest indicator but asked
+
+species_sub <- species_ire_farm <- c("Falco tinnunculus","Phasianus colchicus","Columba oenas","Columba palumbus",
+                                     "Hirundo rustica","Motacilla alba","Saxicola rubicola","Pica pica",
+                                     "Coloeus monedula","Corvus frugilegus","Corvus cornix","Sturnus vulgaris",
+                                     "Passer domesticus","Fringilla coelebs","Chloris chloris","Carduelis carduelis",
+                                     "Linaria cannabina","Emberiza citrinella")
+
 
 # Romania
+# asked
+
 
 # Slovakia
 # https://www.enviroportal.sk/indicator/detail?id=4041&print=yes
-Alauda arvensis, Carduelis cannabina, Carduelis carduelis, Emberiza calandra, Emberiza citrinella, Falco tinnunculus, Hirundo rustica, Chloris chloris, Lanius collurio, Locustella naevia, Motacilla flava, Passer montanus, Saxicola rubetra, Saxicola torquata, Serinus serinus, Streptopelia turtur, Sturnus vulgaris, Sylvia communis, Sylvia nisoria, Vanellus vanellus.
+# 18 species but asked
+
+species_sub <- species_slk_farm <- c("Alauda arvensis", "Carduelis cannabina", "Carduelis carduelis", "Emberiza calandra",
+                                     "Emberiza citrinella", "Falco tinnunculus", "Hirundo rustica", "Chloris chloris",
+                                     "Lanius collurio", "Locustella naevia", "Motacilla flava", "Passer montanus",
+                                     "Saxicola rubetra", "Saxicola torquata", "Serinus serinus", "Streptopelia turtur",
+                                     "Sturnus vulgaris", "Sylvia communis", "Sylvia nisoria", "Vanellus vanellus"
+)
+
+
+
+
+
 
 # Slovenia
+# https://www.sciencedirect.com/science/article/pii/S0167880920303868
+# no forest bird index (confirmed)
+
+species_sub <- species_sln_farm <- c("Acrocephalus palustris","Alauda arvensis","Anthus trivialis","Carduelis cannabina",
+                                     "Carduelis carduelis","Columba oenas","Columba palumbus","Emberiza calandra",
+                                     "Emberiza cirlus","Emberiza citrinella","Falco tinnunculus","Galerida cristata",
+                                     "Hirundo rustica","Jynx torquilla","Lanius collurio","Lullula arborea",
+                                     "Luscinia megarhynchos","Motacilla flava","Passer montanus","Phoenicurus phoenicurus",
+                                     "Picus viridis","Saxicola rubetra","Saxicola torquatus","Serinus serinus",
+                                     "Streptopelia turtur","Sturnus vulgaris","Sylvia communis","Upupa epops",
+                                     "Vanellus vanellus")
+
+
 
 # Spain
+# https://www.nature.com/articles/s41598-019-45854-0
+# asked
+
+species_sub <- species_spa_farm <- c("Merops apiaster","Upupa epops","Alauda arvensis","Melanocorypha calandra",
+                                     "Falco tinnunculus","Cisticola juncidis","Coturnix coturnix","Galerida cristata",
+                                     "Oenanthe hispanica","Emberiza calandra","Sturnus unicolor","Sturnus vulgaris",
+                                     "Pterocles orientalis","Hirundo rustica","Passer domesticus","Passer montanus",
+                                     "Passer hispaniolensis","Corvus monedula","Carduelis carduelis","Athene noctua",
+                                     "Carduelis cannabina","Alectoris rufa","Tetrax tetrax","Calandrella brachydactyla",
+                                     "Streptopelia turtur","Pica pica")
+
 
 # Sweden
 
+species_sub <- species_swe_farm <-  c("Falco tinnunculus","Vanellus vanellus","Alauda arvensis","Hirundo rustica",
+                                      "Corvus frugilegus","Saxicola rubetra","Sylvia communis","Anthus pratensis",
+                                      "Motacilla flava","Lanius collurio","Sturnus vulgaris","Linaria cannabina",
+                                      "Emberiza citrinella","Emberiza hortulana","Passer montanus")
+
+
+species_sub <- species_swe_forest <- c("Accipiter nisus","Bonasa bonasia","Tringa ochropus","Columba oenas",
+                                       "Dendrocopos major","Dryocopus martius","Picus viridis","Jynx torquilla",
+                                       "Dryobates minor","Picoides tridactylus","Nucifraga caryocatactes","Garrulus glandarius",
+                                       "Periparus ater","Lophophanes cristatus","Poecile palustris","Poecile montanus",
+                                       "Sitta europaea","Certhia familiaris","Turdus viscivorus","Phoenicurus phoenicurus",
+                                       "Phylloscopus collybita","Phylloscopus sibilatrix","Regulus regulus","Ficedula hypoleuca",
+                                       "Anthus trivialis","Coccothraustes coccothraustes","Spinus spinus","Pyrrhula pyrrhula",
+                                       "Emberiza rustica")
+
+
 # Switzerland
+# https://www.researchgate.net/publication/228432513_Fur_welche_Vogelarten_tragt_die_Schweiz_eine_besondere_Verantwortung/link/09e415136eddea186c000000/download
+# https://www.researchgate.net/profile/Verena-Keller/publication/289958618_Swiss_bird_index_SBIR_-_Combined_population_trend_indices_for_different_groups_of_regular_breeding_birds_in_Switzerland_1990-2004/links/589b161c92851c8bb685e99c/Swiss-bird-index-SBIR-Combined-population-trend-indices-for-different-groups-of-regular-breeding-birds-in-Switzerland-1990-2004.pdf?_sg%5B0%5D=started_experiment_milestone&origin=journalDetail
+
+species_sub <- species_swi_farm <- c("Falco tinnunculus","Ciconia ciconia","Alectoris rufa","Perdix perdix",
+                                     "Crex crex","Vanellus vanellus","Tyto alba","Otus scops",
+                                     "Athene noctua","Asio otus","Upupa epops","Jynx torquilla",
+                                     "Lullula arborea","Alauda arvensis","Anthus pratensis","Motacilla flava",
+                                     "Phoenicurus phoenicurus","Saxicola rubetra","Saxicola torquata","Sylvia communis",
+                                     "Lanius minor","Lanius excubitor","Lanius senator","Corvus monedula",
+                                     "Corvus frugilegus","Emberiza cirlus","Miliaria calandra","Milvus milvus",
+                                     "Buteo buteo","Turdus pilaris","Corvus corone","Coturnix coturnix",
+                                     "Streptopelia turtur","Hirundo rustica","Anthus trivialis","Lanius collurio",
+                                     "Sturnus vulgaris","Passer montanus","Carduelis cannabina","Emberiza citrinella",
+                                     "Circus pygargus","Sylvia nisoria")
+
+
+
+
+species_sub <- species_swi_forest <- c("Bonasa bonasia","Picus canus","Pernis apivorus","Tetrao tetrix",
+                                       "Tetrao urogallus","Scolopax rusticola","Glaucidium passerinum","Caprimulgus europaeus",
+                                       "Dendrocopos medius","Luscinia megarhynchos","Phylloscopus sibilatrix","Phylloscopus trochilus",
+                                       "Accipiter gentilis","Accipiter nisus","Aegolius funereus","Dryocopus martius",
+                                       "Picoides tridactylus","Prunella modularis","Erithacus rubecula","Turdus torquatus",
+                                       "Turdus merula","Turdus philomelos","Turdus viscivorus","Phylloscopus collybita",
+                                       "Regulus regulus","Regulus ignicapillus","Parus palustris","Parus cristatus",
+                                       "Parus ater","Parus major","Certhia familiaris","Nucifraga caryocatactes",
+                                       "Fringilla coelebs","Serinus citrinella","Loxia curvirostra","Pyrrhula pyrrhula",
+                                       "Columba oenas","Columba palumbus","Strix aluco","Dendrocopos major",
+                                       "Dendrocopos minor","Troglodytes troglodytes","Sylvia curruca","Sylvia borin",
+                                       "Sylvia atricapilla","Phylloscopus bonelli","Ficedula hypoleuca","Aegithalos caudatus",
+                                       "Parus montanus","Parus caeruleus","Sitta europaea","Certhia brachydactyla",
+                                       "Oriolus oriolus","Garrulus glandarius","Carduelis spinus","Carduelis flammea",
+                                       "Coccothraustes coccothraustes","Ficedula albicollis")
+
+
 
 # United Kingdom     
 # https://www.rspb.org.uk/our-work/conservation/conservation-and-sustainability/farming/near-you/farmland-bird-indicator/

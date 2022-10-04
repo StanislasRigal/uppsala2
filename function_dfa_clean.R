@@ -1,6 +1,7 @@
 # I) TMB function
 
 dfa_model_se <- "
+
 // Dynamic Factor Analysis for multivariate time series
 #include <TMB.hpp>
 template<class Type>
@@ -92,8 +93,12 @@ template<class Type>
   for(int i = 0; i < nSp; ++i){
   // Skipping t = 0 when y(i, 0) is fixed at 0. Need to change this if y(i, 0) is not 0.
   // Also had had to change the index of x from t+1 to t, so that x is fixed at zero at time t=0.
-    for(int t = 0; t < nT; ++t){ 
-       nll -= keep(i) * dnorm(y(i, t), x_sp(i, t), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
+    for(int t = 0; t < nT; ++t){
+    if(!R_IsNA(asDouble(y(i,t)))){
+    nll -= keep(i,t) * dnorm(y(i, t), x_sp(i, t), sqrt(obs_se(i, t)*obs_se(i, t)+re_sp(i)*re_sp(i)), true); // with random effect
+    }
+      
+      
       //*----------------------- SECTION I --------------------------*/
         // Simulation block for observation equation
       SIMULATE {
@@ -538,7 +543,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
                                  sdrep[grepl("x_pred2",row.names(sdrep)),])
   
-  geom_mean <- data.frame(Index = apply(data_ts, 2, function(x){ exp(sum(log(x))/length(x)) }),
+  geom_mean <- data.frame(Index = apply(data_ts, 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
                           Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
                           year = as.numeric(names(data_ts)))
 
@@ -906,8 +911,8 @@ core_dfa <- function(data_ts, # Dataset of time series
 
 # III) Main function for the DFA-clust analysis
 
-make_dfa <- function(data_ts, # Dataset of time series
-                     data_ts_se, # Dataset of log observation error of time series 
+make_dfa <- function(data_ts, # Dataset of time series (species in row, year in column, first column with species name)
+                     data_ts_se, # Dataset of log observation error of time series, same dimensions as data_ts
                      nfac = 0, # Number of trends for the DFA, 0 to estimate the best number of trends
                      mintrend = 1, # Minimum number of trends to test
                      maxtrend = 5, # Maximum number of trends to test
@@ -926,6 +931,50 @@ make_dfa <- function(data_ts, # Dataset of time series
   
   min_year <- as.numeric(colnames(data_ts)[2])
   
+  # Log transformed standard errors if they are not (from Taylor expansion)
+  # and check missing values in log transformed standard errors
+  
+  if(anyNA(data_ts_se)){
+    if(sum(complete.cases(as.data.frame(t(data_ts_se))))<1){
+      stop("Species names must be provided in data_ts_se.")
+    }
+    if(sum(complete.cases(as.data.frame(t(data_ts_se))))==1){
+      warning("Only NAs in data_ts_se, standard errors set to 0.")
+      data_ts_se <- as.data.frame(data_ts_se)
+      data_ts_se[,-1] <- 0
+      data_ts_se <- as.data.table(data_ts_se)
+    }
+    if(sum(complete.cases(as.data.frame(t(data_ts_se))))>1){
+      warning("NAs in data_ts_se, missing values replaced by mean of standard errors.")
+      data_ts_se <- as.data.frame(data_ts_se)
+      na_coord <- which(is.na(data_ts_se),arr.ind = T)
+      data_ts_se[na_coord] <- apply(data_ts_se[na_coord[,1],-1], 1, function(x){return(mean(x, na.rm=T))})
+      data_ts_se <- as.data.table(data_ts_se)
+    }
+  }
+  if(se_log == FALSE){
+    data_ts_se <- as.data.frame(data_ts_se)
+    for(i in 1:nrow(data_ts_se)){
+      data_ts_se[i,-1] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_se[1,-1])
+    }
+    data_ts_se <- as.data.table(data_ts_se)
+  }
+  
+  # Handle 0 values in time-series (replacing 0 by 1 % of the reference year value)
+  
+  if(length(which(data_ts==0))>0){
+    warning("At least one zero in time-series")
+    data_ts <- as.data.frame(data_ts)
+    zero_index <- which(data_ts==0, arr.ind = T)
+    data_ts[,-1] <- t(apply(data_ts[,-1], 1, function(x){if(length(which(x==0))>0){x[which(x==0)] <- mean(x,na.rm=T)/100}; return(x)}))
+    data_ts <- as.data.table(data_ts)
+    
+    data_ts_se <- as.data.frame(data_ts_se)
+    if(anyNA(data_ts_se[zero_index[,1],zero_index[,2]])){
+      data_ts_se[zero_index[,1],zero_index[,2]] <- 0
+    }
+  }
+  
   # Mean-centre values if they are not
   
   if(is_mean_centred == FALSE){
@@ -943,32 +992,6 @@ make_dfa <- function(data_ts, # Dataset of time series
     data_ts_se <- data_ts_se_prov
     
   }
-  
-  # Log transformed standard errors if they are not (from Taylor expansion)
-  
-  if(se_log == FALSE){
-    data_ts_se <- as.data.frame(data_ts_se)
-    for(i in 1:nrow(data_ts_se)){
-      data_ts_se[i,-1] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_se[1,-1])
-    }
-    data_ts_se <- as.data.table(data_ts_se)
-  }
-  
-  # Handle 0 values in time-series (replacing 0 by 1 % of the reference year value)
-  
-  if(length(which(data_ts==0))>0){
-      warning("At least one zero in time-series")
-      data_ts <- as.data.frame(data_ts)
-      zero_index <- which(data_ts==0, arr.ind = T)
-      data_ts[,-1] <- t(apply(data_ts[,-1], 1, function(x){if(length(which(x==0))>0){x[which(x==0)] <- mean(x,na.rm=T)/100}; return(x)}))
-      data_ts <- as.data.table(data_ts)
-
-      data_ts_se <- as.data.frame(data_ts_se)
-      if(anyNA(data_ts_se[zero_index[,1],zero_index[,2]])){
-        data_ts_se[zero_index[,1],zero_index[,2]] <- 0
-      }
-    }
-  
   
   
   # Run the core_dfa function to find the best number of latent trend if not specified

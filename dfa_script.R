@@ -442,18 +442,32 @@ summary(lm(PC2~WeightU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
 library(RVAideMemoire)
 
 m1 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
-     Broods.per.year+Incubation.period+Age.of.first.breeding+Sedentary+
+     Broods.per.year+Incubation.period+Age.of.first.breeding+Nest.type+
      Granivore_B+Arthropods_B,data_for_trait)
 
 Anova(m1)
 
-m2 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
-           Broods.per.year+Incubation.period+Age.of.first.breeding+
-           Granivore_B+Arthropods_B,data_for_trait)
 
-m3 <- lm(PC2~LengthU_MEAN+Life.span+Long.distance.migrant+
-           Age.of.first.breeding+
-           Granivore_B+Arthropods_B,data_for_trait)
-
-m4 <- lm(PC2~LengthU_MEAN+Life.span+Long.distance.migrant+
+m1 <- lm(PC2~Long.distance.migrant+
+           Nest.type+
            Granivore_B,data_for_trait)
+summary(m1)
+
+data_for_trait <- merge(forest_nfac[[12]][[1]][[1]],
+                        trait[,c("Species","LengthU_MEAN","WeightU_MEAN","Clutch_MEAN",
+                                 "Nest.type","Life.span","Long.distance.migrant",
+                                 "Broods.per.year","Incubation.period",
+                                 "Age.of.first.breeding","Sedentary",
+                                 "Folivore_Y", "Frugivore_Y", "Granivore_Y", "Arthropods_Y",
+                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B")],
+                        by.x="name_long", by.y="Species", all.x=T)
+data_for_trait$group <- as.character(data_for_trait$group)
+
+m1 <- lm(PC1~LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
+           Broods.per.year+Age.of.first.breeding+Nest.type+
+           Granivore_B+Arthropods_B,data_for_trait)
+
+Anova(m1)
+
+m1 <- lm(PC1~Broods.per.year+Nest.type,data_for_trait)
+summary(m1)
