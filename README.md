@@ -155,7 +155,7 @@ for(i in 1:n_sp_init){ # get simulated ts from loadings
 
 ```
 
-#### Specify data in the riht format
+#### Specify data in the right format
 
 ```{r}
 
@@ -217,15 +217,15 @@ species_sub = species_sub, # Species names
 
 # optional variables
 
-nfac=0, # Number of trends for the DFA, 0 to estimate the best number of trends
+nfac = 0, # Number of trends for the DFA, 0 to estimate the best number of trends
 
-mintrend=1, # Minimum number of trends to test
+mintrend = 1, # Minimum number of trends to test
 
-maxtrend=5, # Maximum number of trends to test
+maxtrend = 5, # Maximum number of trends to test
 
-AIC=TRUE, # Display AIC
+AIC = TRUE, # Display AIC
 
-nboot=500, # Number of bootstrap for clustering
+nboot = 500, # Number of bootstrap for clustering
 
 silent = TRUE, # Silence optimisation
 
@@ -251,7 +251,7 @@ The columns are set as follows:
 
 ```{r}
 
-head(ex_dfa_clust[[1]])
+head(ex_dfa_clust$data_to_plot_sp)
 
 ```
 
@@ -268,7 +268,7 @@ The columns are set as follows:
 
 ```{r}
 
-head(ex_dfa_clust[[2]])
+head(ex_dfa_clust$data_to_plot_tr)
 
 ```
 
@@ -284,7 +284,19 @@ The columns are set as follows:
 
 ```{r}
 
-head(ex_dfa_clust[[3]])
+head(ex_dfa_clust$data_loadings)
+
+```
+
+- `code_sp`: code for species names
+- `variable`: latent trend id
+- `value`: loading factors
+- `se.value`: standard error of loading factors
+- `name_long`: species names
+
+```{r}
+
+head(ex_dfa_clust$exp_var_lt)
 
 ```
 
@@ -294,25 +306,47 @@ head(ex_dfa_clust[[3]])
 
 # Plot species time-series
 
-ex_dfa_clust[[4]]
+ex_dfa_clust$plot_sp
 
 # Plot latent trends
 
-ex_dfa_clust[[5]]
+ex_dfa_clust$plot_tr
 
 # Plot loading factors
 
-ex_dfa_clust[[6]]
+ex_dfa_clust$plot_ld
 
-# Plot species clusters
+# Plot percentage of variance explained by latent trends 
 
-ex_dfa_clust[[7]][[1]]
+ex_dfa_clust$plot_perc_var
+
+# Plot species clusters on first factorial plan
+
+ex_dfa_clust$plot_sp_group[[1]]
+
+# Plot species clusters on second factorial plan
+
+ex_dfa_clust$plot_sp_group[[2]]
+
+# Plot species clusters on third factorial plan
+
+ex_dfa_clust$plot_sp_group[[3]]
 
 # Plot time-series of cluster barycentres
 
-ex_dfa_clust[[7]][[2]]$g1
+ex_dfa_clust$plot_group_ts$g1
 
-ex_dfa_clust[[7]][[2]]$g2
+ex_dfa_clust$plot_group_ts$g2
+
+# Plot time-series of multi-species index
+
+ex_dfa_clust$plot_group_ts2$all
+
+# Plot time-series of cluster barycentres
+
+ex_dfa_clust$plot_group_ts2$g1
+
+ex_dfa_clust$plot_group_ts2$g2
 
 ```
 
@@ -322,11 +356,11 @@ ex_dfa_clust[[7]][[2]]$g2
 
 # Akaike information criterion (AIC) of DFA
 
-ex_dfa_clust$aic # or ex_dfa_clust[[8]]
+ex_dfa_clust$aic
 
 # Optimisation output of DFA
 
-head(ex_dfa_clust$sdRep) # or head(ex_dfa_clust[[9]])
+head(ex_dfa_clust$sdRep)
 
 ```
 
@@ -374,7 +408,7 @@ ex_dfa_clust$group[[4]]
 
 # Time-series of cluster barycentres
 
-head(ex_dfa_clust[[11]])
+head(ex_dfa_clust$trend_group2)
 
 ```
 
@@ -791,94 +825,10 @@ all_nfac <- make_dfa(data_ts = y_all, data_ts_se = obs_se_all,
 
 ```{r}
 
-farm_nfac[[7]]
+farm_nfac$plot_sp_group
 
-forest_nfac[[7]]
+forest_nfac$plot_sp_group
 
-all_nfac[[7]]
-
-```
-
-#### Compute the MSI to compare
-
-##### Farmland birds
-
-```{r}
-
-# Select species
-
-ts_farmland <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                             c( "FALTIN","VANVAN","ALAARV","HIRRUS","CORFRU",
-                                                "SAXRUB","SYLCOM","ANTPRA","MOTFLA","LANCOL",
-                                                "STUVUL","LINCAN","EMBCIT","EMBHOR","PASMON"),])
-                                                
-# Run MSI
-                                                
-RES_farmland <- MSI_MC_func(ts_farmland,SEbaseyear=1998, plotbaseyear=1998)
-
-# Plot MSI
-                     
-ggplot(RES_farmland, aes(x=year, y=MSI))+
-  geom_point(size=3)+
-  ylim(75, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
-  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
-  geom_line(aes(y=Trend), size=1)+ theme_modern() +
-  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
-  
-```
-
-##### Woodland birds
-                                                
-```{r}                            
-
-# Select species
-                                                
-ts_forest <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                      c("ACCNIS","TETBON","TRIOCH","COLOEN",
-                                                        "DENMAJ","DRYMAR","PICVIR","JYNTOR",
-                                                        "DRYMIN","PICTRI","NUCCAR","GARGLA",
-                                                        "PERATE","LOPCRI","POEPAL","POEMON",
-                                                        "SITEUR","CERFAM","TURVIS","PHOPHO",
-                                                        "PHYCOL","PHYSIB","REGREG","FICHYP",
-                                                        "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
-
-# Run MSI
-                                                        
-RES_forest <- MSI_MC_func(ts_forest,SEbaseyear=1998, plotbaseyear=1998)
-
-# Plot MSI
-
-ggplot(RES_forest, aes(x=year, y=MSI))+
-  geom_point(size=3)+
-  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
-  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
-  geom_line(aes(y=Trend), size=1)+ theme_modern() +
-  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
+all_nfac$plot_sp_group
 
 ```
-
-##### Common birds
-
-```{r}
-
-# Select species
-
-ts_all <- droplevels(ts_bird_se_allcountry_clean[ts_bird_se_allcountry_clean$code_sp %in%
-                                                   species_all$code_sp,])
-
-# Run MSI
-
-RES_all <- MSI_MC_func(ts_all,SEbaseyear=1998, plotbaseyear=1998)
-
-# Plot MSI
-
-ggplot(RES_all, aes(x=year, y=MSI))+
-  geom_point(size=3)+
-  ylim(90, NA)+ ylab("MSI (1998 = 100 )")+ xlab("Year")+
-  geom_ribbon(aes(ymin=lower_CL_trend, ymax=upper_CL_trend), alpha=0.2)+
-  geom_line(aes(y=Trend), size=1)+ theme_modern() +
-  geom_pointrange(aes(ymax = MSI+sd_MSI, ymin=MSI-sd_MSI))
-
-```
-
-
