@@ -700,7 +700,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
     
     pca_centre_data2c <- tibble(x=pca_centre_datac[,1],
                                 y=pca_centre_datac[,2],
-                                width=0.08,
+                                width=0.04,
                                 pie = graph33)
   }
   
@@ -1170,6 +1170,18 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
 
     data_loadings$variable <- as.character(data_loadings$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
     
+    # Data for % variance of species ts explained by latent trends
+    
+    exp_var_lt <- data_loadings[,c("variable","value","name_long")]
+    exp_var_lt <- dcast(exp_var_lt, name_long~variable, value.var = "value", fun.aggregate = sum)
+    eta_sp <- data.frame(name_long=species_sub$name_long, eta=sdRep[!grepl("log_re_sp", row.names(sdRep)) & grepl("re_sp", row.names(sdRep)) ,1])
+    exp_var_lt <- merge(exp_var_lt,eta_sp, by="name_long", all.x=T)
+    
+    exp_var_lt$all <- apply(exp_var_lt[,-1],1,function(x){return(sum(abs(x)))})
+    exp_var_lt[,2:(ncol(exp_var_lt)-1)] <- exp_var_lt[,2:(ncol(exp_var_lt)-1)]/exp_var_lt$all
+    exp_var_lt$name_long <- fct_reorder(exp_var_lt$name_long,exp_var_lt$eta)
+    exp_var_lt_long <- melt(exp_var_lt[,1:(ncol(exp_var_lt)-1)])
+    
     
     # Plots
     
@@ -1194,6 +1206,13 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank(),
             axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))
     
+    plot_perc_var <- ggplot(exp_var_lt_long) + 
+      geom_col(aes(value, name_long, fill=variable)) +
+      facet_wrap(variable ~ ., ncol=length(unique(exp_var_lt_long$variable))) +
+      theme_modern() + 
+      theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank(),
+            axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))
+    
   }else{
     
     data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
@@ -1204,6 +1223,22 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
                                            sdRep[rownames(sdRep)=="Z",1]), id.vars="code_sp"),
                            se.value = NA)
+    
+    data_loadings <- merge(data_loadings, species_sub[,c("name_long","code_sp")],by="code_sp")
+    
+    
+    # Data for % variance of species ts explained by latent trends
+    
+    exp_var_lt <- data_loadings[,c("variable","value","name_long")]
+    exp_var_lt <- dcast(exp_var_lt, name_long~variable, value.var = "value", fun.aggregate = sum)
+    eta_sp <- data.frame(name_long=species_sub$name_long, eta=sdRep[!grepl("log_re_sp", row.names(sdRep)) & grepl("re_sp", row.names(sdRep)) ,1])
+    exp_var_lt <- merge(exp_var_lt,eta_sp, by="name_long", all.x=T)
+    
+    exp_var_lt$all <- apply(exp_var_lt[,-1],1,function(x){return(sum(abs(x)))})
+    exp_var_lt[,2:(ncol(exp_var_lt)-1)] <- exp_var_lt[,2:(ncol(exp_var_lt)-1)]/exp_var_lt$all
+    exp_var_lt$name_long <- fct_reorder(exp_var_lt$name_long,exp_var_lt$eta)
+    exp_var_lt_long <- melt(exp_var_lt[,1:(ncol(exp_var_lt)-1)])
+    
     
     # Plots
     
@@ -1217,10 +1252,17 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       theme_modern()
     
     plot_ld <- ggplot(data_loadings) + 
-      geom_col(aes(value, code_sp, fill=variable)) +
-      geom_errorbar(aes(x=value,y=code_sp,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
+      geom_col(aes(value, name_long, fill=variable)) +
+      geom_errorbar(aes(x=value,y=name_long,xmax = value+se.value, xmin=value-se.value), alpha=0.5) +
       facet_wrap(variable ~ ., ncol=4) +
       theme_modern() + theme(legend.position = "none")
+    
+    plot_perc_var <- ggplot(exp_var_lt_long) + 
+      geom_col(aes(value, name_long, fill=variable)) +
+      facet_wrap(variable ~ ., ncol=length(unique(exp_var_lt_long$variable))) +
+      theme_modern() + 
+      theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank(),
+            axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))
     
   }
   
@@ -1274,20 +1316,22 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     trend_group2 <- NA
   }
   
-  return(list(data_to_plot_sp, # Data on species time-series and fit
-              data_to_plot_tr, # Data on latent trends
-              data_loadings, # Data on factor loadings
-              plot_sp, # Plot of species time-series and fit
-              plot_tr, # Plot of latent trends
-              plot_ld, # Plot of factor loadings
-              plot_sp_group, # Plot clusters in factorial plan
-              plot_group_ts, # Plot clustertime-series
-              plot_group_ts2, # Plot clustertime-series from sdRep
+  return(list(data_to_plot_sp = data_to_plot_sp, # Data on species time-series and fit
+              data_to_plot_tr = data_to_plot_tr, # Data on latent trends
+              data_loadings = data_loadings, # Data on factor loadings
+              exp_var_lt = exp_var_lt, # Data on % of variance of species ts explained by latent trends
+              plot_sp = plot_sp, # Plot of species time-series and fit
+              plot_tr = plot_tr, # Plot of latent trends
+              plot_ld = plot_ld, # Plot of factor loadings
+              plot_perc_var = plot_perc_var, # Plot of % of variance of species ts explained by latent trends
+              plot_sp_group = plot_sp_group, # Plot clusters in factorial plan
+              plot_group_ts = plot_group_ts, # Plot clustertime-series
+              plot_group_ts2 = plot_group_ts2, # Plot clustertime-series from sdRep
               aic = aic, # Best AIC
               sdRep = sdRep, # Optimisation output
               group = group_dfa, # Cluster results
-              trend_group, # Cluster barycentre times-series
-              trend_group2 # Cluster barycentre times-series from sdRep
+              trend_group = trend_group, # Cluster barycentre times-series
+              trend_group2 = trend_group2 # Cluster barycentre times-series from sdRep
               ))
 }
 
@@ -1414,7 +1458,7 @@ simul_rand_dfa_intern <- function(cum_perc,
   
   # compare DFA results to expected
   
-  obs_group <- rand_nfac[[10]][[1]][[1]]
+  obs_group <- rand_nfac$group[[1]][[1]]
   y[,ncol(y)] <- as.numeric(as.factor(y[,ncol(y)]))
   
   if(length(obs_group)==1){
@@ -1422,7 +1466,7 @@ simul_rand_dfa_intern <- function(cum_perc,
     clust_nb <- clust_nb2 <- 1
     clust_stab <- 1
   }else{
-    clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac[[10]][[3]],2))))
+    clust_stab <- gsub(", ","-",toString(paste0(round(rand_nfac$group[[3]],2))))
     
     clust_nb <- length(unique(obs_group$group))
     clust_nb2 <- data.frame(obs_group %>% group_by(group) %>% summarize(count=n()))

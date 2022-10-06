@@ -139,42 +139,53 @@ ggsave("output/farm_nfac.png",
        height = 8 # 8 # 3
        )
 
-table_res_farma <- dcast(data=farm_nfac[[3]], name_long~variable, id.vars="value")
-table_res_farmb <- farm_nfac[[12]][[1]][[1]]
+table_res_farma <- dcast(data=farm_nfac$data_loadings, name_long~variable, id.vars="value")
+table_res_farmb <- farm_nfac$group[[1]][[1]]
 table_res_farm <- merge(table_res_farmb[,c("name_long", "group", "uncert")], table_res_farma, by="name_long", all.x=T )
 table_res_farm$pvalue <- table_res_farm$st_error <- table_res_farm$slope <-  NA
 for(i in 1:nrow(table_res_farm)){
   res_lm <- summary(lm(pred.value~Year,
-                       data=farm_nfac[[1]][farm_nfac[[1]]$code_sp==unique(farm_nfac[[1]]$code_sp)[i],]))$coef
+                       data=farm_nfac$data_to_plot_sp[farm_nfac$data_to_plot_sp$code_sp==unique(farm_nfac$data_to_plot_sp$code_sp)[i],]))$coef
   table_res_farm$slope[i] <- res_lm[2,1]
   table_res_farm$st_error[i] <- res_lm[2,2]
   table_res_farm$pvalue[i] <- res_lm[2,4]
 }
-table_res_farm[,3:(ncol(table_res_farm)-1)] <- round(table_res_farm[,3:(ncol(table_res_farm)-1)],4)
+table_res_farmc <- farm_nfac$exp_var_lt[,1:5]
+names(table_res_farmc) <- c("name_long","% Latent trend 1","% Latent trend 2",
+"% Latent trend 3","% eta")
+table_res_farm <- merge(table_res_farm, table_res_farmc, by="name_long", all.x=T )
+table_res_farm[,3:ncol(table_res_farm)] <- round(table_res_farm[,3:ncol(table_res_farm)],4)
+table_res_farm[,10:ncol(table_res_farm)] <- abs(table_res_farm[,10:ncol(table_res_farm)])
 
-summary(lm(Estimate~year, data=farm_nfac[[14]][farm_nfac[[14]]$group=="g1",]))$coef
+
+summary(lm(Estimate~year, data=farm_nfac$trend_group2[farm_nfac$trend_group2$group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_farmland))$coef
-cor.test(farm_nfac[[14]][farm_nfac[[14]]$group=="g1","Estimate"],RES_farmland$MSI)
-cor.test(farm_nfac[[14]][farm_nfac[[14]]$group=="g1","Estimate"],farm_nfac[[14]][farm_nfac[[14]]$group=="all","Estimate"])
+cor.test(farm_nfac$trend_group2[farm_nfac$trend_group2$group=="g1","Estimate"],RES_farmland$MSI)
+cor.test(farm_nfac$trend_group2[farm_nfac$trend_group2$group=="g1","Estimate"],farm_nfac$trend_group2[farm_nfac$trend_group2$group=="all","Estimate"])
 
 
-table_res_foresta <- dcast(data=forest_nfac[[3]], name_long~variable, id.vars="value")
-table_res_forestb <- forest_nfac[[12]][[1]][[1]]
+table_res_foresta <- dcast(data=forest_nfac$data_loadings, name_long~variable, id.vars="value")
+table_res_forestb <- forest_nfac$group[[1]][[1]]
 table_res_forest <- merge(table_res_forestb[,c("name_long", "group", "uncert")], table_res_foresta, by="name_long", all.x=T )
 table_res_forest$pvalue <- table_res_forest$st_error <- table_res_forest$slope <-  NA
 for(i in 1:nrow(table_res_forest)){
   res_lm <- summary(lm(pred.value~Year,
-                       data=forest_nfac[[1]][forest_nfac[[1]]$code_sp==unique(forest_nfac[[1]]$code_sp)[i],]))$coef
+                       data=forest_nfac$data_to_plot_sp[forest_nfac$data_to_plot_sp$code_sp==unique(forest_nfac$data_to_plot_sp$code_sp)[i],]))$coef
   table_res_forest$slope[i] <- res_lm[2,1]
   table_res_forest$st_error[i] <- res_lm[2,2]
   table_res_forest$pvalue[i] <- res_lm[2,4]
 }
-table_res_forest[,3:(ncol(table_res_forest)-1)] <- round(table_res_forest[,3:(ncol(table_res_forest)-1)],4)
+table_res_forestc <- forest_nfac$exp_var_lt[,1:6]
+names(table_res_forestc) <- c("name_long","% Latent trend 1","% Latent trend 2",
+                            "% Latent trend 3","% Latent trend 4","% eta")
+table_res_forest <- merge(table_res_forest, table_res_forestc, by="name_long", all.x=T )
+table_res_forest[,3:ncol(table_res_forest)] <- round(table_res_forest[,3:ncol(table_res_forest)],4)
+table_res_forest[,11:ncol(table_res_forest)] <- abs(table_res_forest[,11:ncol(table_res_forest)])
 
-summary(lm(Estimate~year, data=forest_nfac[[14]][forest_nfac[[14]]$group=="g1",]))$coef
+summary(lm(Estimate~year, data=forest_nfac$trend_group2[forest_nfac$trend_group2 $group=="g1",]))$coef
 summary(lm(MSI~year, data=RES_forest))$coef
-cor.test(forest_nfac[[14]][forest_nfac[[14]]$group=="g1","Estimate"],RES_forest$MSI)
-cor.test(forest_nfac[[14]][forest_nfac[[14]]$group=="g1","Estimate"],forest_nfac[[14]][forest_nfac[[14]]$group=="all","Estimate"])
+cor.test(forest_nfac$trend_group2[forest_nfac$trend_group2$group=="g1","Estimate"],RES_forest$MSI)
+cor.test(forest_nfac$trend_group2[forest_nfac$trend_group2$group=="g1","Estimate"],forest_nfac$trend_group2[forest_nfac$trend_group2$group=="all","Estimate"])
 
 
 table_res_alla <- dcast(data=all_nfac[[3]], name_long~variable, id.vars="value")
@@ -410,7 +421,7 @@ res_tot_l2_sum <- data.frame(res_tot_l2 %>% group_by(proximity) %>% summarize(me
 
 trait <- read.table("raw_data/Life-history characteristics of European birds.txt", header = T, sep = "\t")
 
-data_for_trait <- merge(farm_nfac[[12]][[1]][[1]],
+data_for_trait <- merge(farm_nfac$group[[1]][[1]],
                         trait[,c("Species","LengthU_MEAN","WeightU_MEAN","Clutch_MEAN",
                                  "Nest.type","Life.span","Long.distance.migrant",
                                  "Broods.per.year","Incubation.period",
@@ -420,6 +431,7 @@ data_for_trait <- merge(farm_nfac[[12]][[1]][[1]],
                         by.x="name_long", by.y="Species", all.x=T)
 #data_for_trait <- data_for_trait[data_for_trait$group!=3,]
 data_for_trait$group <- as.character(data_for_trait$group)
+data_for_trait$Long.distance.migrant <- as.character(data_for_trait$Long.distance.migrant)
 summary(lm(WeightU_MEAN~group,data_for_trait))
 summary(lm(Clutch_MEAN~group,data_for_trait))
 summary(lm(Life.span~group,data_for_trait))
@@ -435,6 +447,8 @@ table(data_for_trait$Arthropods_Y,data_for_trait$group)
 table(data_for_trait$Granivore_B,data_for_trait$group)
 table(data_for_trait$Arthropods_B,data_for_trait$group)
 
+data_for_trait[,20:28] <- apply(data_for_trait[,20:28],2,function(x){return(as.character(x))})
+
 summary(lm(PC2~WeightU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
   Broods.per.year+Incubation.period+Age.of.first.breeding+Sedentary+
   Frugivore_Y+Granivore_Y+Arthropods_Y,data_for_trait))
@@ -448,12 +462,12 @@ m1 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migra
 Anova(m1)
 
 
-m1 <- lm(PC2~Long.distance.migrant+
-           Nest.type+
-           Granivore_B,data_for_trait)
+m1 <- lm(PC2~LengthU_MEAN+Long.distance.migrant+
+           Incubation.period+Nest.type+
+           Granivore_B+Arthropods_B,data_for_trait)
 summary(m1)
 
-data_for_trait <- merge(forest_nfac[[12]][[1]][[1]],
+data_for_trait <- merge(forest_nfac$group[[1]][[1]],
                         trait[,c("Species","LengthU_MEAN","WeightU_MEAN","Clutch_MEAN",
                                  "Nest.type","Life.span","Long.distance.migrant",
                                  "Broods.per.year","Incubation.period",
@@ -462,6 +476,9 @@ data_for_trait <- merge(forest_nfac[[12]][[1]][[1]],
                                  "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B")],
                         by.x="name_long", by.y="Species", all.x=T)
 data_for_trait$group <- as.character(data_for_trait$group)
+data_for_trait$Long.distance.migrant <- as.character(data_for_trait$Long.distance.migrant)
+data_for_trait[,22:30] <- apply(data_for_trait[,22:30],2,function(x){return(as.character(x))})
+
 
 m1 <- lm(PC1~LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
            Broods.per.year+Age.of.first.breeding+Nest.type+
@@ -469,5 +486,27 @@ m1 <- lm(PC1~LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
 
 Anova(m1)
 
-m1 <- lm(PC1~Broods.per.year+Nest.type,data_for_trait)
+m1 <- lm(PC1~Clutch_MEAN+
+           Broods.per.year+Age.of.first.breeding+Nest.type+
+           Granivore_B+Arthropods_B,data_for_trait)
 summary(m1)
+
+
+# extract % variance of sp ts explained by latent trends
+
+exp_var_lt <- farm_nfac$data_loadings[,c("variable","value","name_long")]
+exp_var_lt <- dcast(exp_var_lt, name_long~variable, value.var = "value", fun.aggregate = sum)
+eta_sp <- data.frame(name_long=species_farm$name_long, eta=farm_nfac$sdRep[!grepl("log_re_sp", row.names(farm_nfac$sdRep)) & grepl("re_sp", row.names(farm_nfac$sdRep)) ,1])
+exp_var_lt <- merge(exp_var_lt,eta_sp, by="name_long", all.x=T)
+
+exp_var_lt$all <- apply(exp_var_lt[,-1],1,function(x){return(sum(abs(x)))})
+exp_var_lt[,2:(ncol(exp_var_lt)-1)] <- exp_var_lt[,2:(ncol(exp_var_lt)-1)]/exp_var_lt$all
+exp_var_lt$name_long <- fct_reorder(exp_var_lt$name_long,exp_var_lt$eta)
+exp_var_lt_long <- melt(exp_var_lt[,1:(ncol(exp_var_lt)-1)])
+
+ggplot(exp_var_lt_long) + 
+  geom_col(aes(value, name_long, fill=variable)) +
+  facet_wrap(variable ~ ., ncol=length(unique(exp_var_lt_long$variable))) +
+  theme_modern() + 
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))

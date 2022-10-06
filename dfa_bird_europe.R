@@ -359,7 +359,7 @@ species_sub <- species_lux_forest <- c("Columba oenas","Dryocopus martius","Leio
 
 # Netherlands
 # https://stats.sovon.nl/pub/publicatie/18092
-# asked
+# https://www.clo.nl/indicatoren/nl1618-broedvogels-van-het-bos
 
 species_sub <- species_net_farm <- c("Perdix perdix","Streptopelia turtur","Vanellus vanellus","Limosa limosa",
                                      "Sturnus vulgaris","Haematopus ostralegus","Numenius arquata ","Tringa totanus",
@@ -369,36 +369,15 @@ species_sub <- species_net_farm <- c("Perdix perdix","Streptopelia turtur","Vane
                                      "Motacilla flava ","Hippolais icterina ","Hirundo rustica","Saxicola rubicola",
                                      "Mareca strepera ","Curruca communis","Carduelis carduelis")
 
+species_sub <- species_net_forest <- c("Coccothraustes coccothraustes","Ficedula hypoleuca","Sitta europaea","Certhia brachydactyla",
+                                       "Strix aluco","Buteo buteo","Phylloscopus sibilatrix","Poecile palustris",
+                                       "Regulus regulus","Pyrrhula pyrrhula","Muscicapa striata","Picus viridis",
+                                       "Dendrocopos major","Turdus viscivorus","Accipiter gentilis","Dryobates minor",
+                                       "Loxia curvirostra","Lophophanes cristatus","Poecile montanus","Corvus corax",
+                                       "Spinus spinus","Accipiter nisus","Fringilla coelebs","Regulus ignicapilla",
+                                       "Oriolus oriolus","Periparus ater","Dryocopus martius")
 
 
-
-Sturnus vulgaris 
-Anas platyrhynchos
-Phylloscopus trochilus 
-Turdus merula
-Columba palumbus
-Corvus corone
-Chloris chloris
-Prunella modularis
-Riparia riparia
-Sylvia borin 
-Motacilla alba
-Turdus philomelos
-Fulica atra
-Cyanistes caeruleus
-Emberiza schoeniclus 
-Acrocephalus palustris 
-Parus major 
-Phylloscopus collybita 
-Fringilla coelebs
-Acrocephalus scirpaceus
-Troglodytes troglodytes 
-Dendrocopos major
-Curruca communis 
-Sylvia atricapilla 
-Tyto alba 
-Carduelis carduelis 
-Anser anser
 
 
 
