@@ -191,7 +191,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     tryCatch(
       #try to do this
       {
-        NbClust(data, diss=NULL, distance = "euclidean",
+        NbClustb(data, diss=NULL, distance = "euclidean",
                 method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
                 index = "alllong", alphaBeale = 0.1)
       },
@@ -210,18 +210,17 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   }else{
     idx <- 0
     nb_group_best_part <- c()
-    for(index in c("kl", "ch", "hartigan", "ccc", "scott", "marriot", "trcovw", "tracew",
-                   "friedman", "rubin", "cindex", "db", "silhouette", "duda",
-                   "ratkowsky", "ball", "ptbiserial", "gap", "mcclain", "gamma",
-                   "gplus", "tau", "dunn", "hubert", "sdindex", "dindex", "sdbw")){
+    for(index in c("kl", "ch", "ccc", "db",
+                   "silhouette", "duda", "ratkowsky", "ptbiserial",
+                   "gap", "mcclain", "gamma", "gplus",
+                   "tau", "dunn", "sdindex", "sdbw")){
       nb_part <- NbClust(mat_loading, diss=NULL, distance = "euclidean",
                     method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
                     index = index, alphaBeale = 0.1)
       idx <- idx + 1
       nb_group_best_part[idx] <- max(nb_part$Best.partition)
     }
-    which.max(table(nb_group_best_part))
-    nb_group_best <- as.numeric(which.max(table(nb_group_best_part)))
+    nb_group_best <- as.numeric(names(which.max(table(nb_group_best_part))))
   }
   
 
@@ -249,9 +248,15 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     
     # Find the best number of clusters in the bootstrap loadings
     
-    nb <- NbClust2(rand_load, diss=NULL, distance = "euclidean",
-                   method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
-                   index = "alllong", alphaBeale = 0.1)
+    if(min(max(c(2,round(ny/3))),10)>4){
+      nb <- NbClustb(rand_load, diss=NULL, distance = "euclidean",
+                     method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                     index = "alllong", alphaBeale = 0.1)
+    }else{
+      nb <- NbClustb(rand_load, diss=NULL, distance = "euclidean",
+                     method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
+                     index = "kl", alphaBeale = 0.1)
+    }
     
     # Calculate reference partitions as a function of the number of cluster
     
@@ -337,7 +342,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
           all_partition_gr[[gr]] <- all_partition
         }
       }else{if(i == 1){
-        stability_cluster_gr[[gr]]<-1
+        stability_cluster_gr[[gr]] <- 1
         all_partition_gr[[gr]] <- rep(1,nrow(species_sub))
       }}
     }
@@ -921,8 +926,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                      nboot = 500, # Number of bootstrap for clustering
                      silent = TRUE, # Silence optimisation
                      control = list(), # Specify changes for DFA control options
-                     se_log = TRUE,
-                     is_mean_centred = TRUE
+                     se_log = TRUE, # TRUE if error is for log values, FALSE otherwise
+                     is_mean_centred = TRUE # TRUE if data are already mean-centred, FALSE otherwise
                      )
 {
   #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE
@@ -971,8 +976,11 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     
     data_ts_se <- as.data.frame(data_ts_se)
     if(anyNA(data_ts_se[zero_index[,1],zero_index[,2]])){
-      data_ts_se[zero_index[,1],zero_index[,2]] <- 0
+      for(i in 1:nrow(zero_index)){
+        data_ts_se[zero_index[i,1],zero_index[i,2]] <- 0
+      }
     }
+    data_ts_se <- as.data.table(data_ts_se)
   }
   
   # Mean-centre values if they are not
