@@ -229,7 +229,12 @@ nboot = 500, # Number of bootstrap for clustering
 
 silent = TRUE, # Silence optimisation
 
-control = list()) # Specify changes for DFA control options
+control = list(), # Specify changes for DFA control options
+
+se_log = TRUE, # TRUE if error is for log values, FALSE otherwise
+
+is_mean_centred = TRUE # TRUE if data are already mean-centred, FALSE otherwise
+) 
 
 ```
 
