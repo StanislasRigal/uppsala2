@@ -427,7 +427,10 @@ data_for_trait <- merge(farm_nfac$group[[1]][[1]],
                                  "Broods.per.year","Incubation.period",
                                  "Age.of.first.breeding","Sedentary",
                                  "Folivore_Y", "Frugivore_Y", "Granivore_Y", "Arthropods_Y",
-                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B")],
+                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B",
+                                 "Deciduous.forest", "Coniferous.forest", "Woodland",
+                                 "Shrub","Savanna","Tundra","Grassland",
+                                 "Mountain.meadows","Reed","Human.settlements")],
                         by.x="name_long", by.y="Species", all.x=T)
 #data_for_trait <- data_for_trait[data_for_trait$group!=3,]
 data_for_trait$group <- as.character(data_for_trait$group)
@@ -455,9 +458,9 @@ summary(lm(PC2~WeightU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
 
 library(RVAideMemoire)
 
-m1 <- lm(PC2~WeightU_MEAN+LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
+m1 <- lm(PC2~LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
      Broods.per.year+Incubation.period+Age.of.first.breeding+Nest.type+
-     Granivore_B+Arthropods_B,data_for_trait)
+     Granivore_B+Arthropods_B+Shrub+Grassland+Human.settlements,data_for_trait)
 
 Anova(m1)
 
@@ -473,7 +476,10 @@ data_for_trait <- merge(forest_nfac$group[[1]][[1]],
                                  "Broods.per.year","Incubation.period",
                                  "Age.of.first.breeding","Sedentary",
                                  "Folivore_Y", "Frugivore_Y", "Granivore_Y", "Arthropods_Y",
-                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B")],
+                                 "Folivore_B", "Frugivore_B", "Granivore_B", "Arthropods_B",
+                                 "Deciduous.forest", "Coniferous.forest", "Woodland",
+                                 "Shrub","Savanna","Tundra","Grassland",
+                                 "Mountain.meadows","Reed","Human.settlements")],
                         by.x="name_long", by.y="Species", all.x=T)
 data_for_trait$group <- as.character(data_for_trait$group)
 data_for_trait$Long.distance.migrant <- as.character(data_for_trait$Long.distance.migrant)
@@ -482,7 +488,8 @@ data_for_trait[,22:30] <- apply(data_for_trait[,22:30],2,function(x){return(as.c
 
 m1 <- lm(PC1~LengthU_MEAN+Clutch_MEAN+Life.span+Long.distance.migrant+
            Broods.per.year+Age.of.first.breeding+Nest.type+
-           Granivore_B+Arthropods_B,data_for_trait)
+           Granivore_B+Arthropods_B+Deciduous.forest+
+           Coniferous.forest+Woodland,data_for_trait)
 
 Anova(m1)
 

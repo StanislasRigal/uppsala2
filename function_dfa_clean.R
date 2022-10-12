@@ -212,9 +212,9 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     nb_group_best_part <- c()
     for(index in c("kl", "ch", "ccc", "db",
                    "silhouette", "duda", "ratkowsky", "ptbiserial",
-                   "gap", "mcclain", "gamma", "gplus",
+                   "mcclain", "gamma", "gplus",
                    "tau", "dunn", "sdindex", "sdbw")){
-      nb_part <- NbClust(mat_loading, diss=NULL, distance = "euclidean",
+      nb_part <- NbClustb(mat_loading, diss=NULL, distance = "euclidean",
                     method = "kmeans", min.nc=2, max.nc=min(max(c(2,round(ny/3))),10), 
                     index = index, alphaBeale = 0.1)
       idx <- idx + 1
@@ -507,7 +507,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
                             Z_hat, # Factor loadings
                             x_hat, # Latent trends
                             data_ts,
-                            data_ts_se
+                            data_ts_se,
+                            data_to_plot_sp
                             ){
   
   # Combine all data for x_pred
@@ -551,8 +552,17 @@ plot_group_boot <- function(nb_group, # Number of clusters
   geom_mean <- data.frame(Index = apply(data_ts, 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
                           Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
                           year = as.numeric(names(data_ts)))
-
-  # Plot time-series of barycentres
+  
+  geom_mean_data <- data.frame(Index = apply(t(apply(data_ts,1,function(y){y/y[1]})), 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
+                          #Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
+                          year = as.numeric(names(data_ts)))
+  
+  data_mean_pred <- dcast(data_to_plot_sp, name_long~Year, value.var = "pred.value_exp_1")
+  data_mean_pred_se <- dcast(data_to_plot_sp, name_long~Year, value.var = "pred_se.value_exp_1")
+  geom_mean_pred <- data.frame(Index = apply(data_mean_pred[,-1], 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
+                               year = as.numeric(names(data_mean_pred[,-1])))
+  
+    # Plot time-series of barycentres
   
   graph2 <- setNames(lapply(1:(nb_group+1), function(i){
     if(i==1){
@@ -580,17 +590,20 @@ plot_group_boot <- function(nb_group, # Number of clusters
 
     if(i==1){
       
-      geom_mean$Index_scal <- scale(geom_mean$Index)
+      alpha <- (geom_mean_pred$Index[1]-geom_mean_pred$Index[nrow(geom_mean_pred)])/(test$Index[1]-test$Index[nrow(geom_mean_pred)])
+      beta <- geom_mean_pred$Index[nrow(geom_mean_pred)]-alpha*test$Index[nrow(geom_mean_pred)]
+      test$Index_SE_c <- alpha*test$Index_SE
+      test$Index_c <- alpha*test$Index+beta
       
-      ggplot(test, aes(x=year, y=Index_scal)) +
-        geom_line(col="black", size=2) +
-        geom_ribbon(aes(ymin=Index_scal-1.96*Index_SE_scal,ymax=Index_scal+1.96*Index_SE_scal),alpha=0.2,fill="black")+
-        geom_point(data=geom_mean, col="black", size=2) +
-        #geom_pointrange(data=geom_mean, aes(min=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE)) +
+      ggplot(test, aes(x=year, y=Index)) +
+        geom_line(aes(y=Index_c),col="black", size=2) +
+        geom_ribbon(aes(ymin=Index_c-1.96*Index_SE_c,ymax=Index_c+1.96*Index_SE_c),alpha=0.2,fill="black")+
+        geom_point(data=geom_mean_data, col="black", size=2) +
         xlab(NULL) + 
         ylab(NULL) + 
         theme_modern() + 
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
+      
     }else{
       ggplot(test, aes(x=year, y=Index)) +
         geom_line(col=hex_codes1[(i-1)], size=2) +
@@ -963,6 +976,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       data_ts_se[i,-1] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_se[1,-1])
     }
     data_ts_se <- as.data.table(data_ts_se)
+    data_ts_se[is.na(data_ts_se)] <- 0
   }
   
   # Handle 0 values in time-series (replacing 0 by 1 % of the reference year value)
@@ -1093,7 +1107,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       for(wg in 1:length(group_dfa[[3]])){
         W_from_kmeans[(wg+1),][group_dfa[[1]][[1]]$group!=wg] <- 0
       }                       
-      
+      W_from_kmeans[1,] <- 1
     }else{
       
       Z_pred_from_kmeans <- as.matrix(group_dfa[[1]][[2]][grepl("X",names(group_dfa[[1]][[2]]))])
@@ -1146,6 +1160,19 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                            pred_se=melt(sp_se_ts, id.vars=names(data_ts_se_save)[1])[,3])
   
   data_to_plot_sp <- merge(data_to_plot_sp, species_sub[,c("name_long","code_sp")],by="code_sp")
+  data_to_plot_sp$pred.value_exp <- exp(data_to_plot_sp$pred.value)
+  data_to_plot_sp$pred_se.value_exp <- exp(data_to_plot_sp$pred.value)*data_to_plot_sp$pred_se.value
+  data_to_plot_sp$se.value_exp <- data_to_plot_sp$value*data_to_plot_sp$se.value
+  
+  data_to_plot_sp <- ddply(data_to_plot_sp, .(code_sp,name_long),
+        .fun = function(x){
+          x$value_1 <- x$value/x$value[1]
+          x$pred.value_exp_1 <- x$pred.value_exp/x$pred.value_exp[1]
+          x$se.value_exp_1 <- x$se.value_exp/x$value[1]
+          x$pred_se.value_exp_1 <- x$pred_se.value_exp/x$pred.value_exp[1]
+          return(x)
+        }, .progress="text")
+  
   
   
   # Data for DFA trend plot
@@ -1194,9 +1221,9 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     # Plots
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
-      geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
-      geom_line(aes(y=exp(pred.value))) +
-      geom_ribbon(aes(y=exp(pred.value), ymax = exp(pred.value+1.96*pred_se.value), ymin=exp(pred.value-1.96*pred_se.value)), alpha=0.5) +
+      geom_pointrange(aes(ymax = value + 1.96 * se.value_exp, ymin=value - 1.96 * se.value_exp)) + 
+      geom_line(aes(y=pred.value_exp)) +
+      geom_ribbon(aes(y=pred.value_exp, ymax = pred.value_exp + 1.96*pred_se.value_exp, ymin=pred.value_exp - 1.96*pred_se.value_exp), alpha=0.5) +
       facet_wrap(name_long ~ ., ncol=round(sqrt(length(unique(data_to_plot_sp$code_sp)))), scales = "free", labeller = label_bquote(col = italic(.(name_long)))) +
       theme_modern() + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
     
@@ -1251,7 +1278,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     # Plots
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
-      geom_pointrange(aes(ymax = value*exp(1.96 * se.value), ymin=value * exp(-1.96 * se.value))) + 
+      geom_pointrange(aes(ymax = value + 1.96 * se.value_exp, ymin=value - 1.96 * se.value_exp)) + 
       facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
       theme_modern()
     
@@ -1287,7 +1314,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                                            Z_hat = Z_hat,
                                            x_hat = x_hat,
                                            data_ts = data_ts,
-                                           data_ts_se = data_ts_se)
+                                           data_ts_se = data_ts_se,
+                                           data_to_plot_sp = data_to_plot_sp)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
@@ -1306,7 +1334,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                                            Z_hat = Z_hat,
                                            x_hat = x_hat,
                                            data_ts = data_ts,
-                                           data_ts_se = data_ts_se)
+                                           data_ts_se = data_ts_se,
+                                           data_to_plot_sp = data_to_plot_sp)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
