@@ -549,16 +549,10 @@ plot_group_boot <- function(nb_group, # Number of clusters
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
                                  sdrep[grepl("x_pred2",row.names(sdrep)),])
   
-  geom_mean <- data.frame(Index = apply(data_ts, 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
-                          Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
-                          year = as.numeric(names(data_ts)))
-  
   geom_mean_data <- data.frame(Index = apply(t(apply(data_ts,1,function(y){y/y[1]})), 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
-                          #Index_SE = log(apply(data_ts_se, 2, function(x){ sqrt(sum(exp(2*x))) })),
                           year = as.numeric(names(data_ts)))
   
   data_mean_pred <- dcast(data_to_plot_sp, name_long~Year, value.var = "pred.value_exp_1")
-  data_mean_pred_se <- dcast(data_to_plot_sp, name_long~Year, value.var = "pred_se.value_exp_1")
   geom_mean_pred <- data.frame(Index = apply(data_mean_pred[,-1], 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
                                year = as.numeric(names(data_mean_pred[,-1])))
   
@@ -570,16 +564,18 @@ plot_group_boot <- function(nb_group, # Number of clusters
     }else{
       if(nb_group==1){
         test <- data_trend_group[data_trend_group$group==paste0("g",(i-1)),]
-        min_scale <- min(data_trend_group$Estimate)-2*data_trend_group$Std..Error[which.min(data_trend_group$Estimate)]
-        max_scale <- max(data_trend_group$Estimate)+2*data_trend_group$Std..Error[which.max(data_trend_group$Estimate)]
+        min_scale <- min(data_trend_group$Estimate-2*data_trend_group$Std..Error)
+        max_scale <- max(data_trend_group$Estimate+2*data_trend_group$Std..Error)
         min1 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error) + (max(data_trend_group$Estimate+1.96*data_trend_group$Std..Error)-min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error))/10
         min2 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error)
       }else{
         test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
-        min_scale <- min(data_trend_group2$Estimate)-2*data_trend_group2$Std..Error[which.min(data_trend_group2$Estimate)]
-        max_scale <- max(data_trend_group2$Estimate)+2*data_trend_group2$Std..Error[which.max(data_trend_group2$Estimate)]
-        min1 <- min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error) + (max(data_trend_group2$Estimate+1.96*data_trend_group2$Std..Error)-min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error))/10
-        min2 <- min(data_trend_group2$Estimate-1.96*data_trend_group2$Std..Error)
+        #min_scale <- min(data_trend_group2$Estimate)-2*data_trend_group2$Std..Error[which.min(data_trend_group2$Estimate)]
+        #max_scale <- max(data_trend_group2$Estimate)+2*data_trend_group2$Std..Error[which.max(data_trend_group2$Estimate)]
+        min_scale <- min(test$Estimate-2*test$Std..Error)
+        max_scale <- max(test$Estimate+2*test$Std..Error)
+        min1 <- min(test$Estimate-1.96*test$Std..Error) + (max(test$Estimate+1.96*test$Std..Error)-min(test$Estimate-1.96*test$Std..Error))/10
+        min2 <- min(test$Estimate-1.96*test$Std..Error)
       }
     }
     test$Index_SE <- test$Std..Error
@@ -590,8 +586,17 @@ plot_group_boot <- function(nb_group, # Number of clusters
 
     if(i==1){
       
-      alpha <- (geom_mean_pred$Index[1]-geom_mean_pred$Index[nrow(geom_mean_pred)])/(test$Index[1]-test$Index[nrow(geom_mean_pred)])
-      beta <- geom_mean_pred$Index[nrow(geom_mean_pred)]-alpha*test$Index[nrow(geom_mean_pred)]
+      #lm_pred <- lm(Index~year,geom_mean_pred)
+      lm_pred <- lm(Index~year,geom_mean_data)
+      lm_test <- lm(Index~year,test)
+      
+      sse <- abs(lm_test$fitted.values-geom_mean_pred$Index)
+      sse_min <- sort(sse)[1:2]
+      first_val <- which(sse==sse_min[1])
+      second_val <- which(sse==sse_min[2])
+      
+      alpha <- (lm_pred$fitted.values[first_val]-lm_pred$fitted.values[second_val])/(lm_test$fitted.values[first_val]-lm_test$fitted.values[second_val])
+      beta <- lm_pred$fitted.values[second_val]-alpha*lm_test$fitted.values[second_val]
       test$Index_SE_c <- alpha*test$Index_SE
       test$Index_c <- alpha*test$Index+beta
       
@@ -1308,7 +1313,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                                            kmeans_res = group_dfa[[1]],
                                            sdrep = sdRep, nT = nT,
                                            min_year = min_year,
-                                           stability_cluster_final = group_dfa[[3]], 
+                                           stability_cluster_final = group_dfa[[3]],
                                            mean_dist_clust = group_dfa[[4]],
                                            pca_centre = group_dfa[[5]],
                                            Z_hat = Z_hat,
