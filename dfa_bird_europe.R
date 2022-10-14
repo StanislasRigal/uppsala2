@@ -122,6 +122,20 @@ df_all_country <- rbind.fill(droplevels(df[!(df$CountryGroup %in% c("Belgium-Bru
 names(df_all_country)[1] <- names(species_all)[1] <- "code_sp"
 names(species_all)[2] <- "name_long"
 
+# Select the period of study
+
+df_select_timespan <- as.data.frame(df_all_country %>% group_by(CountryGroup, Year) %>% summarise(count=n()))
+df_select_timespan2 <- as.data.frame.matrix(table(df_select_timespan$CountryGroup,df_select_timespan$Year))
+df_select_timespan <- dcast(df_select_timespan, CountryGroup ~ Year, value.var = "count", fun.aggregate =  mean)
+df_select_timespan <- as.data.frame(df_select_timespan)
+df_select_timespan[29,1] <- "Total"
+df_select_timespan[29,-1] <- apply(df_select_timespan[,-1], 2, function(x){return(sum(sign(x),na.rm=T))})
+plot(unlist(df_select_timespan[29,-1])~as.numeric(names(df_select_timespan[,-1])))
+
+country_to_keep <- df_select_timespan$CountryGroup[which(!is.na(df_select_timespan$`2000`))]
+country_to_keep <- country_to_keep[1:(length(country_to_keep)-1)]
+
+df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep & df_all_country$Year >= 2000,])
 
 # List farmland and woodland species by country
 
@@ -139,8 +153,8 @@ species_aus_farm <- data.frame(name_long=c("Falco tinnunculus","Perdix perdix","
 species_aus_farm <- merge(species_aus_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_aus_farm <- na.omit(species_aus_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Austria",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Austria",]
 species_sub <- species_aus_farm <- species_aus_farm[species_aus_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -161,8 +175,8 @@ species_aus_forest <- data.frame(name_long=c("Jynx torquilla","Lullula arborea",
 species_aus_forest <- merge(species_aus_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_aus_forest <- na.omit(species_aus_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Austria",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Austria",]
 species_sub <- species_aus_forest <- species_aus_forest[species_aus_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -191,8 +205,8 @@ species_bel_farm <- data.frame(name_long=c("Alauda arvensis","Anthus pratensis",
 species_bel_farm <- merge(species_bel_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_bel_farm <- na.omit(species_bel_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Belgium",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Belgium",]
 species_sub <- species_bel_farm <- species_bel_farm[species_bel_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -218,8 +232,8 @@ species_bel_forest <- data.frame(name_long=c("Certhia brachydactyla","Certhia fa
 species_bel_forest <- merge(species_bel_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_bel_forest <- na.omit(species_bel_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Belgium",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Belgium",]
 species_sub <- species_bel_forest <- species_bel_forest[species_bel_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -246,8 +260,8 @@ species_bul_farm  <- data.frame(name_long=c("Coturnix coturnix","Galerida crista
 species_bul_farm <- merge(species_bul_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_bul_farm <- na.omit(species_bul_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Bulgaria",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Bulgaria",]
 species_sub <- species_bul_farm <- species_bul_farm[species_bul_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -271,8 +285,8 @@ species_bul_forest  <- data.frame(name_long=c("Columba palumbus","Dendrocopos ma
 species_bul_forest <- merge(species_bul_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_bul_forest <- na.omit(species_bul_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Bulgaria",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Bulgaria",]
 species_sub <- species_bul_forest <- species_bul_forest[species_bul_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -302,8 +316,8 @@ species_cyp_farm  <- data.frame(name_long=c("Falco tinnunculus","Alectoris chuka
 species_cyp_farm <- merge(species_cyp_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_cyp_farm <- na.omit(species_cyp_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Cyprus",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Cyprus",]
 species_sub <- species_cyp_farm <- species_cyp_farm[species_cyp_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -327,8 +341,8 @@ species_cyp_forest  <- data.frame(name_long=c("Columba palumbus","Streptopelia t
 species_cyp_forest <- merge(species_cyp_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_cyp_forest <- na.omit(species_cyp_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Cyprus",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Cyprus",]
 species_sub <- species_cyp_forest <- species_cyp_forest[species_cyp_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -356,8 +370,8 @@ species_cze_farm  <- data.frame(name_long=c("Hirundo rustica","Corvus corone","C
 species_cze_farm <- merge(species_cze_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_cze_farm <- na.omit(species_cze_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Czech Republic",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Czech Republic",]
 species_sub <- species_cze_farm <- species_cze_farm[species_cze_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -388,15 +402,15 @@ species_cze_forest  <- data.frame(name_long=c("Buteo buteo","Accipiter nisus","C
 species_cze_forest <- merge(species_cze_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_cze_forest <- na.omit(species_cze_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Czech Republic",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Czech Republic",]
 species_sub <- species_cze_forest <- species_cze_forest[species_cze_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_cze_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_cze_forest,nfac = 0,
@@ -418,15 +432,15 @@ species_den_farm  <- data.frame(name_long=c("Falco tinnunculus","Perdix perdix",
 species_den_farm <- merge(species_den_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_den_farm <- na.omit(species_den_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Denmark",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Denmark",]
 species_sub <- species_den_farm <- species_den_farm[species_den_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_den_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_den_farm,nfac = 0,
@@ -444,16 +458,16 @@ species_den_forest  <- data.frame(name_long=c("Accipiter nisus","Columba oenas",
 species_den_forest <- merge(species_den_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_den_forest <- na.omit(species_den_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Denmark",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Denmark",]
 species_sub <- species_den_forest <- species_den_forest[species_den_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[,1:9][y_forest[,1:9] == 0] <- NA
-
+#y_forest[,1:9][y_forest[,1:9] == 0] <- NA
+y_forest[y_forest == 0] <- NA
 dfa_den_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_den_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
@@ -463,6 +477,7 @@ dfa_den_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
 
 # Estonia
 # https://www.sciencedirect.com/science/article/pii/S0167880901002122#TBL2
+# plutot https://kirj.ee/public/Ecology/2011/issue_2/ecol-2011-2-88-110.pdf
 
 species_est_farm  <- data.frame(name_long=c("Ciconia ciconia","Crex crex","Tringa totanus","Delichon urbicum",
                                      "Anthus pratensis","Locustella fluviatilis","Curruca nisoria","Muscicapa striata",
@@ -478,15 +493,15 @@ species_est_farm  <- data.frame(name_long=c("Ciconia ciconia","Crex crex","Tring
 species_est_farm <- merge(species_est_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_est_farm <- na.omit(species_est_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Estonia",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Estonia",]
 species_sub <- species_est_farm <- species_est_farm[species_est_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-#y_farm[y_farm == 0] <- NA
+y_farm[y_farm == 0] <- NA
 
 dfa_est_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_est_farm,nfac = 0,
@@ -507,15 +522,15 @@ species_est_forest  <- data.frame(name_long=c("Luscinia luscinia","Dryocopus mar
 species_est_forest <- merge(species_est_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_est_forest <- na.omit(species_est_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Estonia",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Estonia",]
 species_sub <- species_est_forest <- species_est_forest[species_est_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-#y_forest[y_forest == 0] <- NA
+y_forest[y_forest == 0] <- NA
 
 dfa_est_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_est_forest,nfac = 0,
@@ -524,8 +539,8 @@ dfa_est_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            se_log = FALSE,is_mean_centred = FALSE)
 
 # Finland
-#https://www.biodiversity.fi/ext/en/data-pages/fa8_backgroundinfo.html
-#https://www.biodiversity.fi/en/habitats/forests/fo10-forest-birds
+# https://www.biodiversity.fi/ext/en/data-pages/fa8_backgroundinfo.html
+# https://www.biodiversity.fi/en/habitats/forests/fo10-forest-birds
 
 species_fin_farm  <- data.frame(name_long=c("Crex crex","Vanellus vanellus","Numenius arquata","Alauda arvensis",
                                      "Hirundo rustica","Delichon urbicum","Anthus pratensis","Saxicola rubertra",
@@ -535,15 +550,15 @@ species_fin_farm  <- data.frame(name_long=c("Crex crex","Vanellus vanellus","Num
 species_fin_farm <- merge(species_fin_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_fin_farm <- na.omit(species_fin_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Finland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Finland",]
 species_sub <- species_fin_farm <- species_fin_farm[species_fin_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_fin_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_fin_farm,nfac = 0,
@@ -560,15 +575,15 @@ species_fin_forest  <- data.frame(name_long=c("Cuculus canorus","Jynx torquilla"
 species_fin_forest <- merge(species_fin_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_fin_forest <- na.omit(species_fin_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Finland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Finland",]
 species_sub <- species_fin_forest <- species_fin_forest[species_fin_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_fin_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_fin_forest,nfac = 0,
@@ -590,8 +605,8 @@ species_fra_farm  <- data.frame(name_long=c("Vanellus vanellus","Buteo buteo","F
 species_fra_farm <- merge(species_fra_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_fra_farm <- na.omit(species_fra_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "France",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "France",]
 species_sub <- species_fra_farm <- species_fra_farm[species_fra_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -617,8 +632,8 @@ species_fra_forest  <- data.frame(name_long=c("Dendrocopos major","Dendrocoptes 
 species_fra_forest <- merge(species_fra_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_fra_forest <- na.omit(species_fra_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "France",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "France",]
 species_sub <- species_fra_forest <- species_fra_forest[species_fra_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -645,15 +660,15 @@ species_ger_farm  <- data.frame(name_long=c("Buteo buteo","Falco tinnunculus","P
 species_ger_farm <- merge(species_ger_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_ger_farm <- na.omit(species_ger_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Germany",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Germany",]
 species_sub <- species_ger_farm <- species_ger_farm[species_ger_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_ger_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ger_farm,nfac = 0,
@@ -675,15 +690,15 @@ species_ger_forest  <- data.frame(name_long=c("Dryocopus martius","Sylvia atrica
 species_ger_forest <- merge(species_ger_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_ger_forest <- na.omit(species_ger_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Germany",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Germany",]
 species_sub <- species_ger_forest <- species_ger_forest[species_ger_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_ger_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_ger_forest,nfac = 0,
@@ -706,15 +721,15 @@ species_hun_farm  <- data.frame(name_long=c("Falco tinnunculus","Perdix perdix",
 species_hun_farm <- merge(species_hun_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_hun_farm <- na.omit(species_hun_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Hungary",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Hungary",]
 species_sub <- species_hun_farm <- species_hun_farm[species_hun_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_hun_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_hun_farm,nfac = 0,
@@ -733,8 +748,8 @@ species_hun_forest  <- data.frame(name_long=c("Columba oenas","Dryocopus martius
 species_hun_forest <- merge(species_hun_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_hun_forest <- na.omit(species_hun_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Hungary",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Hungary",]
 species_sub <- species_hun_forest <- species_hun_forest[species_hun_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -763,15 +778,15 @@ species_ita_farm  <- data.frame(name_long=c("Alauda arvensis","Lanius collurio",
 species_ita_farm <- merge(species_ita_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_ita_farm <- na.omit(species_ita_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Italy",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Italy",]
 species_sub <- species_ita_farm <- species_ita_farm[species_ita_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_ita_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ita_farm,nfac = 0,
@@ -790,15 +805,15 @@ species_ita_forest  <- data.frame(name_long=c("Poecile montanus","Poecile palust
 species_ita_forest <- merge(species_ita_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_ita_forest <- na.omit(species_ita_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Italy",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Italy",]
 species_sub <- species_ita_forest <- species_ita_forest[species_ita_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_ita_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_ita_forest,nfac = 0,
@@ -817,15 +832,15 @@ species_lat_farm  <- data.frame(name_long=c("Ciconia ciconia","Crex crex","Vanel
 species_lat_farm <- merge(species_lat_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_lat_farm <- na.omit(species_lat_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Latvia",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Latvia",]
 species_sub <- species_lat_farm <- species_lat_farm[species_lat_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_lat_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_lat_farm,nfac = 0,
@@ -844,16 +859,16 @@ species_lat_forest  <- data.frame(name_long=c("Accipiter gentilis","Accipiter ni
 species_lat_forest <- merge(species_lat_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_lat_forest <- na.omit(species_lat_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Latvia",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Latvia",]
 species_sub <- species_lat_forest <- species_lat_forest[species_lat_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
-
+#y_forest[y_forest == 0] <- NA
+# no because from 2005 for forest
 dfa_lat_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_lat_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
@@ -872,8 +887,8 @@ species_lux_farm  <- data.frame(name_long=c("Alauda arvensis","Saxicola torquatu
 species_lux_farm <- merge(species_lux_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_lux_farm <- na.omit(species_lux_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Luxembourg",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Luxembourg",]
 species_sub <- species_lux_farm <- species_lux_farm[species_lux_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -896,8 +911,8 @@ species_lux_forest  <- data.frame(name_long=c("Columba oenas","Dryocopus martius
 species_lux_forest <- merge(species_lux_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_lux_forest <- na.omit(species_lux_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Luxembourg",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Luxembourg",]
 species_sub <- species_lux_forest <- species_lux_forest[species_lux_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -928,15 +943,15 @@ species_net_farm  <- data.frame(name_long=c("Perdix perdix","Streptopelia turtur
 species_net_farm <- merge(species_net_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_net_farm <- na.omit(species_net_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Netherlands",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Netherlands",]
 species_sub <- species_net_farm <- species_net_farm[species_net_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_net_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_net_farm,nfac = 0,
@@ -957,15 +972,15 @@ species_net_forest  <- data.frame(name_long=c("Coccothraustes coccothraustes","F
 species_net_forest <- merge(species_net_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_net_forest <- na.omit(species_net_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Netherlands",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Netherlands",]
 species_sub <- species_net_forest <- species_net_forest[species_net_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_net_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_net_forest,nfac = 0,
@@ -986,8 +1001,8 @@ species_nor_farm  <- data.frame(name_long=c("Vanellus vanellus","Numenius arquat
 species_nor_farm <- merge(species_nor_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_nor_farm <- na.omit(species_nor_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Norway",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Norway",]
 species_sub <- species_nor_farm <- species_nor_farm[species_nor_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1012,8 +1027,8 @@ species_nor_forest  <- data.frame(name_long=c("Turdus viscivorus","Poecile monta
 species_nor_forest <- merge(species_nor_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_nor_forest <- na.omit(species_nor_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Norway",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Norway",]
 species_sub <- species_nor_forest <- species_nor_forest[species_nor_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1042,8 +1057,8 @@ species_pol_farm  <- data.frame(name_long=c("Ciconia ciconia", "Falco tinnunculu
 species_pol_farm <- merge(species_pol_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_pol_farm <- na.omit(species_pol_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Poland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Poland",]
 species_sub <- species_pol_farm <- species_pol_farm[species_pol_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1072,15 +1087,15 @@ species_pol_forest  <- data.frame(name_long=c("Periparus ater", "Lophophanus cri
 species_pol_forest <- merge(species_pol_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_pol_forest <- na.omit(species_pol_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Poland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Poland",]
 species_sub <- species_pol_forest <- species_pol_forest[species_pol_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_pol_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_pol_forest,nfac = 0,
@@ -1101,8 +1116,8 @@ species_por_farm  <- data.frame(name_long=c("Athene noctua","Bubulcus ibis","Car
 species_por_farm <- merge(species_por_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_por_farm <- na.omit(species_por_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Portugal",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Portugal",]
 species_sub <- species_por_farm <- species_por_farm[species_por_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1127,8 +1142,8 @@ species_por_forest  <- data.frame(name_long=c("Aegithalos caudatus","Certhia bra
 species_por_forest <- merge(species_por_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_por_forest <- na.omit(species_por_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Portugal",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Portugal",]
 species_sub <- species_por_forest <- species_por_forest[species_por_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1156,15 +1171,15 @@ species_ire_farm  <- data.frame(name_long=c("Falco tinnunculus","Phasianus colch
 species_ire_farm <- merge(species_ire_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_ire_farm <- na.omit(species_ire_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Republic of Ireland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Republic of Ireland",]
 species_sub <- species_ire_farm <- species_ire_farm[species_ire_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_ire_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ire_farm,nfac = 0,
@@ -1189,8 +1204,8 @@ species_slk_farm  <- data.frame(name_long=c("Alauda arvensis", "Linaria cannabin
 species_slk_farm <- merge(species_slk_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_slk_farm <- na.omit(species_slk_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Republic of Ireland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Slovakia",]
 species_sub <- species_slk_farm <- species_slk_farm[species_slk_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1224,8 +1239,8 @@ species_sln_farm  <- data.frame(name_long=c("Acrocephalus palustris","Alauda arv
 species_sln_farm <- merge(species_sln_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_sln_farm <- na.omit(species_sln_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Slovenia",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Slovenia",]
 species_sub <- species_sln_farm <- species_sln_farm[species_sln_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1255,15 +1270,15 @@ species_spa_farm  <- data.frame(name_long=c("Merops apiaster","Upupa epops","Ala
 species_spa_farm <- merge(species_spa_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_spa_farm <- na.omit(species_spa_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Spain",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Spain",]
 species_sub <- species_spa_farm <- species_spa_farm[species_spa_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_spa_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_spa_farm,nfac = 0,
@@ -1281,15 +1296,15 @@ species_swe_farm  <- data.frame(name_long= c("Falco tinnunculus","Vanellus vanel
 species_swe_farm <- merge(species_swe_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_swe_farm <- na.omit(species_swe_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Sweden",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Sweden",]
 species_sub <- species_swe_farm <- species_swe_farm[species_swe_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_swe_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_swe_farm,nfac = 0,
@@ -1310,15 +1325,15 @@ species_swe_forest  <- data.frame(name_long=c("Accipiter nisus","Tetrastes bonas
 species_swe_forest <- merge(species_swe_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_swe_forest <- na.omit(species_swe_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Sweden",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Sweden",]
 species_sub <- species_swe_forest <- species_swe_forest[species_swe_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_swe_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_swe_forest,nfac = 0,
@@ -1346,8 +1361,8 @@ species_swi_farm  <- data.frame(name_long=c("Falco tinnunculus","Ciconia ciconia
 species_swi_farm <- merge(species_swi_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_swi_farm <- na.omit(species_swi_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Switzerland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Switzerland",]
 species_sub <- species_swi_farm <- species_swi_farm[species_swi_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1381,15 +1396,15 @@ species_swi_forest  <- data.frame(name_long=c("Tetrastes bonasia","Picus canus",
 species_swi_forest <- merge(species_swi_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_swi_forest <- na.omit(species_swi_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "Switzerland",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "Switzerland",]
 species_sub <- species_swi_forest <- species_swi_forest[species_swi_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_swi_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_swi_forest,nfac = 0,
@@ -1411,15 +1426,15 @@ species_uk_farm  <- data.frame(name_long=c("Passer montanus", "Emberiza calandra
 species_uk_farm <- merge(species_uk_farm, species_all, by="name_long", all.x=T)
 species_sub <- species_uk_farm <- na.omit(species_uk_farm)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "United Kingdom",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "United Kingdom",]
 species_sub <- species_uk_farm <- species_uk_farm[species_uk_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                      code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_farm[y_farm == 0] <- NA
+#y_farm[y_farm == 0] <- NA
 
 dfa_uk_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_uk_farm,nfac = 0,
@@ -1441,18 +1456,351 @@ species_uk_forest  <- data.frame(name_long=c("Turdus merula","Cyanistes caeruleu
 species_uk_forest <- merge(species_uk_forest, species_all, by="name_long", all.x=T)
 species_sub <- species_uk_forest <- na.omit(species_uk_forest)
 
-Obs <- df_all_country[df_all_country$code_sp %in% species_sub$code_sp &
-                        df_all_country$CountryGroup == "United Kingdom",]
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                        df_all_country_2000$CountryGroup == "United Kingdom",]
 species_sub <- species_uk_forest <- species_uk_forest[species_uk_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-y_forest[y_forest == 0] <- NA
+#y_forest[y_forest == 0] <- NA
 
 dfa_uk_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_uk_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
                            se_log = FALSE,is_mean_centred = FALSE)
+
+
+# Species indices
+
+## Species specialisation index (SSI)
+# https://onlinelibrary.wiley.com/doi/10.1111/oik.02276
+
+SSI <- read.csv("raw_data/SSI.csv", header=T)
+SSI$Species <- paste0(SSI$Genus, sep=" ", SSI$Species)
+SSI$Genus <- NULL
+
+SSI_cornix <- SSI[SSI$Species=="Corvus corone",]
+SSI_cornix$Species <- "Corvus cornix"
+SSI <- rbind(SSI,SSI_cornix)
+SSI$Species[SSI$Species=="Bonasa bonasia"] <- "Tetrastes bonasia"
+SSI$Species[SSI$Species=="Carduelis cannabina"] <- "Linaria cannabina"
+SSI$Species[SSI$Species=="Carduelis chloris"] <- "Chloris chloris"
+SSI$Species[SSI$Species=="Carduelis flammea"] <- "Acanthis flammea"
+SSI$Species[SSI$Species=="Carduelis spinus"] <- "Spinus spinus"
+SSI$Species[SSI$Species=="Corvus monedula"] <- "Coloeus monedula"
+SSI$Species[SSI$Species=="Delichon urbica"] <- "Delichon urbicum"
+SSI$Species[SSI$Species=="Dendrocopos medius"] <- "Dendrocoptes medius"
+SSI$Species[SSI$Species=="Dendrocopos minor"] <- "Dryobates minor"
+SSI$Species[SSI$Species=="Hippolais pallida"] <- "Iduna pallida"
+SSI$Species[SSI$Species=="Hirundo daurica"] <- "Cecropis daurica"
+SSI$Species[SSI$Species=="Hirundo rupestris"] <- "Ptyonoprogne rupestris"
+SSI$Species[SSI$Species=="Larus ridibundus"] <- "Chroicocephalus ridibundus"
+SSI$Species[SSI$Species=="Miliaria calandra"] <- "Emberiza calandra"
+SSI$Species[SSI$Species=="Parus ater"] <- "Periparus ater"
+SSI$Species[SSI$Species=="Parus caeruleus"] <- "Cyanistes caeruleus"
+SSI$Species[SSI$Species=="Parus cristatus"] <- "Lophophanes cristatus"
+SSI$Species[SSI$Species=="Parus montanus"] <- "Poecile montanus"
+SSI$Species[SSI$Species=="Parus palustris"] <- "Poecile palustris"
+SSI$Species[SSI$Species=="Saxicola torquata"] <- "Saxicola torquatus"
+SSI$Species[SSI$Species=="Serinus citrinella"] <- "Carduelis citrinella"
+SSI$Species[SSI$Species=="Sylvia cantillans"] <- "Curruca cantillans"
+SSI$Species[SSI$Species=="Sylvia communis"] <- "Curruca communis"
+SSI$Species[SSI$Species=="Sylvia curruca"] <- "Curruca curruca"
+SSI$Species[SSI$Species=="Sylvia hortensis"] <- "Curruca hortensis"
+SSI$Species[SSI$Species=="Sylvia melanocephala"] <- "Curruca melanocephala"
+SSI$Species[SSI$Species=="Sylvia melanothorax"] <- "Curruca melanothorax"
+SSI$Species[SSI$Species=="Sylvia nisoria"] <- "Curruca nisoria"
+SSI$Species[SSI$Species=="Sylvia undata"] <- "Curruca undata"
+SSI$Species[SSI$Species=="Tetrao tetrix"] <- "Lyrurus tetrix"
+
+SSI$Species[SSI$Species==""] <- "Acrocephalus arundinaceus"
+SSI$Species[SSI$Species==""] <- "Acrocephalus schoenobaenus"
+SSI$Species[SSI$Species==""] <- "Acrocephalus scirpaceus"
+SSI$Species[SSI$Species==""] <- "Actitis hypoleucos"
+SSI$Species[SSI$Species==""] <- "Alcedo atthis"
+SSI$Species[SSI$Species==""] <- "Anas platyrhynchos"
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+SSI$Species[SSI$Species==""] <- ""
+
+## Species temperature index (STI)
+# https://royalsocietypublishing.org/doi/epdf/10.1098/rspb.2008.0878
+# https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1600-0587.2012.07799.x
+# get bird occurence from https://ebba2.info/data-request/
+# get climat data from https://surfobs.climate.copernicus.eu/dataaccess/access_eobs.php
+
+# map of temperature
+require(raster)
+temp_se <- brick("raw_data/tg_ens_mean_0.1deg_reg_v23.1e.nc")
+
+end_year <- 0
+
+for(i in 1:(2021-1950)){
+  print(i)
+  beg_year <- end_year+1
+  end_year <- end_year+365
+  year <- paste0("temp_",1949+i)
+  if(i %in% c(seq(1952,2021,4)-1949)){
+    end_year<-end_year+1 # account for bisextil years
+  }
+  map_year <- assign(year, mean(temp_se[[(beg_year+31):(beg_year+201)]], na.rm=T)) # from February to July cf Loxia
+  path <- paste0("output/temp_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+}
+
+# species occurrence
+
+species_occ <- read.csv("raw_data/ebba2_data_occurrence_50km.csv", sep=";", header = T)
+
+# grid of occurrence
+
+grid_occ <- readOGR("raw_data/ebba2_grid50x50_v1.shp")
+grid_occ_poly <- SpatialPolygons(grid_occ@polygons)
+
+# temperature by grid cell and by year
+
+for(i in 2000:2017){ # data from the same period as the survey (2000-2017)
+  print(i)
+  year <- paste0("temp_",i)
+  path <- paste0("output/temp_",i,".tif")
+  temp_year <- paste0("temp_",i,"_tr")
+  value_year <- paste0("value_",i)
+  mean_value_year <- paste0("mean_value_",i)
+  
+  map_year <- assign(year, raster(path))
+  map_year_tr <- assign(temp_year, projectRaster(map_year, crs = proj4string(grid_occ)))
+  
+  value_year_list <- assign(value_year, extract(map_year_tr,grid_occ_poly))
+  mean_value_year_list <- assign(mean_value_year, lapply(value_year_list, FUN = function(x){return(mean(x,na.rm=T))}))
+  
+  grid_occ@data[,ncol(grid_occ@data)+1] <- unlist(mean_value_year_list)
+  names(grid_occ@data)[ncol(grid_occ@data)] <- year
+  
+}
+
+grid_occ_fort <- fortify(grid_occ, region='cell50x50')
+grid_occ_fort <- merge(grid_occ_fort, grid_occ@data,
+                       by.x = "id", by.y="cell50x50")
+
+ggplot(grid_occ_fort, aes(x = long, y = lat, group = id)) + 
+  geom_polygon(aes(fill=temp_2000))+
+  scale_fill_gradient2()
+
+grid_occ_fort$grid_occ_mean <- apply(grid_occ_fort,1,function(x){return(mean(as.numeric(x[8:25]), na.rm=T))})
+
+grid_mean <- data.frame(grid_occ_fort %>% group_by(id) %>% summarise(mean_temp = mean(grid_occ_mean, na.rm=T)))
+
+# Merge species occurrence and temperature
+
+species_occ_temp <- merge(species_occ,grid_mean,
+                          by.x = "cell50x50", by.y = "id", all.x=T)
+
+species_sti <- data.frame(species_occ_temp %>% group_by(birdlife_scientific_name) %>% summarise(STI = mean(mean_temp, na.rm=T),
+                                                                                                sd_STI = sd(mean_temp, na.rm=T)))
+STI <- species_sti
+
+names(STI)[1] <- "Species"
+
+STI$Species <- as.character(STI$Species)
+STI <- STI[which(STI$Species!=""),]
+STI$Species[STI$Species=="Bonasa bonasia"] <- "Tetrastes bonasia"
+STI_cornix <- STI[STI$Species=="Corvus corone",]
+STI_cornix$Species <- "Corvus cornix"
+STI <- rbind(STI,STI_cornix)
+STI$Species[STI$Species=="Corvus monedula"] <- "Coloeus monedula"
+STI$Species[STI$Species=="Cyanecula svecica"] <- "Luscinia svecica"
+STI$Species[STI$Species=="Larus ridibundus"] <- "Chroicocephalus ridibundus"
+STI$Species[STI$Species=="Leiopicus medius"] <- "Dendrocoptes medius"
+STI$Species[STI$Species=="Sylvia cantillans"] <- "Curruca cantillans"
+STI$Species[STI$Species=="Sylvia communis"] <- "Curruca communis"
+STI$Species[STI$Species=="Sylvia curruca"] <- "Curruca curruca"
+STI$Species[STI$Species=="Sylvia hortensis"] <- "Curruca hortensis"
+STI$Species[STI$Species=="Sylvia melanocephala"] <- "Curruca melanocephala"
+STI$Species[STI$Species=="Sylvia melanothorax"] <- "Curruca melanothorax"
+STI$Species[STI$Species=="Sylvia nisoria"] <- "Curruca nisoria"
+STI$Species[STI$Species=="Sylvia undata"] <- "Curruca undata"
+
+
+## Species functional index (SFI)
+# https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1461-0248.2010.01493.x
+# https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12266
+# https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12709
+# https://www.jstor.org/stable/4539206#metadata_info_tab_contents
+
+library(ade4)
+library(RVAideMemoire)
+library(cluster)
+library(geometry)
+
+trait <- read.table("raw_data/Life-history characteristics of European birds.txt", header = T, sep = "\t")
+
+# Select traits
+
+trait_selected <- trait[,c("Species",
+                           "WeightU_MEAN","WingU_MEAN","BillU_MEAN","TarsusU_MEAN","TailU_MEAN","Sexual.dimorphism","Clutch_MEAN","Life.span","Age.of.independence", "Age.of.first.breeding", "Fledging.period","Egg_MASS", # Resource quantity
+                           "Fish_B","Other.vertebrates_B","Carrion_B", # Vertebrate diet to aggregate
+                           "Arthropods_B","Other.invertebrates_B", # Invertebrate diet to aggregate
+                           "Folivore_B","Frugivore_B","Granivore_B", # Plant diet to aggregate
+                           "Nest.type","Nest.building", # Nest location
+                           "Association.during.nesting", "Mating.system", "Hatching", "Association.outside.the.breeding.season", "Territoriality", "Human.settlements", "Incubation.sex","Young", # Behaviour
+                           "Sedentary","Short.distance.migrant","Long.distance.migrant" # Migratory status to aggregate
+                           )]
+
+trait_selected$Vertebrate_diet <- 0
+trait_selected$Vertebrate_diet[trait_selected$Fish_B == 1 |
+                               trait_selected$Other.vertebrates_B == 1 |
+                               trait_selected$Carrion_B == 1] <- 1
+trait_selected$Fish_B <- trait_selected$Other.vertebrates_B <- trait_selected$Carrion_B <- NULL
+
+trait_selected$Invertebrate_diet <- 0
+trait_selected$Invertebrate_diet[trait_selected$Arthropods_B == 1 |
+                                 trait_selected$Other.invertebrates_B == 1] <- 1
+trait_selected$Arthropods_B <- trait_selected$Other.invertebrates_B <- NULL
+
+trait_selected$Plant_diet <- 0
+trait_selected$Plant_diet[trait_selected$Folivore_B == 1 |
+                                   trait_selected$Frugivore_B == 1 |
+                                   trait_selected$Granivore_B == 1] <- 1
+trait_selected$Folivore_B <- trait_selected$Frugivore_B <- trait_selected$Granivore_B  <- NULL
+
+trait_selected$Migratory_status <- "S"
+trait_selected$Migratory_status[trait_selected$Sedentary == 1 &
+                                trait_selected$Short.distance.migrant == 1] <- "S,SD"
+trait_selected$Migratory_status[trait_selected$Short.distance.migrant == 1 &
+                                  trait_selected$Long.distance.migrant == 1] <- "SD,LD"
+trait_selected$Migratory_status[trait_selected$Short.distance.migrant == 0 &
+                                  trait_selected$Long.distance.migrant == 1] <- "LD"
+trait_selected$Sedentary <- trait_selected$Short.distance.migrant <- trait_selected$Long.distance.migrant  <- NULL
+
+# Correct species names
+
+trait_selected$Species <- as.character(trait_selected$Species)
+trait_selected <- trait_selected[which(trait_selected$Species!=""),]
+trait_selected$Species[trait_selected$Species=="Bonasa bonasia"] <- "Tetrastes bonasia"
+trait_selected_cornix <- trait_selected[trait_selected$Species=="Corvus corone",]
+trait_selected_cornix$Species <- "Corvus cornix"
+trait_selected <- rbind(trait_selected,trait_selected_cornix)
+trait_selected$Species[trait_selected$Species=="Corvus monedula"] <- "Coloeus monedula"
+trait_selected$Species[trait_selected$Species=="Cyanecula svecica"] <- "Luscinia svecica"
+trait_selected$Species[trait_selected$Species=="Larus ridibundus"] <- "Chroicocephalus ridibundus"
+trait_selected$Species[trait_selected$Species=="Leiopicus medius"] <- "Dendrocoptes medius"
+trait_selected$Species[trait_selected$Species=="Sylvia cantillans"] <- "Curruca cantillans"
+trait_selected$Species[trait_selected$Species=="Sylvia communis"] <- "Curruca communis"
+trait_selected$Species[trait_selected$Species=="Sylvia curruca"] <- "Curruca curruca"
+trait_selected$Species[trait_selected$Species=="Sylvia hortensis"] <- "Curruca hortensis"
+trait_selected$Species[trait_selected$Species=="Sylvia melanocephala"] <- "Curruca melanocephala"
+trait_selected$Species[trait_selected$Species=="Sylvia melanothorax"] <- "Curruca melanothorax"
+trait_selected$Species[trait_selected$Species=="Sylvia nisoria"] <- "Curruca nisoria"
+trait_selected$Species[trait_selected$Species=="Sylvia undata"] <- "Curruca undata"
+
+trait_selected_sp <- trait_selected[which(trait_selected$Species %in% species_all$name_long),]
+trait_selected_sp[,c("Sexual.dimorphism","Nest.type", "Nest.building", "Association.during.nesting",
+          "Mating.system", "Hatching", "Association.outside.the.breeding.season",
+          "Territoriality", "Human.settlements", "Incubation.sex",
+          "Young", "Vertebrate_diet", "Invertebrate_diet",
+          "Plant_diet", "Migratory_status")] <- lapply(trait_selected_sp[,c("Sexual.dimorphism","Nest.type", "Nest.building", "Association.during.nesting",
+                                                                            "Mating.system", "Hatching", "Association.outside.the.breeding.season",
+                                                                            "Territoriality", "Human.settlements", "Incubation.sex",
+                                                                            "Young", "Vertebrate_diet", "Invertebrate_diet",
+                                                                            "Plant_diet", "Migratory_status")], factor)
+
+table.na <- apply(trait_selected_sp,2,function(x){sum(is.na(x))})
+
+# 1st possibility: Hill&Smith
+
+# Replacing NA by mean and scale
+
+trait_selected_sp[,c(2:6,8:13)] <- apply(trait_selected_sp[,c(2:6,8:13)],2,function(x){x[is.na(x)] <- mean(x,na.rm=T)})
+for(i in c(7,14:27)){
+  trait_selected_sp[is.na(trait_selected_sp[,i]),i] <- names(which.max(table(trait_selected_sp[,i])))
+}
+
+
+trait_selected_sp[,c(2:6,8:13)] <- apply(trait_selected_sp[,c(2:6,8:13)],2,function(x){return(scale(x))})
+
+# Explanatory mixed analysis 
+
+AMix <- dudi.hillsmith(trait_selected_sp[,-1], scannf=F, nf=25) # 25 axes for 75%
+MVA.synt(AMix, rows=25)
+MVA.plot(AMix)
+MVA.plot(AMix,"corr")
+scat.cr(AMix,axis=1)
+
+trait_hs <- AMix$li
+row.names(trait_hs) <- trait_selected_sp[,1]
+
+mat.dista <- daisy(trait_hs, metric="euclidean")
+names(mat.dista) <- trait_selected_sp$Species
+
+hc1 <- hclust(mat.dista)
+hc2 <- hclust(cophenetic(hc1), method = "ave")
+plot(hc2)
+
+vect.dista <- data.frame(Species=trait_selected_sp$Species,
+                         fd.obs=rowSums(as.matrix(mat.dista)),
+                         fd.obs.coph=rowSums(as.matrix(cophenetic(hc1))))
+
+vect.dista$SFI <- scale(vect.dista$fd.obs.coph, center=F)
+
+
+# 2nd possibility: Gower distance matrix
+
+mat.dist <- daisy(trait_selected_sp[,-1], metric="gower", type=list(asymm=c("Human.settlements","Vertebrate_diet","Invertebrate_diet","Plant_diet")))
+mat.dist2 <- sqrt(mat.dist) # euclidean matrix
+names(mat.dist2) <- trait_selected_sp$Species
+vect.dist <- data.frame(Species=trait_selected_sp$Species, fd.obs=rowSums(as.matrix(mat.dist2)))
+
+hc1 <- hclust(mat.dist2)
+hc2 <- hclust(cophenetic(hc1), method = "ave")
+plot(hc2)
+
+vect.distb <- data.frame(Species=trait_selected_sp$Species,
+                         fd.obs=rowSums(as.matrix(mat.dist2)),
+                         fd.obs.coph=rowSums(as.matrix(cophenetic(hc1))))
+
+vect.distb$SFI <- scale(vect.distb$fd.obs.coph, center=F)
+
+SFI <- merge(vect.dista[,c("Species","SFI")],vect.distb[,c("Species","SFI")],
+             by="Species")
+
+SXI <- merge(SFI,STI,by="Species", all.x=T)
+SXI <- merge(SXI,SSI,by="Species", all.x=T)
+
+### Test model to explain clusters
+
+data_mod <- merge(dfa_aus_farm$group[[1]][[1]],SXI, by.x="name_long", by.y="Species")
+summary(lm(PC1~SFI.x+STI+SSI, data=data_mod))

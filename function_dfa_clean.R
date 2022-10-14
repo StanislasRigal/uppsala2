@@ -948,7 +948,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                      is_mean_centred = TRUE # TRUE if data are already mean-centred, FALSE otherwise
                      )
 {
-  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE
+  #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE;is_mean_centred = TRUE
   
   # Save first year for plot
   
