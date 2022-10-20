@@ -15,6 +15,7 @@ library(see)
 library(scales)
 library(ggrepel)
 library(forcats)
+library(ppcor)
 
 # Other packages used in the README.md
 
