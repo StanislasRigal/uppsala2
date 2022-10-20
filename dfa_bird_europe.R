@@ -876,7 +876,33 @@ dfa_lat_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            se_log = FALSE,is_mean_centred = FALSE)
 
 # Lithuania
-# asked
+# no official forest bird indicator
+
+species_lit_farm  <- data.frame(name_long=c("Ciconia ciconia","Crex crex","Vanellus vanellus","Alauda arvensis",
+                                            "Hirundo rustica","Anthus pratensis","Motacilla flava","Saxicola rubetra",
+                                            "Curruca communis","Lanius collurio","Sturnus vulgaris","Passer montanus",
+                                            "Carduelis carduelis","Emberiza citrinella"))
+
+species_lit_farm <- merge(species_lit_farm, species_all, by="name_long", all.x=T)
+species_sub <- species_lit_farm <- na.omit(species_lit_farm)
+
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                             df_all_country_2000$CountryGroup == "Lithuania",]
+species_sub <- species_lit_farm <- species_lit_farm[species_lit_farm$code_sp %in% unique(Obs$code_sp),]
+y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
+                code_sp~Year, fun.aggregate = sum, value.var = "Index")
+obs_se_farm <- dcast(Obs[,c("code_sp","Index_SE","Year")],
+                     code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
+
+y_farm[y_farm == 0] <- NA
+
+dfa_lit_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
+                         species_sub = species_lit_farm,nfac = 0,
+                         mintrend = 1,maxtrend = 5,AIC = TRUE,
+                         nboot = 500,silent = TRUE,control = list(),
+                         se_log = FALSE,is_mean_centred = FALSE)
+
+
 
 # Luxembourg
 # asked
