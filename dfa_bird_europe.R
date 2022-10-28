@@ -930,7 +930,7 @@ dfa_lux_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          se_log = FALSE,is_mean_centred = FALSE)
 
 species_lux_forest  <- data.frame(name_long=c("Columba oenas","Dryocopus martius","Leiopicus medius","Anthus trivialis",
-                                       "Turdus viscivorus","Phylloscopus sibilatrix","Regulus regulus","Regulus ignicapillus",
+                                       "Turdus viscivorus","Phylloscopus sibilatrix","Regulus regulus","Regulus ignicapilla",
                                        "Sitta europaea","Certhia familiaris","Coccothraustes coccothraustes"))
 
 
@@ -1100,11 +1100,11 @@ dfa_pol_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          se_log = FALSE,is_mean_centred = FALSE)
 
 species_pol_forest  <- data.frame(name_long=c("Periparus ater", "Lophophanus cristatus", "Regulus regulus", "Erithacus rubecula",
-                                       "Pyrrhula pyrrhula", "Phyloscopus sibilatrix", "Dendrocopos major", "Troglodytes troglodytes",
-                                       "Certhia familiaris", "Phylloscopus colybita", "Regulus ignicapillus", "Anthus trivialis", 
+                                       "Pyrrhula pyrrhula", "Phylloscopus sibilatrix", "Dendrocopos major", "Troglodytes troglodytes",
+                                       "Certhia familiaris", "Phylloscopus colybita", "Regulus ignicapilla", "Anthus trivialis", 
                                        "Turdus philomelos", "Dryocopus martius", "Garrulus glandarius", "Turdus viscivorus",
                                        "Fringilla coelebs", "Ficedula parva", "Ficedula hypoleuca", "Sitta europea", 
-                                       "Prunella modularis", "Spinus spinus", "Phylloscopus trochulus", "Poecile montanus",
+                                       "Prunella modularis", "Spinus spinus", "Phylloscopus trochilus", "Poecile montanus",
                                        "Parus major", "Poecile palustris", "Turdus merula", "Lullula arborea",
                                        "Sylvia atricapilla", "Certhia brachydactyla", "Aegithalos caudatus", "Coccothraustes coccothraustes",
                                        "Columba oenas", "Phoenicurus phoenicurus"))
@@ -1381,7 +1381,7 @@ species_swi_farm  <- data.frame(name_long=c("Falco tinnunculus","Ciconia ciconia
                                      "Buteo buteo","Turdus pilaris","Corvus corone","Coturnix coturnix",
                                      "Streptopelia turtur","Hirundo rustica","Anthus trivialis","Lanius collurio",
                                      "Sturnus vulgaris","Passer montanus","Linaria cannabina","Emberiza citrinella",
-                                     "Circus pygargus"," Curruca nisoria"))
+                                     "Circus pygargus","Curruca nisoria"))
 
 
 species_swi_farm <- merge(species_swi_farm, species_all, by="name_long", all.x=T)
@@ -1409,7 +1409,7 @@ species_swi_forest  <- data.frame(name_long=c("Tetrastes bonasia","Picus canus",
                                        "Accipiter gentilis","Accipiter nisus","Aegolius funereus","Dryocopus martius",
                                        "Picoides tridactylus","Prunella modularis","Erithacus rubecula","Turdus torquatus",
                                        "Turdus merula","Turdus philomelos","Turdus viscivorus","Phylloscopus collybita",
-                                       "Regulus regulus","Regulus ignicapillus","Poecile palustris","Lophophanes cristatus",
+                                       "Regulus regulus","Regulus ignicapilla","Poecile palustris","Lophophanes cristatus",
                                        "Periparus ater","Parus major","Certhia familiaris","Nucifraga caryocatactes",
                                        "Fringilla coelebs","Carduelis citrinella","Loxia curvirostra","Pyrrhula pyrrhula",
                                        "Columba oenas","Columba palumbus","Strix aluco","Dendrocopos major",
@@ -1468,14 +1468,14 @@ dfa_uk_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          nboot = 500,silent = TRUE,control = list(),
                          se_log = FALSE,is_mean_centred = FALSE)
 
-species_uk_forest  <- data.frame(name_long=c("Turdus merula","Cyanistes caeruleus","Pyrrhula pyrrhula","Fringilla coelebs",
+species_uk_forest  <- data.frame(name_long=c("Turdus merula","Acanthis flammea","Pyrrhula pyrrhula","Fringilla coelebs",
                                     "Prunella modularis","Parus major","Curruca curruca","Aegithalos caudatus",
                                     "Erithacus rubecula","Turdus philomelos","Strix aluco","Troglodytes troglodytes",
                                     "Sylvia atricapilla","Phylloscopus collybita","Periparus ater","Sylvia borin",
                                     "Regulus regulus","Dendrocopos major","Picus viridis","Garrulus glandarius",
                                     "Dryobates minor","Poecile palustris","Luscinia megarhynchos","Sitta europaea",
                                     "Carduelis cabaret","Phoenicurus phoenicurus","Accipiter nisus","Muscicapa striata",
-                                    "Anthus trivialis","Certhia familiaris","Poecile montana","Phylloscopus trochilus",
+                                    "Anthus trivialis","Certhia familiaris","Poecile montanus","Phylloscopus trochilus",
                                     "Ficedula hypoleuca","Phylloscopus sibilatrix","Loxia curvirostra","Spinus spinus",
                                     "Tetrao urogallus"))
 
@@ -1542,46 +1542,6 @@ SSI$Species[SSI$Species=="Sylvia nisoria"] <- "Curruca nisoria"
 SSI$Species[SSI$Species=="Sylvia undata"] <- "Curruca undata"
 SSI$Species[SSI$Species=="Tetrao tetrix"] <- "Lyrurus tetrix"
 
-SSI$Species[SSI$Species==""] <- "Acrocephalus arundinaceus"
-SSI$Species[SSI$Species==""] <- "Acrocephalus schoenobaenus"
-SSI$Species[SSI$Species==""] <- "Acrocephalus scirpaceus"
-SSI$Species[SSI$Species==""] <- "Actitis hypoleucos"
-SSI$Species[SSI$Species==""] <- "Alcedo atthis"
-SSI$Species[SSI$Species==""] <- "Anas platyrhynchos"
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
-SSI$Species[SSI$Species==""] <- ""
 
 ## Species temperature index (STI)
 # https://royalsocietypublishing.org/doi/epdf/10.1098/rspb.2008.0878
@@ -2297,11 +2257,11 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
 
-result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czechia",2),rep("Denmark",2),
+result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
                                      rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
-                                     rep("Hungary",2),rep("Ireland",1),rep("Italia",2),rep("Latvia",1),
+                                     rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
                                      rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
-                                     rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("UK",2)),
+                                     rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
                          Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),
                                    "FBI","FBI",rep(c("FBI","WBI"),3),"FBI",rep(c("FBI","WBI"),3)),
                          Nb_lat_trend = NA, Nb_cluster = NA,
@@ -2351,4 +2311,155 @@ ggplot(data = result_to_plot, aes(y=country_index, x=variable, fill=value)) +
                        name="Pearson\nCorrelation") +
   theme_minimal() + geom_text(aes(label=round(value,2)))
 
+
+## Results as figures
+
+ggplot(result_cor, aes(x=Nb_lat_trend, fill=Index)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, bins=4) +
+  scale_fill_manual(values=c("#69b3a2", "#404080")) +
+  theme_modern()+
+  labs(fill="")
+
+ggplot(result_cor, aes(x=Nb_cluster, fill=Index)) +
+  geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
+  scale_fill_manual(values=c("#69b3a2", "#404080")) +
+  theme_modern()+
+  labs(fill="")
+
+
+library(sf)
+library(rnaturalearth)
+
+worldmap <- ne_countries(scale = 'medium', type = 'countries',returnclass = 'sf')
+#sf::sf_use_s2(FALSE)
+europe_cropped <- st_crop(worldmap[worldmap$sovereignt %in% c("Austria","Belgium","Bulgaria","Cyprus","Czech Republic","Denmark",
+                                                              "Estonia","Finland","France","Germany","Greece","Hungary","Ireland",
+                                                              "Italy","Latvia","Lithuania","Netherlands","Norway","Portugal","Poland","Romania",
+                                                              "Slovakia","Spain","Sweden","Switzerland","United Kingdom",
+                                                              "Croatia","Republic of Serbia","Albania","Slovenia","Bosnia and Herzegovina","Kosovo",
+                                                              "Montenegro", "Belarus","Ukraine","Russia","Moldova","Macedonia","Luxembourg"),],
+                          xmin = -12, xmax = 35,ymin = 30, ymax = 73)
+
+europe_cropped$fill_param <- rep(NA,nrow(europe_cropped))
+
+europe_cropped$fill_param[europe_cropped$sovereignt %in% c("Austria","Belgium","Bulgaria","Cyprus","Czech Republic","Denmark",
+                                                           "Estonia","Finland","France","Germany","Greece","Hungary","Ireland",
+                                                           "Italy","Latvia","Lithuania","Netherlands","Norway","Portugal","Poland","Romania",
+                                                           "Slovakia","Spain","Sweden","Switzerland","United Kingdom","Slovenia","Luxembourg")] <- "PECBMS member (in 2016)"
+
+europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="FBI",]), by.x="sovereignt", by.y="Country", all.x=T)
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster"))] <- c("nb_lat_trend_fbi","nb_cluster_fbi")
+europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="WBI",]), by.x="sovereignt", by.y="Country", all.x=T)
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster"))] <- c("nb_lat_trend_wbi","nb_cluster_wbi")
+
+
+# Reproject data
+
+europe_map <- sf::st_transform(
+  europe_cropped,
+  "+init=epsg:27572"
+)
+
+# Simplify map
+
+library(rmapshaper)
+europe_map_simpl <- ms_simplify(europe_map, keep = 0.3,
+                                keep_shapes = FALSE)
+
+# Map of high input farm cover
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_fbi)) + scale_fill_gradient(low="white",high="#D302F9",na.value="lightgrey")+
+  theme_void()+ coord_sf(datum = NA)
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_fbi)) + scale_fill_gradient(low="white",high="#D302F9",na.value="lightgrey")+
+  theme_void()+ coord_sf(datum = NA)
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_wbi)) + scale_fill_gradient(low="white",high="#D302F9",na.value="lightgrey")+
+  theme_void()+ coord_sf(datum = NA)
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_wbi)) + scale_fill_gradient(low="white",high="#D302F9",na.value="lightgrey")+
+  theme_void()+ coord_sf(datum = NA)
+
+
 # Do the same by species
+
+country_names <- data.frame(CountryGroup=c("Austria","Belgium","Czech Republic","Denmark",
+                                     "Estonia","Finland","France","Germany",
+                                     "Hungary","Ireland","Italia","Latvia",
+                                     "Lithuania","Netherlands","Norway","Poland",
+                                     "Spain","Sweden","Switzerland","United Kingdom"))
+
+species_alaarv <- data.frame(name_long="Alauda arvensis")
+
+species_alaarv <- merge(species_alaarv, species_all, by="name_long", all.x=T)
+species_sub <- species_alaarv
+
+Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                             df_all_country_2000$CountryGroup %in% country_names$CountryGroup,]
+y_alaarv <- dcast(Obs[,c("CountryGroup","Index","Year")],
+                  CountryGroup~Year, fun.aggregate = sum, value.var = "Index")
+obs_se_alaarv <- dcast(Obs[,c("CountryGroup","Index_SE","Year")],
+                       CountryGroup~Year, fun.aggregate = sum, value.var = "Index_SE")
+
+names(y_alaarv)[1] <- names(obs_se_alaarv)[1] <- "code_sp"
+
+y_alaarv[y_alaarv == 0] <- NA
+
+species_alaarv <- data.frame(country_names, name_long = country_names$CountryGroup)
+names(species_alaarv)[1] <- "code_sp"
+species_alaarv <- species_alaarv[species_alaarv$code_sp %in% unique(Obs$CountryGroup),]
+
+
+dfa_alaarv <- make_dfa(data_ts = y_alaarv,data_ts_se = obs_se_alaarv,
+                         species_sub = species_alaarv,nfac = 0,
+                         mintrend = 1,maxtrend = 5,AIC = TRUE,
+                         nboot = 500,silent = TRUE,control = list(),
+                         se_log = FALSE,is_mean_centred = FALSE)
+
+for(i in 1:nrow(species_all)){
+  print(i)
+  dfa_name <- paste0("dfa_",substr(sub(" .*","",species_all$name_long[i]),1,3),
+                     substr(sub(".* ","",species_all$name_long[i]),1,3))
+  species_name <- data.frame(name_long=species_all$name_long[i])
+  
+  species_name <- merge(species_name, species_all, by="name_long", all.x=T)
+  species_sub <- species_name
+  
+  Obs <- df_all_country_2000[df_all_country_2000$code_sp %in% species_sub$code_sp &
+                               df_all_country_2000$CountryGroup %in% country_names$CountryGroup,]
+  if(nrow(Obs)>0){
+    y_name <- dcast(Obs[,c("CountryGroup","Index","Year")],
+                    CountryGroup~Year, fun.aggregate = sum, value.var = "Index")
+    obs_se_name <- dcast(Obs[,c("CountryGroup","Index_SE","Year")],
+                         CountryGroup~Year, fun.aggregate = sum, value.var = "Index_SE")
+    
+    names(y_name)[1] <- names(obs_se_name)[1] <- "code_sp"
+    
+    to_remove <- y_name$code_sp[apply(y_name[,-1],1, function(x) sum(is.na(x)) == length(x))]
+    if(length(to_remove)>0){
+      y_name <- y_name[y_name$code_sp!=to_remove]
+      obs_se_name <- obs_se_name[obs_se_name$code_sp!=to_remove]
+    }
+    
+    if(nrow(y_name)<5){
+      dfa_name2 <- NA
+    }else{
+      y_name[y_name == 0] <- NA
+      
+      species_name <- data.frame(country_names, name_long = country_names$CountryGroup)
+      names(species_name)[1] <- "code_sp"
+      species_name <- species_name[species_name$code_sp %in% unique(y_name$code_sp),]
+      
+      
+      dfa_name2 <- make_dfa(data_ts = y_name,data_ts_se = obs_se_name,
+                            species_sub = species_name,nfac = 0,
+                            mintrend = 1,maxtrend = 5,AIC = TRUE,
+                            nboot = 500,silent = TRUE,control = list(),
+                            se_log = FALSE,is_mean_centred = FALSE)
+    }
+  }else{
+    dfa_name2 <- NA
+  }
+  
+  assign(dfa_name,dfa_name2)
+}
+
+
+
