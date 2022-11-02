@@ -600,7 +600,9 @@ plot_group_boot <- function(nb_group, # Number of clusters
       test$Index_SE_c <- alpha*test$Index_SE
       test$Index_c <- alpha*test$Index+beta
       
-      ggplot(test, aes(x=year, y=Index)) +
+      data_msi <- test
+      
+      res_plot <- ggplot(test, aes(x=year, y=Index)) +
         geom_line(aes(y=Index_c),col="black", size=2) +
         geom_ribbon(aes(ymin=Index_c-1.96*Index_SE_c,ymax=Index_c+1.96*Index_SE_c),alpha=0.2,fill="black")+
         geom_point(data=geom_mean_data, col="black", size=2) +
@@ -609,8 +611,11 @@ plot_group_boot <- function(nb_group, # Number of clusters
         theme_modern() + 
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
       
+      res_list <- list(res_plot, data_msi)
+      return(res_list)
+      
     }else{
-      ggplot(test, aes(x=year, y=Index)) +
+      res_plot <- ggplot(test, aes(x=year, y=Index)) +
         geom_line(col=hex_codes1[(i-1)], size=2) +
         geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill=hex_codes1[(i-1)])+
         xlab(NULL) + 
@@ -620,11 +625,15 @@ plot_group_boot <- function(nb_group, # Number of clusters
         annotate("text", x=mean(test$year), y=min2, label= paste0("Mean distance = ", round(mean_dist_clust[(i-1),1],3))) +
         theme_modern() + 
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
+      return(res_plot)
     }
     
     
   }), levels(as.factor(data_trend_group2$group)))
   
+  
+  data_msi <- graph2$all[[2]]
+  graph2$all <- graph2$all[[1]]
   
   # Combine data for PCA centres
   
@@ -779,7 +788,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
               graph, # Plot of time-series of cluster barycentres 
               data_trend_group, # Data of time-series of cluster barycentres 
               graph2, # Plot of time-series of cluster barycentres from sdRep
-              data_trend_group2 # Data of time-series of cluster barycentres from sdRep
+              data_trend_group2, # Data of time-series of cluster barycentres from sdRep
+              data_msi # Data for multi-species index
               ))
 }
 
@@ -1326,6 +1336,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       trend_group <- plot_sp_group_all[[3]]
       plot_group_ts2 <- plot_sp_group_all[[4]]
       trend_group2 <- plot_sp_group_all[[5]]
+      data_msi <- plot_sp_group_all[[6]]
     }
     if(length(group_dfa[[3]])==1){
       plot_sp_group_all <- plot_group_boot(nb_group = 1,
@@ -1346,6 +1357,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       trend_group <- plot_sp_group_all[[3]]
       plot_group_ts2 <- plot_sp_group_all[[4]]
       trend_group2 <- plot_sp_group_all[[5]]
+      data_msi <- plot_sp_group_all[[6]]
     }
   }
   
@@ -1356,6 +1368,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     trend_group <- NA
     plot_group_ts2 <- NA
     trend_group2 <- NA
+    data_msi <- NA
   }
   
   return(list(data_to_plot_sp = data_to_plot_sp, # Data on species time-series and fit
@@ -1373,7 +1386,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
               sdRep = sdRep, # Optimisation output
               group = group_dfa, # Cluster results
               trend_group = trend_group, # Cluster barycentre times-series
-              trend_group2 = trend_group2 # Cluster barycentre times-series from sdRep
+              trend_group2 = trend_group2, # Cluster barycentre times-series from sdRep
+              data_msi = data_msi # Data for multi-species index
               ))
 }
 
