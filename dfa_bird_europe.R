@@ -1860,7 +1860,7 @@ vect.distb <- data.frame(Species=trait_selected_sp$Species,
                          fd.obs=rowSums(as.matrix(mat.dist2)),
                          fd.obs.coph=rowSums(as.matrix(cophenetic(hc1))))
 
-vect.distb$SFI <- scale(vect.distb$fd.obs.coph, center=F)
+vect.distb$SFI <- (vect.distb$fd.obs - min(vect.distb$fd.obs)) / (max(vect.distb$fd.obs) - min(vect.distb$fd.obs))
 
 SFI <- merge(vect.dista[,c("Species","SFI")],vect.distb[,c("Species","SFI")],
              by="Species")

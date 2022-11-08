@@ -938,8 +938,27 @@ core_dfa <- function(data_ts, # Dataset of time series
               ))
 }
 
+## 5) Rescale function for indices not mean centered
 
-
+rescale_index <- function(index, se, ref) {
+  missing <- is.na(index)
+  log_index <- log(index[!missing])
+  log_var <- se[!missing]^2 / index[!missing]^2
+  ref_nmiss <- ref[!missing]
+  first.ix <- 1 # which(log_index == log(100) & log_var == 0)
+  n <- length(log_index)
+  M <- diag(1, n) - 1/sum(ref_nmiss) * rep(1,n) %*% t(as.integer(ref_nmiss)) # Rescaling matrix
+  
+  # Assume variance of first year raw log index is half of he smallest of the remaining indices.
+  
+  vy1 <- min(log_var[-first.ix])/2
+  log_index_scaled <- NA + index
+  log_index_scaled[!missing] <- M %*% log_index
+  log_index_se <- NA + index
+  log_index_se[!missing] <- sqrt(diag(M %*% (diag(log_var  +  vy1 * replace(rep(-1, length(log_index)), first.ix, 1))) %*% t(M)))
+  scale_index_se <- rbind(log_index = log_index_scaled, se_log = log_index_se)
+  return(scale_index_se)
+}
 
 
 # III) Main function for the DFA-clust analysis
@@ -985,7 +1004,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       data_ts_se <- as.data.table(data_ts_se)
     }
   }
-  if(se_log == FALSE){
+  if(se_log == FALSE & is_mean_centred == TRUE){
     data_ts_se <- as.data.frame(data_ts_se)
     for(i in 1:nrow(data_ts_se)){
       data_ts_se[i,-1] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_se[1,-1])
