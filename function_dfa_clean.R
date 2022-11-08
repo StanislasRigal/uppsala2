@@ -945,13 +945,18 @@ rescale_index <- function(index, se, ref) {
   log_index <- log(index[!missing])
   log_var <- se[!missing]^2 / index[!missing]^2
   ref_nmiss <- ref[!missing]
-  first.ix <- 1 # which(log_index == log(100) & log_var == 0)
+  first.ix <- which(log_index == log(100) & log_var == 0)
   n <- length(log_index)
   M <- diag(1, n) - 1/sum(ref_nmiss) * rep(1,n) %*% t(as.integer(ref_nmiss)) # Rescaling matrix
   
-  # Assume variance of first year raw log index is half of he smallest of the remaining indices.
+  # Assume variance of first year raw log index is close to the smallest of the remaining indices.
   
-  vy1 <- min(log_var[-first.ix])/2
+  if(se[first.ix] > 0){
+    vy1 <- min(min(log_var[-first.ix])/1.01,log_var[first.ix])
+  }else{
+    vy1 <- min(log_var[-first.ix])/1.01
+  }
+  
   log_index_scaled <- NA + index
   log_index_scaled[!missing] <- M %*% log_index
   log_index_se <- NA + index
@@ -974,14 +979,16 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                      silent = TRUE, # Silence optimisation
                      control = list(), # Specify changes for DFA control options
                      se_log = TRUE, # TRUE if error is for log values, FALSE otherwise
-                     is_mean_centred = TRUE # TRUE if data are already mean-centred, FALSE otherwise
+                     is_mean_centred = TRUE, # TRUE if data are already mean-centred, FALSE otherwise
+                     min_year_sc = NULL # first year for rescaling if is_mean_centred = FALSE
                      )
 {
   #data_ts=y_farm;data_ts_se=obs_se_farm;nfac=3;mintrend=1;maxtrend=5;AIC=TRUE;species_sub=species_farm;nboot=500;silent = TRUE;control = list();se_log = TRUE;is_mean_centred = TRUE
   
-  # Save first year for plot
+  # Save first and last years for plot and first year + 1 for scaling
   
   min_year <- as.numeric(colnames(data_ts)[2])
+  max_year <- as.numeric(colnames(data_ts)[ncol(data_ts)])
   
   # Log transformed standard errors if they are not (from Taylor expansion)
   # and check missing values in log transformed standard errors
@@ -1034,18 +1041,20 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   # Mean-centre values if they are not
   
   if(is_mean_centred == FALSE){
-    data_ts_prov <- t(apply(data_ts,1,function(x){return(exp(scale(log(as.numeric(x[-1])), scale = F)))}))
-    data_ts_prov <- data.table(data_ts[,1],data_ts_prov)
-    colnames(data_ts_prov) <- colnames(data_ts)
     
-    data_ts_se_prov <- as.matrix(data_ts_se[,-1]) # from Taylor expansion
-    for(i in 1:nrow(data_ts_se)){
-      data_ts_se_prov[i,] <- 1/as.numeric(data_ts[i,-1])*as.numeric(data_ts_prov[i,-1])*as.numeric(data_ts_se[1,-1])
+    data_ts_prov <- as.matrix(data_ts[,-1]) 
+    data_ts_se_prov <- as.matrix(data_ts_se[,-1]) 
+    for(i in 1:nrow(data_ts)){
+      rescale_value <- rescale_index(data_ts_prov[i,],data_ts_se_prov[i,],min_year:max_year %in% min_year_sc:max_year)
+      data_ts_prov[i,] <- exp(rescale_value[1,])
+      data_ts_se_prov[i,] <- rescale_value[2,]
     }
-    data_ts_se_prov <- data.table(data_ts_se[,1],data_ts_se_prov)
+    data_ts_prov <- data.table(data_ts[,1],data_ts_prov[,attr(data_ts_prov,"dimnames")[[2]] %in% min_year_sc:max_year])
+    data_ts_se_prov <- data.table(data_ts_se[,1],data_ts_se_prov[,attr(data_ts_se_prov,"dimnames")[[2]] %in% min_year_sc:max_year])
     
     data_ts <- data_ts_prov
     data_ts_se <- data_ts_se_prov
+    min_year <- min_year_sc
     
   }
   

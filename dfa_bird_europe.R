@@ -135,7 +135,7 @@ plot(unlist(df_select_timespan[29,-1])~as.numeric(names(df_select_timespan[,-1])
 country_to_keep <- df_select_timespan$CountryGroup[which(!is.na(df_select_timespan$`2000`))]
 country_to_keep <- country_to_keep[1:(length(country_to_keep)-1)]
 
-df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep & df_all_country$Year >= 2000,])
+df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep & df_all_country$Year >= 1999,])
 
 # List farmland and woodland species by country
 
@@ -168,7 +168,7 @@ dfa_aus_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_aus_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_aus_farm,"output/dfa_aus_farm.rds")
 
 species_aus_forest <- data.frame(name_long=c("Jynx torquilla","Lullula arborea","Anthus trivialis","Turdus pilaris",
@@ -192,7 +192,7 @@ dfa_aus_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_aus_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 saveRDS(dfa_aus_forest,"output/dfa_aus_forest.rds")
 
@@ -223,7 +223,7 @@ dfa_bel_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_bel_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_bel_farm,"output/dfa_bel_farm.rds")
 
 
@@ -252,7 +252,7 @@ dfa_bel_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_bel_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_bel_forest,"output/dfa_bel_forest.rds")
 
 
@@ -281,7 +281,7 @@ dfa_bul_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_bul_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 
 
@@ -306,7 +306,7 @@ dfa_bul_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_bul_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 
 # Cyprus
@@ -337,7 +337,7 @@ dfa_cyp_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_cyp_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 species_cyp_forest  <- data.frame(name_long=c("Columba palumbus","Streptopelia turtur","Troglodytes troglodytes","Oenanthe cypriaca",
                                        "Cettia cetti","Iduna pallida","Curruca melanothorax","Periparus ater",
@@ -362,7 +362,7 @@ dfa_cyp_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_cyp_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 # Czech Republic
 # https://www.tandfonline.com/doi/abs/10.1080/00063657.2015.1048423
@@ -392,7 +392,7 @@ dfa_cze_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_cze_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_cze_farm,"output/dfa_cze_farm.rds")
 
 species_cze_forest  <- data.frame(name_long=c("Buteo buteo","Accipiter nisus","Columba palumbus","Streptopelia turtur",
@@ -426,7 +426,7 @@ dfa_cze_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_cze_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_cze_forest,"output/dfa_cze_forest.rds")
 
 
@@ -458,7 +458,7 @@ dfa_den_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_den_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_den_farm,"output/dfa_den_farm.rds")
 
 
@@ -487,7 +487,7 @@ dfa_den_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                          species_sub = species_den_forest,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_den_forest,"output/dfa_den_forest.rds")
 
 
@@ -524,7 +524,7 @@ dfa_est_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_est_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_est_farm,"output/dfa_est_farm.rds")
 
 
@@ -556,7 +556,7 @@ dfa_est_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_est_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_est_forest,"output/dfa_est_forest.rds")
 
 # Finland
@@ -586,7 +586,7 @@ dfa_fin_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_fin_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_fin_farm,"output/dfa_fin_farm.rds")
 
 
@@ -614,7 +614,7 @@ dfa_fin_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_fin_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_fin_forest,"output/dfa_fin_forest.rds")
 
 # France
@@ -646,7 +646,7 @@ dfa_fra_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_fra_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_fra_farm,"output/dfa_fra_farm.rds")
 
 
@@ -676,7 +676,7 @@ dfa_fra_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_fra_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_fra_forest,"output/dfa_fra_forest.rds")
 
 # Germany
@@ -706,7 +706,7 @@ dfa_ger_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ger_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_ger_farm,"output/dfa_ger_farm.rds")
 
 
@@ -739,7 +739,7 @@ dfa_ger_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_ger_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_ger_forest,"output/dfa_ger_forest.rds")
 
 # Greece
@@ -772,7 +772,7 @@ dfa_hun_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_hun_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_hun_farm,"output/dfa_hun_farm.rds")
 
 species_hun_forest  <- data.frame(name_long=c("Columba oenas","Dryocopus martius","Dendrocopos major","Dendrocoptes medius",
@@ -801,7 +801,7 @@ dfa_hun_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_hun_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_hun_forest,"output/dfa_hun_forest.rds")
 
 # Italy
@@ -833,7 +833,7 @@ dfa_ita_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ita_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_ita_farm,"output/dfa_ita_farm.rds")
 
 
@@ -863,7 +863,7 @@ dfa_ita_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_ita_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_ita_forest,"output/dfa_ita_forest.rds")
 
 # Latvia
@@ -892,7 +892,7 @@ dfa_lat_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_lat_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_lat_farm,"output/dfa_lat_farm.rds")
 
 
@@ -921,7 +921,7 @@ dfa_lat_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_lat_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 # Lithuania
 # no official forest bird indicator
@@ -949,7 +949,7 @@ dfa_lit_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_lit_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_lit_farm,"output/dfa_lit_farm.rds")
 
 
@@ -977,7 +977,7 @@ dfa_lux_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_lux_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 species_lux_forest  <- data.frame(name_long=c("Columba oenas","Dryocopus martius","Leiopicus medius","Anthus trivialis",
                                        "Turdus viscivorus","Phylloscopus sibilatrix","Regulus regulus","Regulus ignicapilla",
@@ -1001,7 +1001,7 @@ dfa_lux_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_lux_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 
 # Netherlands
@@ -1034,7 +1034,7 @@ dfa_net_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_net_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_net_farm,"output/dfa_net_farm.rds")
 
 
@@ -1066,7 +1066,7 @@ dfa_net_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_net_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_net_forest,"output/dfa_net_forest.rds")
 
 # Norway
@@ -1097,7 +1097,7 @@ dfa_nor_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_nor_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_nor_farm,"output/dfa_nor_farm.rds")
 
 
@@ -1126,7 +1126,7 @@ dfa_nor_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_nor_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_nor_forest,"output/dfa_nor_forest.rds")
 
 # Poland
@@ -1158,7 +1158,7 @@ dfa_pol_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_pol_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_pol_farm,"output/dfa_pol_farm.rds")
 
 
@@ -1191,7 +1191,7 @@ dfa_pol_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_pol_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_pol_forest,"output/dfa_pol_forest.rds")
 
 # Portugal
@@ -1221,7 +1221,7 @@ dfa_por_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_por_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 species_por_forest  <- data.frame(name_long=c("Aegithalos caudatus","Certhia brachydactyla","Columba palumbus","Cuculus canorus",
                                        "Cyanistes caeruleus","Dendrocopos major","Erithacus rubecula","Fringilla coelebs",
@@ -1247,7 +1247,7 @@ dfa_por_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_por_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 # Republic of Ireland
 # https://birdwatchireland.ie/our-work/surveys-research/research-surveys/countryside-bird-survey/countryside-bird-population-indicators/
@@ -1277,7 +1277,7 @@ dfa_ire_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_ire_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_ire_farm,"output/dfa_ire_farm.rds")
 
 # Romania
@@ -1311,7 +1311,7 @@ dfa_slk_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_slk_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 
 
@@ -1346,7 +1346,7 @@ dfa_sln_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_sln_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 
 # Spain
 # https://www.nature.com/articles/s41598-019-45854-0
@@ -1378,7 +1378,7 @@ dfa_spa_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_spa_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_spa_farm,"output/dfa_spa_farm.rds")
 
 # Sweden
@@ -1406,7 +1406,7 @@ dfa_swe_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_swe_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_swe_farm,"output/dfa_swe_farm.rds")
 
 species_swe_forest  <- data.frame(name_long=c("Accipiter nisus","Tetrastes bonasia","Tringa ochropus","Columba oenas",
@@ -1437,7 +1437,7 @@ dfa_swe_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_swe_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_swe_forest,"output/dfa_swe_forest.rds")
 
 # Switzerland
@@ -1475,7 +1475,7 @@ dfa_swi_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_swi_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_swi_farm,"output/dfa_swi_farm.rds")
 
 species_swi_forest  <- data.frame(name_long=c("Tetrastes bonasia","Picus canus","Pernis apivorus","Lyrurus tetrix",
@@ -1512,7 +1512,7 @@ dfa_swi_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_swi_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_swi_forest,"output/dfa_swi_forest.rds")
 
 
@@ -1544,7 +1544,7 @@ dfa_uk_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
                          species_sub = species_uk_farm,nfac = 0,
                          mintrend = 1,maxtrend = 5,AIC = TRUE,
                          nboot = 500,silent = TRUE,control = list(),
-                         se_log = FALSE,is_mean_centred = FALSE)
+                         se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_uk_farm,"output/dfa_uk_farm.rds")
 
 
@@ -1577,7 +1577,7 @@ dfa_uk_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_uk_forest,nfac = 0,
                            mintrend = 1,maxtrend = 5,AIC = TRUE,
                            nboot = 500,silent = TRUE,control = list(),
-                           se_log = FALSE,is_mean_centred = FALSE)
+                           se_log = FALSE,is_mean_centred = FALSE, min_year_sc=2000)
 saveRDS(dfa_uk_forest,"output/dfa_uk_forest.rds")
 
 
@@ -2383,7 +2383,7 @@ result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czec
                                      rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
                          Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),
                                    "FBI","FBI",rep(c("FBI","WBI"),3),"FBI",rep(c("FBI","WBI"),3)),
-                         Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA,
+                         Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
                          PCA1_SFI = NA, PCA1_SFI_pval = NA, PCA1_STI = NA, PCA1_STI_pval = NA,
                          PCA1_SSI = NA, PCA1_SSI_pval = NA, R2_PCA1 = NA,
                          PCA2_SFI = NA, PCA2_SFI_pval = NA, PCA2_STI = NA, PCA2_STI_pval = NA,
@@ -2406,89 +2406,102 @@ for(i in 1:length(list_dfa)){
   data_dfa <- list_dfa[[i]]
   
   result_cor[i,3] <- length(unique(data_dfa$data_loadings$variable))
-  result_cor[i,4] <- length(which(table(data_dfa$group[[1]][[1]]$group)>1))#length(unique(data_dfa$group[[1]][[1]]$group))
-  result_cor[i,5] <- length(which(table(data_dfa$group[[1]][[1]]$group)==1))
   
-  data_mod <- merge(data_dfa$group[[1]][[1]],SXI, by.x="name_long", by.y="Species")
-  
-  result_cor[i,6] <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
-  result_cor[i,7] <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
-  result_cor[i,8] <- cor.test(data_mod$PC1,data_mod$STI)$estimate
-  result_cor[i,9] <- cor.test(data_mod$PC1,data_mod$STI)$p.value
-  result_cor[i,10] <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
-  result_cor[i,11] <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
-  result_cor[i,12] <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
-
-  result_cor[i,13] <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
-  result_cor[i,14] <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
-  result_cor[i,15] <- cor.test(data_mod$PC2,data_mod$STI)$estimate
-  result_cor[i,16] <- cor.test(data_mod$PC2,data_mod$STI)$p.value
-  result_cor[i,17] <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
-  result_cor[i,18] <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
-  result_cor[i,19] <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
-  
-  result_cor[i,20] <- result_cor[i,21] <- result_cor[i,22] <- result_cor[i,23] <- result_cor[i,24] <- 0
-  
-  if(result_cor[i,4]>1){
-    for(j in names(which(table(data_dfa$group[[1]][[1]]$group)>1))){
-      cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
-      if(cor_res$estimate<0 & cor_res$p.value<0.05){
-        result_cor[i,20] <- result_cor[i,20] + 1
-      }
-      if(cor_res$estimate<0){
-        result_cor[i,21] <- result_cor[i,21] + 1
-      }
-    }
-    result_cor[i,22] <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-    result_cor[i,23] <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-    result_cor[i,24] <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+  if(result_cor[i,3] == 1){
+    result_cor[i,4] <- 1
+    result_cor[i,5] <- 0
+    result_cor[i,6] <- length(unique(data_dfa$data_to_plot_sp$name_long))
+    result_cor[i,7:ncol(result_cor)] <- NA
+  }else{
+    result_cor[i,4] <- length(which(table(data_dfa$group[[1]][[1]]$group)>1))#length(unique(data_dfa$group[[1]][[1]]$group))
+    result_cor[i,5] <- length(which(table(data_dfa$group[[1]][[1]]$group)==1))
+    result_cor[i,6] <- length(unique(data_dfa$data_to_plot_sp$name_long))
     
-    # reproject species on the line between cluster centres
+    data_mod <- merge(data_dfa$group[[1]][[1]],SXI, by.x="name_long", by.y="Species")
     
-    cluster_centre_coord_all <- data_dfa$group[[1]][[2]][,grepl("X",names(data_dfa$group[[1]][[2]]))]
-    comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
+    result_cor[i,7] <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
+    result_cor[i,8] <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
+    result_cor[i,9] <- cor.test(data_mod$PC1,data_mod$STI)$estimate
+    result_cor[i,10] <- cor.test(data_mod$PC1,data_mod$STI)$p.value
+    result_cor[i,11] <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
+    result_cor[i,12] <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
+    result_cor[i,13] <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
     
-    for(comb_cluster_num in 1:ncol(comb_cluster)){
-      cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
-      mean_coord <- apply(cluster_centre_coord,2,sum)/2
-      data_coord <- data_dfa$group[[1]][[1]]
-      data_coord <- data_coord[data_coord$group %in% comb_cluster[,comb_cluster_num],]
-      if(nrow(data_coord)>2){
-        n_axis <-  ncol(cluster_centre_coord)
-        new_coord_all_sp <- data_coord[,which(grepl("X",names(data_coord)) | names(data_coord)=="name_long")]
-        new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
-        new_coord_all_sp$new_val <- NA
-        for(sp in data_coord$name_long){
-          coord_sp <- data_coord[data_coord$name_long==sp,grepl("X",names(data_coord))]
-          t_scalar_numer <- t_scalar_denomin <- 0
-          for(axis_num in 1:n_axis){
-            t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
-            t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
-          }
-          t_scalar <- t_scalar_numer/t_scalar_denomin
-          new_coord_sp <- coord_sp
-          for(axis_num in 1:n_axis){
-            new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
-          }
-          dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
-          dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
-          dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
-          if(dist_c1_new_coord<dist_c2_new_coord){
-            sign_dist <- -1
-          }else{sign_dist <- 1}
-          value_reproj_sp <- sign_dist*dist_mean_new_coord
-          new_coord_all_sp[new_coord_all_sp$name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
-          new_coord_all_sp$new_val[new_coord_all_sp$name_long==sp] <- value_reproj_sp
+    result_cor[i,14] <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
+    result_cor[i,15] <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
+    result_cor[i,16] <- cor.test(data_mod$PC2,data_mod$STI)$estimate
+    result_cor[i,17] <- cor.test(data_mod$PC2,data_mod$STI)$p.value
+    result_cor[i,18] <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
+    result_cor[i,19] <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
+    result_cor[i,20] <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
+    
+    result_cor[i,21:25] <- 0
+    
+    if(result_cor[i,4]>1){
+      for(j in names(which(table(data_dfa$group[[1]][[1]]$group)>1))){
+        cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
+        if(cor_res$estimate<0 & cor_res$p.value<0.05){
+          result_cor[i,21] <- result_cor[i,21] + 1
         }
-        
-        data_mod_new <- merge(new_coord_all_sp,SXI, by.x="name_long", by.y="Species")
-        col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-        result_cor[i,col_name1] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value < 0.05, 1, 0)
-        col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-        result_cor[i,col_name2] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value < 0.05, 1, 0)
-        col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-        result_cor[i,col_name3] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value < 0.05, 1, 0)
-        
+        if(cor_res$estimate<0){
+          result_cor[i,22] <- result_cor[i,22] + 1
+        }
+      }
+      result_cor[i,23] <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+      result_cor[i,24] <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+      result_cor[i,25] <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+      
+      # reproject species on the line between cluster centres
+      
+      cluster_centre_coord_all <- data_dfa$group[[1]][[2]][,grepl("X",names(data_dfa$group[[1]][[2]]))]
+      comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
+      
+      for(comb_cluster_num in 1:ncol(comb_cluster)){
+        cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
+        mean_coord <- apply(cluster_centre_coord,2,sum)/2
+        data_coord <- data_dfa$group[[1]][[1]]
+        data_coord <- data_coord[data_coord$group %in% comb_cluster[,comb_cluster_num],]
+        if(nrow(data_coord)>2){
+          n_axis <-  ncol(cluster_centre_coord)
+          new_coord_all_sp <- data_coord[,which(grepl("X",names(data_coord)) | names(data_coord)=="name_long")]
+          new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
+          new_coord_all_sp$new_val <- NA
+          for(sp in data_coord$name_long){
+            coord_sp <- data_coord[data_coord$name_long==sp,grepl("X",names(data_coord))]
+            t_scalar_numer <- t_scalar_denomin <- 0
+            for(axis_num in 1:n_axis){
+              t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
+              t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
+            }
+            t_scalar <- t_scalar_numer/t_scalar_denomin
+            new_coord_sp <- coord_sp
+            for(axis_num in 1:n_axis){
+              new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
+            }
+            dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
+            dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
+            dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
+            if(dist_c1_new_coord<dist_c2_new_coord){
+              sign_dist <- -1
+            }else{sign_dist <- 1}
+            value_reproj_sp <- sign_dist*dist_mean_new_coord
+            new_coord_all_sp[new_coord_all_sp$name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
+            new_coord_all_sp$new_val[new_coord_all_sp$name_long==sp] <- value_reproj_sp
+          }
+          
+          data_mod_new <- merge(new_coord_all_sp,SXI, by.x="name_long", by.y="Species")
+          col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[i,col_name1] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value < 0.05, 1, 0)
+          col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          if(length(which(!is.na(data_mod_new$SSI)))>2){
+            result_cor[i,col_name2] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value < 0.05, 1, 0)
+          }else{
+            result_cor[i,col_name2] <- NA
+          }
+          col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[i,col_name3] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value < 0.05, 1, 0)
+          
+        }
       }
     }
   }
@@ -2564,9 +2577,9 @@ europe_cropped$fill_param[europe_cropped$sovereignt %in% c("Austria","Belgium","
                                                            "Slovakia","Spain","Sweden","Switzerland","United Kingdom","Slovenia","Luxembourg")] <- "PECBMS member (in 2016)"
 
 europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="FBI",]), by.x="sovereignt", by.y="Country", all.x=T)
-names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_fbi","nb_cluster_fbi","nb_outlier_fbi","nb_anticor_cluster_fbi","nb_anticor_cluster_fbi_all")
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_fbi","nb_cluster_fbi","nb_outlier_fbi","nb_species_fbi","nb_anticor_cluster_fbi","nb_anticor_cluster_fbi_all")
 europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="WBI",]), by.x="sovereignt", by.y="Country", all.x=T)
-names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_wbi","nb_cluster_wbi","nb_outlier_wbi","nb_anticor_cluster_wbi","nb_anticor_cluster_wbi_all")
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_wbi","nb_cluster_wbi","nb_outlier_wbi","nb_species_wbi","nb_anticor_cluster_wbi","nb_anticor_cluster_wbi_all")
 europe_cropped$nb_anticor_cluster_fbi2 <- europe_cropped$nb_anticor_cluster_fbi+europe_cropped$nb_anticor_cluster_fbi_all
 europe_cropped$nb_anticor_cluster_wbi2 <- europe_cropped$nb_anticor_cluster_wbi+europe_cropped$nb_anticor_cluster_wbi_all
 
@@ -2586,16 +2599,16 @@ europe_map_simpl <- ms_simplify(europe_map, keep = 0.3,
 # Map of number of latent trends and clusters
 
 ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_fbi)) + scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
-  theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = as.character(nb_lat_trend_fbi))) +
+  theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = paste0(nb_lat_trend_fbi,"(",nb_species_fbi,")"))) +
   theme(legend.position = "none")
 ggplot(result_cor[result_cor$Index=="FBI",], aes(x=Nb_lat_trend, fill=Index)) +
-  geom_histogram(color="#e9ecef", alpha=0.6, bins=4) +
+  geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#f5b041")) + theme_modern() + 
   #xlab("Number of latent trends") + ylab("Number of countries") + theme(legend.position = "none")
   theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank())
 ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_fbi)) + scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
-  theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi>0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = paste0(nb_cluster_fbi,"(",nb_outlier_fbi,")"))) +
-  geom_sf_text(data = europe_map_simpl[europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi==0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = as.character(nb_cluster_fbi))) +
+  theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[which(europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi>0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland"))),], aes(label = paste0(nb_cluster_fbi,"(",nb_outlier_fbi,")"))) +
+  geom_sf_text(data = europe_map_simpl[which(europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi==0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland"))),], aes(label = as.character(nb_cluster_fbi))) +
   theme(legend.position = "none")
 ggplot(result_cor[result_cor$Index=="FBI",], aes(x=Nb_cluster, fill=Index)) +
   geom_histogram(color="#e9ecef", alpha=0.6, bins=3) +
@@ -2610,10 +2623,10 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_anticor_cluster_fbi2))
 
 
 ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_wbi)) + scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
-  theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = as.character(nb_lat_trend_wbi))) +
+  theme_void()+ coord_sf(datum = NA) +geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = paste0(nb_lat_trend_wbi,"(",nb_species_wbi,")"))) +
   theme(legend.position = "none")
 ggplot(result_cor[result_cor$Index=="WBI",], aes(x=Nb_lat_trend, fill=Index)) +
-  geom_histogram(color="#e9ecef", alpha=0.6, bins=4) +
+  geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#52be80")) + theme_modern() + 
   #xlab("Number of latent trends") + ylab("Number of countries") + theme(legend.position = "none")
   theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank())
@@ -2622,7 +2635,7 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_wbi)) + scale_
   geom_sf_text(data = europe_map_simpl[europe_map_simpl$nb_cluster_wbi>0 & europe_map_simpl$nb_outlier_wbi==0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = as.character(nb_cluster_wbi))) +
   theme(legend.position = "none")
 ggplot(result_cor[result_cor$Index=="WBI",], aes(x=Nb_cluster, fill=Index)) +
-  geom_histogram(color="#e9ecef", alpha=0.6, bins=4) +
+  geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#52be80")) + theme_modern() + 
   #xlab("Number of clusters") + ylab("Number of countries") + theme(legend.position = "none")
   theme(legend.position = "none", axis.title.x = element_blank(), axis.title.y = element_blank())
@@ -2646,7 +2659,20 @@ ggsave("output/hist1.png",
        height = 2 
 )
 
+# plot group trend
 
+ggplot(dfa_fra_forest$trend_group2[dfa_fra_forest$trend_group2$group=="g1",], aes(x=year, y=Estimate)) +
+  geom_line(size=1) +
+  geom_ribbon(aes(ymin=Estimate-1.96*Std..Error,ymax=Estimate+1.96*Std..Error),alpha=0.2)+
+  xlab(NULL) + 
+  ylab(NULL) + 
+  theme_modern() +theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+
+ggsave("output/trend_fr_w1.png",
+       dpi=300,
+       width = 2, 
+       height = 1.3
+)
 
 # Plot map instead of correlation
 
