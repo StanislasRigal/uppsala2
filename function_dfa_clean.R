@@ -39,7 +39,7 @@ template<class Type>
   matrix<Type> WZ(W.rows(), Z.cols());
 
   // Mean of latent trends
-  matrix<Type> x_sum(x.rows(), 1);
+  matrix<Type> x_mean(x.rows(), 1);
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
@@ -65,27 +65,24 @@ template<class Type>
     }
   
   for (int f = 0; f < x.rows(); ++f) {
-    x_sum(f) = x.row(f).sum();
+    x_mean(f) = x.row(f).sum()/x.cols();
     SIMULATE {
-      x_sum(f) = x.row(f).sum();
+      x_mean(f) = x.row(f).sum()/x.cols();
     }
   }
 
   // Species trends
   for(int i = 0; i < nSp; ++i) {
-    x_sp(i, 0) = (Z.row(i) * (-x_sum)).sum();
-    for(int t = 1; t < nT; ++t) {
-      x_sp(i, t) = (Z.row(i) * (x.col(t))).sum();
+    for(int t = 0; t < nT; ++t) {
+      x_sp(i, t) = (Z.row(i) * (x.col(t)-x_mean)).sum();
     }
   }  
   
   // Cluster center
   WZ = W * Z;
-  x_pred.col(0) = Z_pred * (-x_sum);
-  x_pred2.col(0) = WZ * (-x_sum);
-  for (int t=1; t < nT; ++t) {
-    x_pred.col(t) = Z_pred * (x.col(t));
-    x_pred2.col(t) = WZ * (x.col(t));
+  for (int t=0; t < nT; ++t) {
+    x_pred.col(t) = Z_pred * (x.col(t)-x_mean);
+    x_pred2.col(t) = WZ * (x.col(t)-x_mean);
   }  
   
   
@@ -236,7 +233,7 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
     
     # Draw factor loadings using covariance matrix
     set.seed(i)
-    rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings[!row_col_0,]$value, sigma=cov_mat_Z) 
+    rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings$value[-row_col_0], sigma=cov_mat_Z) 
     
     # Complete loading vector with fixed values
     for(j in 1:(nfac-1)){
@@ -1107,7 +1104,6 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   # Get point estimates
 
   x_hat <- (tmbObj$env$parList)()$x
-  
   Z_hat <- (tmbObj$env$parList)(par=tmbOpt$par)$Z
   
   Z_hat_se <- sdRep_test[rownames(sdRep_test)=="Z",2]
@@ -1138,7 +1134,6 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   
   data_loadings <- melt(data.frame(code_sp=data_ts_save[,1],Z_hat_orig),
                         id.vars="code_sp")
-  
   # Run group_from_dfa_boot to obtain species clusters
   
   if(nfac>1){
@@ -1222,7 +1217,6 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   
   data_to_plot_tr <- data.frame(t(x_hat), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
   data_to_plot_tr_se <- data.frame(t(x_hat_se), Year=min(data_to_plot_sp$Year):max(data_to_plot_sp$Year))
-  
   
   if(nfac > 1){
     
@@ -1343,7 +1337,6 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
             axis.text.x = element_text(angle = 45, hjust = 1), axis.text.y = element_text(face="italic"))
     
   }
-  
   if(is.list(group_dfa)){
     if(length(group_dfa[[3]])>1){
       plot_sp_group_all <- plot_group_boot(nb_group = nrow(group_dfa[[1]][[2]]),
