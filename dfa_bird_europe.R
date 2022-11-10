@@ -135,7 +135,7 @@ plot(unlist(df_select_timespan[29,-1])~as.numeric(names(df_select_timespan[,-1])
 country_to_keep <- df_select_timespan$CountryGroup[which(!is.na(df_select_timespan$`2000`))]
 country_to_keep <- country_to_keep[1:(length(country_to_keep)-1)]
 
-df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep & df_all_country$Year >= 1999,])
+df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep,]) #& df_all_country$Year >= 1999,])
 
 # List farmland and woodland species by country
 
