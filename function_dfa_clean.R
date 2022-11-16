@@ -10,7 +10,9 @@ template<class Type>
   // Data
   DATA_ARRAY(y);
   // Observation standard error
-   DATA_ARRAY(obs_se);
+  DATA_ARRAY(obs_se);
+  DATA_INTEGER(center); // 0 if centered on the first year, 1 if log mean centered
+  
   
   int nSp = y.dim[0];
   int nT = y.dim[1];
@@ -40,6 +42,7 @@ template<class Type>
 
   // Mean of latent trends
   matrix<Type> x_mean(x.rows(), 1);
+  x_mean.setZero();
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
@@ -63,11 +66,12 @@ template<class Type>
       }
       }
     }
-  
-  for (int f = 0; f < x.rows(); ++f) {
-    x_mean(f) = x.row(f).sum()/x.cols();
-    SIMULATE {
+  if (center) {
+    for (int f = 0; f < x.rows(); ++f) {
       x_mean(f) = x.row(f).sum()/x.cols();
+      SIMULATE {
+        x_mean(f) = x.row(f).sum()/x.cols();
+      }
     }
   }
 
@@ -832,6 +836,7 @@ core_dfa <- function(data_ts, # Dataset of time series
   
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se),
+                  center = 1,
                   Z_pred = Z_predinit,
                   W = W_init)
   
