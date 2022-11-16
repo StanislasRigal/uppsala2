@@ -10,7 +10,8 @@ template<class Type>
   // Data
   DATA_ARRAY(y);
   // Observation standard error
-   DATA_ARRAY(obs_se);
+  DATA_ARRAY(obs_se);
+  DATA_INTEGER(center); // 0 if centered on the first year, 1 if log mean centered
   
   int nSp = y.dim[0];
   int nT = y.dim[1];
@@ -40,6 +41,7 @@ template<class Type>
 
   // Mean of latent trends
   matrix<Type> x_mean(x.rows(), 1);
+  x_mean.setZero();
   
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
@@ -63,9 +65,10 @@ template<class Type>
       }
       }
     }
-  
+    
+  if (center) {
   for (int f = 0; f < x.rows(); ++f) {
-    x_mean(f) = x.row(f).sum()/x.cols();
+      x_mean(f) = x.row(f).sum()/x.cols();
     SIMULATE {
       x_mean(f) = x.row(f).sum()/x.cols();
     }
@@ -829,9 +832,9 @@ core_dfa <- function(data_ts, # Dataset of time series
                   rep(0, nrow(data_ts)),rep(0, nrow(data_ts))) # Two mean trends can currently computed, add more rows to W_init to compute more mean trends.
   
   # SE is on log-scale, so no transformation needed
-  
   dataTmb <- list(y = log(as.matrix(data_ts)),
                   obs_se = as.matrix(data_ts_se),
+                  center = 1,
                   Z_pred = Z_predinit,
                   W = W_init)
   
@@ -1135,7 +1138,6 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   data_loadings <- melt(data.frame(code_sp=data_ts_save[,1],Z_hat_orig),
                         id.vars="code_sp")
   # Run group_from_dfa_boot to obtain species clusters
-  
   if(nfac>1){
     group_dfa <- group_from_dfa_boot1(data_loadings, cov_mat_Z, species_sub, nboot=nboot, ny, nfac)
     
