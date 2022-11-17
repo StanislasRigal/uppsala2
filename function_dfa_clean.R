@@ -509,7 +509,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
                             x_hat, # Latent trends
                             data_ts,
                             data_ts_se,
-                            data_to_plot_sp
+                            data_to_plot_sp,
+                            species_name_ordre
                             ){
   
   # Combine all data for x_pred
@@ -557,7 +558,27 @@ plot_group_boot <- function(nb_group, # Number of clusters
   geom_mean_pred <- data.frame(Index = apply(data_mean_pred[,-1], 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
                                year = as.numeric(names(data_mean_pred[,-1])))
   
-    # Plot time-series of barycentres
+  # min and max for cluster plot
+  
+  min_scale <- 1
+  max_scale <- 0
+  for(i in 2:(nb_group+1)){
+    data_to_plot_sp_g <- data_to_plot_sp[which(data_to_plot_sp$code_sp%in% kmeans_res[[1]]$code_sp[which(kmeans_res[[1]]$group==(i-1))]),]
+    data_mean_pred_g <- dcast(data_to_plot_sp_g, name_long~Year, value.var = "pred.value_exp_1")
+    geom_mean_pred_g <- data.frame(Index = apply(data_mean_pred_g[,-1], 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
+                                   year = as.numeric(names(data_mean_pred_g[,-1])))
+    if(nrow(data_mean_pred_g)>1){
+      min_scale <- min(min_scale,min(geom_mean_pred_g$Index)*0.9)
+      max_scale <- max(max_scale,max(geom_mean_pred_g$Index)*1.1)
+    }
+  }
+  if(max_scale<min_scale){
+    max_scale <- 1
+    min_scale <- 0
+  }
+  
+  
+  # Plot time-series of barycentres
   
   graph2 <- setNames(lapply(1:(nb_group+1), function(i){
     if(i==1){
@@ -565,18 +586,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
     }else{
       if(nb_group==1){
         test <- data_trend_group[data_trend_group$group==paste0("g",(i-1)),]
-        min_scale <- min(data_trend_group$Estimate-2*data_trend_group$Std..Error)
-        max_scale <- max(data_trend_group$Estimate+2*data_trend_group$Std..Error)
-        min1 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error) + (max(data_trend_group$Estimate+1.96*data_trend_group$Std..Error)-min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error))/10
-        min2 <- min(data_trend_group$Estimate-1.96*data_trend_group$Std..Error)
       }else{
         test <- data_trend_group2[data_trend_group2$group==paste0("g",(i-1)),]
-        #min_scale <- min(data_trend_group2$Estimate)-2*data_trend_group2$Std..Error[which.min(data_trend_group2$Estimate)]
-        #max_scale <- max(data_trend_group2$Estimate)+2*data_trend_group2$Std..Error[which.max(data_trend_group2$Estimate)]
-        min_scale <- min(test$Estimate-2*test$Std..Error)
-        max_scale <- max(test$Estimate+2*test$Std..Error)
-        min1 <- min(test$Estimate-1.96*test$Std..Error) + (max(test$Estimate+1.96*test$Std..Error)-min(test$Estimate-1.96*test$Std..Error))/10
-        min2 <- min(test$Estimate-1.96*test$Std..Error)
       }
     }
     test$Index_SE <- test$Std..Error
@@ -616,9 +627,43 @@ plot_group_boot <- function(nb_group, # Number of clusters
       return(res_list)
       
     }else{
+      
+      data_ts_g <- data_ts[which(species_name_ordre %in% kmeans_res[[1]]$code_sp[which(kmeans_res[[1]]$group==(i-1))]),]
+      geom_mean_data_g <- data.frame(Index = apply(t(apply(data_ts_g,1,function(y){y/y[1]})), 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
+                                   year = as.numeric(names(data_ts_g)))
+      data_to_plot_sp_g <- data_to_plot_sp[which(data_to_plot_sp$code_sp%in% kmeans_res[[1]]$code_sp[which(kmeans_res[[1]]$group==(i-1))]),]
+      data_mean_pred_g <- dcast(data_to_plot_sp_g, name_long~Year, value.var = "pred.value_exp_1")
+      geom_mean_pred_g <- data.frame(Index = apply(data_mean_pred_g[,-1], 2, function(x){ exp(sum(log(x), na.rm=T)/length(x)) }),
+                                   year = as.numeric(names(data_mean_pred_g[,-1])))
+      
+      lm_pred <- lm(Index~year,geom_mean_data_g)
+      lm_test <- lm(Index~year,test)
+      
+      sse <- abs(lm_test$fitted.values-geom_mean_pred$Index)
+      sse_min <- sort(sse)[1:2]
+      first_val <- which(sse==sse_min[1])
+      second_val <- which(sse==sse_min[2])
+      
+      alpha <- (lm_pred$fitted.values[first_val]-lm_pred$fitted.values[second_val])/(lm_test$fitted.values[first_val]-lm_test$fitted.values[second_val])
+      beta <- lm_pred$fitted.values[second_val]-alpha*lm_test$fitted.values[second_val]
+      test$Index_SE_c <- alpha*test$Index_SE
+      test$Index_c <- alpha*test$Index+beta
+      
+      min1 <- min_scale + 0.07*(max_scale-min_scale)#min(test$Index_c-1.96*test$Index_SE_c) + (max(test$Index_c+1.96*test$Index_SE_c)-min(test$Index_c-1.96*test$Index_SE_c))/10
+      min2 <- min_scale + 0.01*(max_scale-min_scale)#min(test$Index_c-1.96*test$Index_SE_c)
+      
+      min_scale_save <- min_scale
+      if(min_scale>min(test$Index_c-1.96*test$Index_SE_c)){
+        min_scale <- min(test$Index_c-1.96*test$Index_SE_c)
+      }
+      max_scale_save <- max_scale
+      if(max_scale<max(test$Index_c+1.96*test$Index_SE_c)){
+        max_scale <- max(test$Index_c+1.96*test$Index_SE_c)
+      }
+      
       res_plot <- ggplot(test, aes(x=year, y=Index)) +
-        geom_line(col=hex_codes1[(i-1)], size=2) +
-        geom_ribbon(aes(ymin=Index-1.96*Index_SE,ymax=Index+1.96*Index_SE),alpha=0.2,fill=hex_codes1[(i-1)])+
+        geom_line(aes(y=Index_c),col=hex_codes1[(i-1)], size=2) +
+        geom_ribbon(aes(ymin=Index_c-1.96*Index_SE_c,ymax=Index_c+1.96*Index_SE_c),alpha=0.2,fill=hex_codes1[(i-1)])+
         xlab(NULL) + 
         ylab(NULL) + 
         ylim(c(min_scale,max_scale)) +
@@ -626,15 +671,26 @@ plot_group_boot <- function(nb_group, # Number of clusters
         annotate("text", x=mean(test$year), y=min2, label= paste0("Mean distance = ", round(mean_dist_clust[(i-1),1],3))) +
         theme_modern() + 
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/(nb_group+1))
-      return(res_plot)
+      
+      max_scale <- max_scale_save
+      min_scale <- min_scale_save
+      
+      data_msi_g <- test
+      res_list <- list(res_plot, data_msi_g)
+      return(res_list)
     }
     
     
   }), levels(as.factor(data_trend_group2$group)))
   
-  
   data_msi <- graph2$all[[2]]
   graph2$all <- graph2$all[[1]]
+  
+  for(i in 2:(nb_group+1)){
+    data_msi <- rbind(data_msi, graph2[[i]][[2]])
+    graph2[[i]] <- graph2[[i]][[1]]
+  }
+
   
   # Combine data for PCA centres
   
@@ -648,7 +704,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
     test <- data.frame(Index=ts_pca[,i], year=1:length(ts_pca[,i]))
     ggplot(test, aes(x=year, y=Index)) +
       geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
-      theme_modern() + theme_transparent() +
+      theme_modern() + 
+      ggimage::theme_transparent() +
       ylim(c(min_y_graph3,max_y_graph3)) +
       theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
             axis.title = element_blank(),
@@ -665,7 +722,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
       test <- data.frame(Index=ts_pca2[,i], year=1:length(ts_pca2[,i]))
       ggplot(test, aes(x=year, y=Index)) +
         geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
-        theme_modern() + theme_transparent() +
+        theme_modern() + 
+        ggimage::theme_transparent() +
         ylim(c(min_y_graph32,max_y_graph32)) +
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
               axis.title = element_blank(),
@@ -681,7 +739,8 @@ plot_group_boot <- function(nb_group, # Number of clusters
       test <- data.frame(Index=ts_pca3[,i], year=1:length(ts_pca3[,i]))
       ggplot(test, aes(x=year, y=Index)) +
         geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
-        theme_modern() + theme_transparent() +
+        theme_modern() + 
+        ggimage::theme_transparent() +
         ylim(c(min_y_graph33,max_y_graph33)) +
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
               axis.title = element_blank(),
@@ -991,6 +1050,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   
   min_year <- as.numeric(colnames(data_ts)[2])
   max_year <- as.numeric(colnames(data_ts)[ncol(data_ts)])
+  species_name_ordre <- data_ts$code_sp
   
   # Log transformed standard errors if they are not (from Taylor expansion)
   # and check missing values in log transformed standard errors
@@ -1356,7 +1416,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                                            x_hat = x_hat,
                                            data_ts = data_ts,
                                            data_ts_se = data_ts_se,
-                                           data_to_plot_sp = data_to_plot_sp)
+                                           data_to_plot_sp = data_to_plot_sp,
+                                           species_name_ordre = species_name_ordre)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]
@@ -1377,7 +1438,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
                                            x_hat = x_hat,
                                            data_ts = data_ts,
                                            data_ts_se = data_ts_se,
-                                           data_to_plot_sp = data_to_plot_sp)
+                                           data_to_plot_sp = data_to_plot_sp,
+                                           species_name_ordre = species_name_ordre)
       plot_sp_group <- plot_sp_group_all[[1]]
       plot_group_ts <- plot_sp_group_all[[2]]
       trend_group <- plot_sp_group_all[[3]]

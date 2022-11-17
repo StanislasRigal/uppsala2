@@ -16,7 +16,7 @@ get_ts <- function(data_bird_input){
   
   nb_route_presence <- tapply(ifelse(d$abund>0,1,0),d$year,sum)
   
-  year<-as.numeric(as.character(levels(as.factor(d$year))))
+  year <- as.numeric(as.character(levels(as.factor(d$year))))
   
   firstY <- min(year)
   
