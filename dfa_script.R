@@ -163,6 +163,7 @@ summary(lm(MSI~year, data=RES_farmland))$coef
 cor.test(farm_nfac$trend_group2[farm_nfac$trend_group2$group=="g1","Estimate"],RES_farmland$MSI)
 cor.test(farm_nfac$trend_group2[farm_nfac$trend_group2$group=="g1","Estimate"],farm_nfac$trend_group2[farm_nfac$trend_group2$group=="all","Estimate"])
 cor.test(farm_nfac$data_msi[farm_nfac$data_msi$group=="g1","Index_c"],farm_nfac$data_msi[farm_nfac$data_msi$group=="all","Index_c"])
+summary(lm(Index_c~year, data=farm_nfac$data_msi[farm_nfac$data_msi$group=="g1",]))$coef
 
 
 table_res_foresta <- dcast(data=forest_nfac$data_loadings, name_long~variable, id.vars="value")
