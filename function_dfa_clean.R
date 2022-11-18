@@ -801,7 +801,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
     geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
     geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
     geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15) +
-    geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2) +
+    ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2) +
     theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
     ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
     xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
@@ -816,7 +816,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
       geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
       geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
       geom_point(data=centroids,aes(x=PC1,y=PC3), shape=15) +
-      geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2b) +
+      ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2b) +
       theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
       ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
       xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
@@ -829,7 +829,7 @@ plot_group_boot <- function(nb_group, # Number of clusters
       geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
       geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
       geom_point(data=centroids,aes(x=PC2,y=PC3), shape=15) +
-      geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2c) +
+      ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2c) +
       theme_modern() + xlab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
       ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
       xlim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
