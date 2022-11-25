@@ -484,11 +484,12 @@ group_from_dfa_boot1 <- function(data_loadings, # Species initial factor loading
   }
   
   
-  return(list(kmeans_res, # Results of clustering
-              centroids, # Position of cluster barycentres
-              stability_cluster_final, # Stability of clusters
-              mean_dist_clust, # Average distance between species and barycentre
-              pca_centre_list # Coordinates to plot trends of PCA axes
+  return(list(kmeans_res = kmeans_res, # Results of clustering
+              centroids = centroids, # Position of cluster barycentres
+              stability_cluster_final = stability_cluster_final, # Stability of clusters
+              mean_dist_clust = mean_dist_clust, # Average distance between species and barycentre
+              pca_centre_list = pca_centre_list, # Coordinates to plot trends of PCA axes
+              myPCA = myPCA # PCA result
   ))
 }
 
@@ -1150,6 +1151,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   # Recalcul sdreport
   
   sdRep <- summary(sdreport(tmbObj))
+  sdRep_all <- sdreport(tmbObj)
   
   # Prepare data to plot
   
@@ -1385,11 +1387,182 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
               plot_group_ts = plot_group_ts, # Plot clustertime-series
               plot_group_ts2 = plot_group_ts2, # Plot clustertime-series from sdRep
               aic = aic, # Best AIC
-              sdRep = sdRep, # Optimisation output
+              sdRep = sdRep, # Optimisation output summary
+              sdRep_all = sdRep_all, # Optimisation output
               group = group_dfa, # Cluster results
               trend_group = trend_group, # Cluster barycentre times-series
               trend_group2 = trend_group2 # Cluster barycentre times-series from sdRep
               ))
+}
+
+
+# Analyse cluster and species traits
+
+cluster_trait <- function(data_dfa,
+                          trait_mat){
+  
+  ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
+  
+  nfac <- length(unique(data_dfa$data_to_plot_tr$variable))
+  
+  nb_group <- length(unique(data_dfa$group$kmeans_res[[1]]$group))
+  
+  cov_mat_Z <- data_dfa$sdRep_all$cov.fixed[which(rownames(data_dfa$sdRep)=="Z"),which(rownames(data_dfa$sdRep)=="Z")]
+  
+  data_loadings <- data_dfa$data_loadings
+  
+  constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
+  
+  for(nb in 1:nboot){
+    
+    # Draw factor loadings using covariance matrix
+    set.seed(nb)
+    
+    rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings$value[!constrInd], sigma=cov_mat_Z) 
+    
+    # Add fixed term
+    for(j in 1:(nfac-1)){
+      index_0 <- ny*j
+      rand_load <- append(rand_load, rep(0,j), after=index_0)
+    }
+    
+    rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+    
+    # Get coordinates of species in the first factorial plan
+    pca_rand_load <- data.frame(group=data_dfa$group$kmeans_res[[1]],rand_load,
+                           (t(apply(rand_load, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
+    
+    # Get coordinates of center in the first factorial plan
+    kmeans_center <- rep(NA,nfac)
+    for(i in 1:nb_group){
+      kmeans_center_row <- c()
+      for(j in 1:nfac){
+        kmeans_center_row <- c(kmeans_center_row,weighted.mean(pca_rand_load[pca_rand_load$group.group==i,paste0("X",j)],
+                                                               pca_rand_load[pca_rand_load$group.group==i,"group.uncert"]))
+      }
+      kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+    }
+    kmeans_center <- kmeans_center[-1,]
+    kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                             (t(apply(kmeans_center, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
+    
+    
+    Nb_lat_trend <- Nb_cluster <- Nb_outlier <- Nb_species <-
+    PCA1_SFI <- PCA1_SFI_pval <- PCA1_STI <- PCA1_STI_pval <-
+    PCA1_SSI <- PCA1_SSI_pval <- R2_PCA1 <-
+    PCA2_SFI <- PCA2_SFI_pval <- PCA2_STI <- PCA2_STI_pval <-
+    PCA2_SSI <- PCA2_SSI_pval <- R2_PCA2 <-
+    SFI_12 <- SSI_12 <- STI_12 <-
+    SFI_13 <- SSI_13 <- STI_13 <-
+    SFI_14 <- SSI_14 <- STI_14 <-
+    SFI_15 <- SSI_15 <- STI_15 <-
+    SFI_23 <- SSI_23 <- STI_23 <-
+    SFI_24 <- SSI_24 <- STI_24 <-
+    SFI_25 <- SSI_25 <- STI_25 <-
+    SFI_34 <- SSI_34 <- STI_34 <-
+    SFI_35 <- SSI_35 <- STI_35 <-
+    SFI_45 <- SSI_45 <- STI_45 <- NA
+    
+    Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
+    Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
+    
+    if(Nb_lat_trend == 1){
+      Nb_cluster <- 1
+      Nb_outlier <- 0
+    }else{
+      Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
+      Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
+      
+      data_mod <- merge(pca_rand_load, trait_mat, by.x="group.name_long", by.y="Species")
+      
+      PCA1_SFI <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
+      PCA1_SFI_pval <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
+      PCA1_STI <- cor.test(data_mod$PC1,data_mod$STI)$estimate
+      PCA1_STI_pval <- cor.test(data_mod$PC1,data_mod$STI)$p.value
+      PCA1_SSI <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
+      PCA1_SSI_pval <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
+      R2_PCA1 <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
+      
+      PCA2_SFI <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
+      PCA2_SFI_pval <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
+      PCA2_STI <- cor.test(data_mod$PC2,data_mod$STI)$estimate
+      PCA2_STI_pval <- cor.test(data_mod$PC2,data_mod$STI)$p.value
+      PCA2_SSI <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
+      PCA2_SSI_pval <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
+      R2_PCA2 <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
+      
+      Nb_anticor_cluster_sig <- Nb_anticor_cluster_all <-
+      SFI_group <- SSI_group <- STI_group <- 0
+      
+      if(Nb_cluster>1){
+        for(j in names(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))){
+          cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
+          if(cor_res$estimate<0 & cor_res$p.value<0.05){
+            Nb_anticor_cluster_sig <- Nb_anticor_cluster_sig + 1
+          }
+          if(cor_res$estimate<0){
+            Nb_anticor_cluster_all <- Nb_anticor_cluster_all + 1
+          }
+        }
+        SFI_group <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+        SSI_group <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+        STI_group <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+        
+        # Reproject species on the line between cluster centres
+        
+        cluster_centre_coord_all <- kmeans_2[,grepl("X",names(kmeans_2))]
+        comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
+        
+        for(comb_cluster_num in 1:ncol(comb_cluster)){
+          cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
+          mean_coord <- apply(cluster_centre_coord,2,sum)/2
+          data_coord <- pca_rand_load
+          data_coord <- data_coord[data_coord$group.group %in% comb_cluster[,comb_cluster_num],]
+          if(nrow(data_coord)>2){
+            n_axis <-  ncol(cluster_centre_coord)
+            new_coord_all_sp <- data_coord[,which((!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord))) | names(data_coord)=="group.name_long")]
+            new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
+            new_coord_all_sp$new_val <- NA
+            for(sp in data_coord$group.name_long){
+              coord_sp <- data_coord[data_coord$group.name_long==sp,which(!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord)))]
+              t_scalar_numer <- t_scalar_denomin <- 0
+              for(axis_num in 1:n_axis){
+                t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
+                t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
+              }
+              t_scalar <- t_scalar_numer/t_scalar_denomin
+              new_coord_sp <- coord_sp
+              for(axis_num in 1:n_axis){
+                new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
+              }
+              dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
+              dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
+              dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
+              if(dist_c1_new_coord<dist_c2_new_coord){
+                sign_dist <- -1
+              }else{sign_dist <- 1}
+              value_reproj_sp <- sign_dist*dist_mean_new_coord
+              new_coord_all_sp[new_coord_all_sp$group.name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
+              new_coord_all_sp$new_val[new_coord_all_sp$group.name_long==sp] <- value_reproj_sp
+            }
+            
+            data_mod_new <- merge(new_coord_all_sp, trait_mat, by.x="group.name_long", by.y="Species")
+            col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+            result_cor[i,col_name1] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value < 0.05, 1, 0)
+            col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+            if(length(which(!is.na(data_mod_new$SSI)))>2){
+              result_cor[i,col_name2] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value < 0.05, 1, 0)
+            }else{
+              result_cor[i,col_name2] <- NA
+            }
+            col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+            result_cor[i,col_name3] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value < 0.05, 1, 0)
+            
+          }
+        }
+      }
+    }
+  }
 }
 
 
