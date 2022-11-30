@@ -155,7 +155,7 @@ species_sub <- species_aus_farm <- na.omit(species_aus_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Austria",]
-MSI_aus_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_aus_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_aus_farm <- species_aus_farm[species_aus_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -179,7 +179,7 @@ species_sub <- species_aus_forest <- na.omit(species_aus_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Austria",]
-MSI_aus_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_aus_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_aus_forest <- species_aus_forest[species_aus_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -210,7 +210,7 @@ species_sub <- species_bel_farm <- na.omit(species_bel_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Belgium",]
-MSI_bel_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_bel_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_bel_farm <- species_bel_farm[species_bel_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -239,7 +239,7 @@ species_sub <- species_bel_forest <- na.omit(species_bel_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Belgium",]
-MSI_bel_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_bel_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_bel_forest <- species_bel_forest[species_bel_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -379,7 +379,7 @@ species_sub <- species_cze_farm <- na.omit(species_cze_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Czech Republic",]
-MSI_cze_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_cze_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_cze_farm <- species_cze_farm[species_cze_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -413,7 +413,7 @@ species_sub <- species_cze_forest <- na.omit(species_cze_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Czech Republic",]
-MSI_cze_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_cze_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_cze_forest <- species_cze_forest[species_cze_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -445,7 +445,7 @@ species_sub <- species_den_farm <- na.omit(species_den_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Denmark",]
-MSI_den_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_den_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_den_farm <- species_den_farm[species_den_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -474,7 +474,7 @@ species_sub <- species_den_forest <- na.omit(species_den_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Denmark",]
-MSI_den_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_den_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_den_forest <- species_den_forest[species_den_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -511,7 +511,7 @@ species_sub <- species_est_farm <- na.omit(species_est_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Estonia",]
-MSI_est_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_est_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_est_farm <- species_est_farm[species_est_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -543,7 +543,7 @@ species_sub <- species_est_forest <- na.omit(species_est_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Estonia",]
-MSI_est_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_est_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_est_forest <- species_est_forest[species_est_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -573,7 +573,7 @@ species_sub <- species_fin_farm <- na.omit(species_fin_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Finland",]
-MSI_fin_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_fin_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fin_farm <- species_fin_farm[species_fin_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -601,7 +601,7 @@ species_sub <- species_fin_forest <- na.omit(species_fin_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Finland",]
-MSI_fin_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_fin_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fin_forest <- species_fin_forest[species_fin_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -633,7 +633,7 @@ species_sub <- species_fra_farm <- na.omit(species_fra_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "France",]
-MSI_fra_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_fra_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fra_farm <- species_fra_farm[species_fra_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -663,7 +663,7 @@ species_sub <- species_fra_forest <- na.omit(species_fra_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "France",]
-MSI_fra_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_fra_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fra_forest <- species_fra_forest[species_fra_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -693,7 +693,7 @@ species_sub <- species_ger_farm <- na.omit(species_ger_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Germany",]
-MSI_ger_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_ger_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ger_farm <- species_ger_farm[species_ger_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -726,7 +726,7 @@ species_sub <- species_ger_forest <- na.omit(species_ger_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Germany",]
-MSI_ger_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_ger_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ger_forest <- species_ger_forest[species_ger_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -759,7 +759,7 @@ species_sub <- species_hun_farm <- na.omit(species_hun_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Hungary",]
-MSI_hun_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_hun_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_hun_farm <- species_hun_farm[species_hun_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -788,7 +788,7 @@ species_sub <- species_hun_forest <- na.omit(species_hun_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Hungary",]
-MSI_hun_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_hun_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_hun_forest <- species_hun_forest[species_hun_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -820,7 +820,7 @@ species_sub <- species_ita_farm <- na.omit(species_ita_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Italy",]
-MSI_ita_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_ita_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ita_farm <- species_ita_farm[species_ita_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -850,7 +850,7 @@ species_sub <- species_ita_forest <- na.omit(species_ita_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Italy",]
-MSI_ita_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_ita_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ita_forest <- species_ita_forest[species_ita_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -879,7 +879,7 @@ species_sub <- species_lat_farm <- na.omit(species_lat_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Latvia",]
-MSI_lat_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_lat_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_lat_farm <- species_lat_farm[species_lat_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -936,7 +936,7 @@ species_sub <- species_lit_farm <- na.omit(species_lit_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                              df_all_country_2000$CountryGroup == "Lithuania",]
-MSI_lit_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_lit_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_lit_farm <- species_lit_farm[species_lit_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1021,7 +1021,7 @@ species_sub <- species_net_farm <- na.omit(species_net_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Netherlands",]
-MSI_net_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_net_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_net_farm <- species_net_farm[species_net_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1053,7 +1053,7 @@ species_sub <- species_net_forest <- na.omit(species_net_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Netherlands",]
-MSI_net_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_net_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_net_forest <- species_net_forest[species_net_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1084,7 +1084,7 @@ species_sub <- species_nor_farm <- na.omit(species_nor_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Norway",]
-MSI_nor_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_nor_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_nor_farm <- species_nor_farm[species_nor_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1113,7 +1113,7 @@ species_sub <- species_nor_forest <- na.omit(species_nor_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Norway",]
-MSI_nor_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_nor_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_nor_forest <- species_nor_forest[species_nor_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1145,7 +1145,7 @@ species_sub <- species_pol_farm <- na.omit(species_pol_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Poland",]
-MSI_pol_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_pol_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_pol_farm <- species_pol_farm[species_pol_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1178,7 +1178,7 @@ species_sub <- species_pol_forest <- na.omit(species_pol_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Poland",]
-MSI_pol_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_pol_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_pol_forest <- species_pol_forest[species_pol_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1264,7 +1264,7 @@ species_sub <- species_ire_farm <- na.omit(species_ire_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Republic of Ireland",]
-MSI_ire_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_ire_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ire_farm <- species_ire_farm[species_ire_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1365,7 +1365,7 @@ species_sub <- species_spa_farm <- na.omit(species_spa_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Spain",]
-MSI_spa_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_spa_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_spa_farm <- species_spa_farm[species_spa_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1393,7 +1393,7 @@ species_sub <- species_swe_farm <- na.omit(species_swe_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Sweden",]
-MSI_swe_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_swe_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swe_farm <- species_swe_farm[species_swe_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1424,7 +1424,7 @@ species_sub <- species_swe_forest <- na.omit(species_swe_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Sweden",]
-MSI_swe_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_swe_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swe_forest <- species_swe_forest[species_swe_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1462,7 +1462,7 @@ species_sub <- species_swi_farm <- na.omit(species_swi_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Switzerland",]
-MSI_swi_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_swi_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swi_farm <- species_swi_farm[species_swi_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1499,7 +1499,7 @@ species_sub <- species_swi_forest <- na.omit(species_swi_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Switzerland",]
-MSI_swi_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_swi_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swi_forest <- species_swi_forest[species_swi_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1531,7 +1531,7 @@ species_sub <- species_uk_farm <- na.omit(species_uk_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "United Kingdom",]
-MSI_uk_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_uk_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_uk_farm <- species_uk_farm[species_uk_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1564,7 +1564,7 @@ species_sub <- species_uk_forest <- na.omit(species_uk_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "United Kingdom",]
-MSI_uk_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#MSI_uk_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_uk_forest <- species_uk_forest[species_uk_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -2375,139 +2375,28 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_spa_farm,dfa_swe_farm,dfa_swe_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
-
-result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
-                                     rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
-                                     rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
-                                     rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
-                                     rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
-                         Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),
-                                   "FBI","FBI",rep(c("FBI","WBI"),3),"FBI",rep(c("FBI","WBI"),3)),
-                         Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
-                         PCA1_SFI = NA, PCA1_SFI_pval = NA, PCA1_STI = NA, PCA1_STI_pval = NA,
-                         PCA1_SSI = NA, PCA1_SSI_pval = NA, R2_PCA1 = NA,
-                         PCA2_SFI = NA, PCA2_SFI_pval = NA, PCA2_STI = NA, PCA2_STI_pval = NA,
-                         PCA2_SSI = NA, PCA2_SSI_pval = NA, R2_PCA2 = NA,
-                         Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
-                         SFI_group = NA, SSI_group = NA, STI_group = NA,
-                         SFI_12 = NA, SSI_12 = NA, STI_12 = NA,
-                         SFI_13 = NA, SSI_13 = NA, STI_13 = NA,
-                         SFI_14 = NA, SSI_14 = NA, STI_14 = NA,
-                         SFI_15 = NA, SSI_15 = NA, STI_15 = NA,
-                         SFI_23 = NA, SSI_23 = NA, STI_23 = NA,
-                         SFI_24 = NA, SSI_24 = NA, STI_24 = NA,
-                         SFI_25 = NA, SSI_25 = NA, STI_25 = NA,
-                         SFI_34 = NA, SSI_34 = NA, STI_34 = NA,
-                         SFI_35 = NA, SSI_35 = NA, STI_35 = NA,
-                         SFI_45 = NA, SSI_45 = NA, STI_45 = NA)
+result_cor_dfa <- cluster_trait(dfa_aus_farm,SXI)
 
 for(i in 1:length(list_dfa)){
   
+  print(i)
+  
   data_dfa <- list_dfa[[i]]
   
-  result_cor[i,3] <- length(unique(data_dfa$data_loadings$variable))
-  
-  if(result_cor[i,3] == 1){
-    result_cor[i,4] <- 1
-    result_cor[i,5] <- 0
-    result_cor[i,6] <- length(unique(data_dfa$data_to_plot_sp$name_long))
-    result_cor[i,7:ncol(result_cor)] <- NA
-  }else{
-    result_cor[i,4] <- length(which(table(data_dfa$group[[1]][[1]]$group)>1))#length(unique(data_dfa$group[[1]][[1]]$group))
-    result_cor[i,5] <- length(which(table(data_dfa$group[[1]][[1]]$group)==1))
-    result_cor[i,6] <- length(unique(data_dfa$data_to_plot_sp$name_long))
-    
-    data_mod <- merge(data_dfa$group[[1]][[1]],SXI, by.x="name_long", by.y="Species")
-    
-    result_cor[i,7] <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
-    result_cor[i,8] <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
-    result_cor[i,9] <- cor.test(data_mod$PC1,data_mod$STI)$estimate
-    result_cor[i,10] <- cor.test(data_mod$PC1,data_mod$STI)$p.value
-    result_cor[i,11] <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
-    result_cor[i,12] <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
-    result_cor[i,13] <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
-    
-    result_cor[i,14] <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
-    result_cor[i,15] <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
-    result_cor[i,16] <- cor.test(data_mod$PC2,data_mod$STI)$estimate
-    result_cor[i,17] <- cor.test(data_mod$PC2,data_mod$STI)$p.value
-    result_cor[i,18] <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
-    result_cor[i,19] <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
-    result_cor[i,20] <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
-    
-    result_cor[i,21:25] <- 0
-    
-    if(result_cor[i,4]>1){
-      for(j in names(which(table(data_dfa$group[[1]][[1]]$group)>1))){
-        cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
-        if(cor_res$estimate<0 & cor_res$p.value<0.05){
-          result_cor[i,21] <- result_cor[i,21] + 1
-        }
-        if(cor_res$estimate<0){
-          result_cor[i,22] <- result_cor[i,22] + 1
-        }
-      }
-      result_cor[i,23] <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-      result_cor[i,24] <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-      result_cor[i,25] <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-      
-      # reproject species on the line between cluster centres
-      
-      cluster_centre_coord_all <- data_dfa$group[[1]][[2]][,grepl("X",names(data_dfa$group[[1]][[2]]))]
-      comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
-      
-      for(comb_cluster_num in 1:ncol(comb_cluster)){
-        cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
-        mean_coord <- apply(cluster_centre_coord,2,sum)/2
-        data_coord <- data_dfa$group[[1]][[1]]
-        data_coord <- data_coord[data_coord$group %in% comb_cluster[,comb_cluster_num],]
-        if(nrow(data_coord)>2){
-          n_axis <-  ncol(cluster_centre_coord)
-          new_coord_all_sp <- data_coord[,which(grepl("X",names(data_coord)) | names(data_coord)=="name_long")]
-          new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
-          new_coord_all_sp$new_val <- NA
-          for(sp in data_coord$name_long){
-            coord_sp <- data_coord[data_coord$name_long==sp,grepl("X",names(data_coord))]
-            t_scalar_numer <- t_scalar_denomin <- 0
-            for(axis_num in 1:n_axis){
-              t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
-              t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
-            }
-            t_scalar <- t_scalar_numer/t_scalar_denomin
-            new_coord_sp <- coord_sp
-            for(axis_num in 1:n_axis){
-              new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
-            }
-            dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
-            dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
-            dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
-            if(dist_c1_new_coord<dist_c2_new_coord){
-              sign_dist <- -1
-            }else{sign_dist <- 1}
-            value_reproj_sp <- sign_dist*dist_mean_new_coord
-            new_coord_all_sp[new_coord_all_sp$name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
-            new_coord_all_sp$new_val[new_coord_all_sp$name_long==sp] <- value_reproj_sp
-          }
-          
-          data_mod_new <- merge(new_coord_all_sp,SXI, by.x="name_long", by.y="Species")
-          col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-          result_cor[i,col_name1] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value < 0.05, 1, 0)
-          col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-          if(length(which(!is.na(data_mod_new$SSI)))>2){
-            result_cor[i,col_name2] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value < 0.05, 1, 0)
-          }else{
-            result_cor[i,col_name2] <- NA
-          }
-          col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-          result_cor[i,col_name3] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value < 0.05, 1, 0)
-          
-        }
-      }
-    }
-  }
+  result_cor_dfa[i,] <- cluster_trait(data_dfa,SXI)
 }
 
+result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
+                       rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
+                       rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
+                       rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
+                       rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
+                       Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
+                                 "FBI",rep(c("FBI","WBI"),3)),
+                       result_cor_dfa)
+
 saveRDS(result_cor,"output/result_cor.rds")
+
 
 # Plot results
 

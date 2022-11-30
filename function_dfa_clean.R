@@ -554,8 +554,12 @@ plot_group_boot <- function(nb_group, # Number of clusters
   
   outlier_cluster <- paste0("g",names(which(table(kmeans_res[[1]]$group)==1)))
   
-  if(outlier_cluster != "g"){
-    data_trend_group2 <- data_trend_group2[which(data_trend_group2$group != outlier_cluster),]
+  if(length(outlier_cluster) == 1){
+    if(outlier_cluster != "g"){
+      data_trend_group2 <- data_trend_group2[which(data_trend_group2$group != outlier_cluster),]
+    }
+  }else{
+    data_trend_group2 <- data_trend_group2[which(!(data_trend_group2$group %in% outlier_cluster)),]
   }
   
   # Plot time-series of barycentres
@@ -1399,170 +1403,725 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
 # Analyse cluster and species traits
 
 cluster_trait <- function(data_dfa,
-                          trait_mat){
+                          trait_mat,
+                          nboot = 100){
   
-  ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
+  result_cor_final <- data.frame(Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
+                                 Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
+                                 perc_sig_SFI_12 = NA, perc_sig_neg_SFI_12 = NA, perc_sig_pos_SFI_12 = NA, mean_sig_SFI_12 = NA, sd_sig_SFI_12 = NA, mean_SFI_12 = NA, sd_SFI_12 = NA,
+                                 perc_sig_SSI_12 = NA, perc_sig_neg_SSI_12 = NA, perc_sig_pos_SSI_12 = NA, mean_sig_SSI_12 = NA, sd_sig_SSI_12 = NA, mean_SSI_12 = NA, sd_SSI_12 = NA,
+                                 perc_sig_STI_12 = NA, perc_sig_neg_STI_12 = NA, perc_sig_pos_STI_12 = NA, mean_sig_STI_12 = NA, sd_sig_STI_12 = NA, mean_STI_12 = NA, sd_STI_12 = NA,
+                                 perc_sig_SFI_13 = NA, perc_sig_neg_SFI_13 = NA, perc_sig_pos_SFI_13 = NA, mean_sig_SFI_13 = NA, sd_sig_SFI_13 = NA, mean_SFI_13 = NA, sd_SFI_13 = NA,
+                                 perc_sig_SSI_13 = NA, perc_sig_neg_SSI_13 = NA, perc_sig_pos_SSI_13 = NA, mean_sig_SSI_13 = NA, sd_sig_SSI_13 = NA, mean_SSI_13 = NA, sd_SSI_13 = NA,
+                                 perc_sig_STI_13 = NA, perc_sig_neg_STI_13 = NA, perc_sig_pos_STI_13 = NA, mean_sig_STI_13 = NA, sd_sig_STI_13 = NA, mean_STI_13 = NA, sd_STI_13 = NA,
+                                 perc_sig_SFI_14 = NA, perc_sig_neg_SFI_14 = NA, perc_sig_pos_SFI_14 = NA, mean_sig_SFI_14 = NA, sd_sig_SFI_14 = NA, mean_SFI_14 = NA, sd_SFI_14 = NA,
+                                 perc_sig_SSI_14 = NA, perc_sig_neg_SSI_14 = NA, perc_sig_pos_SSI_14 = NA, mean_sig_SSI_14 = NA, sd_sig_SSI_14 = NA, mean_SSI_14 = NA, sd_SSI_14 = NA,
+                                 perc_sig_STI_14 = NA, perc_sig_neg_STI_14 = NA, perc_sig_pos_STI_14 = NA, mean_sig_STI_14 = NA, sd_sig_STI_14 = NA, mean_STI_14 = NA, sd_STI_14 = NA,
+                                 perc_sig_SFI_15 = NA, perc_sig_neg_SFI_15 = NA, perc_sig_pos_SFI_15 = NA, mean_sig_SFI_15 = NA, sd_sig_SFI_15 = NA, mean_SFI_15 = NA, sd_SFI_15 = NA,
+                                 perc_sig_SSI_15 = NA, perc_sig_neg_SSI_15 = NA, perc_sig_pos_SSI_15 = NA, mean_sig_SSI_15 = NA, sd_sig_SSI_15 = NA, mean_SSI_15 = NA, sd_SSI_15 = NA,
+                                 perc_sig_STI_15 = NA, perc_sig_neg_STI_15 = NA, perc_sig_pos_STI_15 = NA, mean_sig_STI_15 = NA, sd_sig_STI_15 = NA, mean_STI_15 = NA, sd_STI_15 = NA,
+                                 perc_sig_SFI_16 = NA, perc_sig_neg_SFI_16 = NA, perc_sig_pos_SFI_16 = NA, mean_sig_SFI_16 = NA, sd_sig_SFI_16 = NA, mean_SFI_16 = NA, sd_SFI_16 = NA,
+                                 perc_sig_SSI_16 = NA, perc_sig_neg_SSI_16 = NA, perc_sig_pos_SSI_16 = NA, mean_sig_SSI_16 = NA, sd_sig_SSI_16 = NA, mean_SSI_16 = NA, sd_SSI_16 = NA,
+                                 perc_sig_STI_16 = NA, perc_sig_neg_STI_16 = NA, perc_sig_pos_STI_16 = NA, mean_sig_STI_16 = NA, sd_sig_STI_16 = NA, mean_STI_16 = NA, sd_STI_16 = NA,
+                                 perc_sig_SFI_23 = NA, perc_sig_neg_SFI_23 = NA, perc_sig_pos_SFI_23 = NA, mean_sig_SFI_23 = NA, sd_sig_SFI_23 = NA, mean_SFI_23 = NA, sd_SFI_23 = NA,
+                                 perc_sig_SSI_23 = NA, perc_sig_neg_SSI_23 = NA, perc_sig_pos_SSI_23 = NA, mean_sig_SSI_23 = NA, sd_sig_SSI_23 = NA, mean_SSI_23 = NA, sd_SSI_23 = NA,
+                                 perc_sig_STI_23 = NA, perc_sig_neg_STI_23 = NA, perc_sig_pos_STI_23 = NA, mean_sig_STI_23 = NA, sd_sig_STI_23 = NA, mean_STI_23 = NA, sd_STI_23 = NA,
+                                 perc_sig_SFI_24 = NA, perc_sig_neg_SFI_24 = NA, perc_sig_pos_SFI_24 = NA, mean_sig_SFI_24 = NA, sd_sig_SFI_24 = NA, mean_SFI_24 = NA, sd_SFI_24 = NA,
+                                 perc_sig_SSI_24 = NA, perc_sig_neg_SSI_24 = NA, perc_sig_pos_SSI_24 = NA, mean_sig_SSI_24 = NA, sd_sig_SSI_24 = NA, mean_SSI_24 = NA, sd_SSI_24 = NA,
+                                 perc_sig_STI_24 = NA, perc_sig_neg_STI_24 = NA, perc_sig_pos_STI_24 = NA, mean_sig_STI_24 = NA, sd_sig_STI_24 = NA, mean_STI_24 = NA, sd_STI_24 = NA,
+                                 perc_sig_SFI_25 = NA, perc_sig_neg_SFI_25 = NA, perc_sig_pos_SFI_25 = NA, mean_sig_SFI_25 = NA, sd_sig_SFI_25 = NA, mean_SFI_25 = NA, sd_SFI_25 = NA,
+                                 perc_sig_SSI_25 = NA, perc_sig_neg_SSI_25 = NA, perc_sig_pos_SSI_25 = NA, mean_sig_SSI_25 = NA, sd_sig_SSI_25 = NA, mean_SSI_25 = NA, sd_SSI_25 = NA,
+                                 perc_sig_STI_25 = NA, perc_sig_neg_STI_25 = NA, perc_sig_pos_STI_25 = NA, mean_sig_STI_25 = NA, sd_sig_STI_25 = NA, mean_STI_25 = NA, sd_STI_25 = NA,
+                                 perc_sig_SFI_34 = NA, perc_sig_neg_SFI_34 = NA, perc_sig_pos_SFI_34 = NA, mean_sig_SFI_34 = NA, sd_sig_SFI_34 = NA, mean_SFI_34 = NA, sd_SFI_34 = NA,
+                                 perc_sig_SSI_34 = NA, perc_sig_neg_SSI_34 = NA, perc_sig_pos_SSI_34 = NA, mean_sig_SSI_34 = NA, sd_sig_SSI_34 = NA, mean_SSI_34 = NA, sd_SSI_34 = NA,
+                                 perc_sig_STI_34 = NA, perc_sig_neg_STI_34 = NA, perc_sig_pos_STI_34 = NA, mean_sig_STI_34 = NA, sd_sig_STI_34 = NA, mean_STI_34 = NA, sd_STI_34 = NA,
+                                 perc_sig_SFI_35 = NA, perc_sig_neg_SFI_35 = NA, perc_sig_pos_SFI_35 = NA, mean_sig_SFI_35 = NA, sd_sig_SFI_35 = NA, mean_SFI_35 = NA, sd_SFI_35 = NA,
+                                 perc_sig_SSI_35 = NA, perc_sig_neg_SSI_35 = NA, perc_sig_pos_SSI_35 = NA, mean_sig_SSI_35 = NA, sd_sig_SSI_35 = NA, mean_SSI_35 = NA, sd_SSI_35 = NA,
+                                 perc_sig_STI_35 = NA, perc_sig_neg_STI_35 = NA, perc_sig_pos_STI_35 = NA, mean_sig_STI_35 = NA, sd_sig_STI_35 = NA, mean_STI_35 = NA, sd_STI_35 = NA,
+                                 perc_sig_SFI_36 = NA, perc_sig_neg_SFI_36 = NA, perc_sig_pos_SFI_36 = NA, mean_sig_SFI_36 = NA, sd_sig_SFI_36 = NA, mean_SFI_36 = NA, sd_SFI_36 = NA,
+                                 perc_sig_SSI_36 = NA, perc_sig_neg_SSI_36 = NA, perc_sig_pos_SSI_36 = NA, mean_sig_SSI_36 = NA, sd_sig_SSI_36 = NA, mean_SSI_36 = NA, sd_SSI_36 = NA,
+                                 perc_sig_STI_36 = NA, perc_sig_neg_STI_36 = NA, perc_sig_pos_STI_36 = NA, mean_sig_STI_36 = NA, sd_sig_STI_36 = NA, mean_STI_36 = NA, sd_STI_36 = NA,
+                                 perc_sig_SFI_45 = NA, perc_sig_neg_SFI_45 = NA, perc_sig_pos_SFI_45 = NA, mean_sig_SFI_45 = NA, sd_sig_SFI_45 = NA, mean_SFI_45 = NA, sd_SFI_45 = NA,
+                                 perc_sig_SSI_45 = NA, perc_sig_neg_SSI_45 = NA, perc_sig_pos_SSI_45 = NA, mean_sig_SSI_45 = NA, sd_sig_SSI_45 = NA, mean_SSI_45 = NA, sd_SSI_45 = NA,
+                                 perc_sig_STI_45 = NA, perc_sig_neg_STI_45 = NA, perc_sig_pos_STI_45 = NA, mean_sig_STI_45 = NA, sd_sig_STI_45 = NA, mean_STI_45 = NA, sd_STI_45 = NA,
+                                 perc_sig_SFI_46 = NA, perc_sig_neg_SFI_46 = NA, perc_sig_pos_SFI_46 = NA, mean_sig_SFI_46 = NA, sd_sig_SFI_46 = NA, mean_SFI_46 = NA, sd_SFI_46 = NA,
+                                 perc_sig_SSI_46 = NA, perc_sig_neg_SSI_46 = NA, perc_sig_pos_SSI_46 = NA, mean_sig_SSI_46 = NA, sd_sig_SSI_46 = NA, mean_SSI_46 = NA, sd_SSI_46 = NA,
+                                 perc_sig_STI_46 = NA, perc_sig_neg_STI_46 = NA, perc_sig_pos_STI_46 = NA, mean_sig_STI_46 = NA, sd_sig_STI_46 = NA, mean_STI_46 = NA, sd_STI_46 = NA,
+                                 perc_sig_SFI_56 = NA, perc_sig_neg_SFI_56 = NA, perc_sig_pos_SFI_56 = NA, mean_sig_SFI_56 = NA, sd_sig_SFI_56 = NA, mean_SFI_56 = NA, sd_SFI_56 = NA,
+                                 perc_sig_SSI_56 = NA, perc_sig_neg_SSI_56 = NA, perc_sig_pos_SSI_56 = NA, mean_sig_SSI_56 = NA, sd_sig_SSI_56 = NA, mean_SSI_56 = NA, sd_SSI_56 = NA,
+                                 perc_sig_STI_56 = NA, perc_sig_neg_STI_56 = NA, perc_sig_pos_STI_56 = NA, mean_sig_STI_56 = NA, sd_sig_STI_56 = NA, mean_STI_56 = NA, sd_STI_56 = NA
+  )
   
-  nfac <- length(unique(data_dfa$data_to_plot_tr$variable))
+  result_cor_all <- data.frame(Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
+                               PCA1_SFI = NA, PCA1_SFI_pval = NA, PCA1_STI = NA, PCA1_STI_pval = NA,
+                               PCA1_SSI = NA, PCA1_SSI_pval = NA, R2_PCA1 = NA,
+                               PCA2_SFI = NA, PCA2_SFI_pval = NA, PCA2_STI = NA, PCA2_STI_pval = NA,
+                               PCA2_SSI = NA, PCA2_SSI_pval = NA, R2_PCA2 = NA,
+                               Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
+                               SFI_group = NA, SSI_group = NA, STI_group = NA,
+                               SFI_12 = NA, SSI_12 = NA, STI_12 = NA,
+                               SFI_13 = NA, SSI_13 = NA, STI_13 = NA,
+                               SFI_14 = NA, SSI_14 = NA, STI_14 = NA,
+                               SFI_15 = NA, SSI_15 = NA, STI_15 = NA,
+                               SFI_16 = NA, SSI_16 = NA, STI_16 = NA,
+                               SFI_23 = NA, SSI_23 = NA, STI_23 = NA,
+                               SFI_24 = NA, SSI_24 = NA, STI_24 = NA,
+                               SFI_25 = NA, SSI_25 = NA, STI_25 = NA,
+                               SFI_26 = NA, SSI_26 = NA, STI_26 = NA,
+                               SFI_34 = NA, SSI_34 = NA, STI_34 = NA,
+                               SFI_35 = NA, SSI_35 = NA, STI_35 = NA,
+                               SFI_36 = NA, SSI_36 = NA, STI_36 = NA,
+                               SFI_45 = NA, SSI_45 = NA, STI_45 = NA,
+                               SFI_46 = NA, SSI_46 = NA, STI_46 = NA,
+                               SFI_56 = NA, SSI_56 = NA, STI_56 = NA,
+                               SFI_12_pval = NA, SSI_12_pval = NA, STI_12_pval = NA,
+                               SFI_13_pval = NA, SSI_13_pval = NA, STI_13_pval = NA,
+                               SFI_14_pval = NA, SSI_14_pval = NA, STI_14_pval = NA,
+                               SFI_15_pval = NA, SSI_15_pval = NA, STI_15_pval = NA,
+                               SFI_16_pval = NA, SSI_16_pval = NA, STI_16_pval = NA,
+                               SFI_23_pval = NA, SSI_23_pval = NA, STI_23_pval = NA,
+                               SFI_24_pval = NA, SSI_24_pval = NA, STI_24_pval = NA,
+                               SFI_25_pval = NA, SSI_25_pval = NA, STI_25_pval = NA,
+                               SFI_26_pval = NA, SSI_26_pval = NA, STI_26_pval = NA,
+                               SFI_34_pval = NA, SSI_34_pval = NA, STI_34_pval = NA,
+                               SFI_35_pval = NA, SSI_35_pval = NA, STI_35_pval = NA,
+                               SFI_36_pval = NA, SSI_36_pval = NA, STI_36_pval = NA,
+                               SFI_45_pval = NA, SSI_45_pval = NA, STI_45_pval = NA,
+                               SFI_46_pval = NA, SSI_46_pval = NA, STI_46_pval = NA,
+                               SFI_56_pval = NA, SSI_56_pval = NA, STI_56_pval = NA)
   
-  nb_group <- length(unique(data_dfa$group$kmeans_res[[1]]$group))
-  
-  cov_mat_Z <- data_dfa$sdRep_all$cov.fixed[which(rownames(data_dfa$sdRep)=="Z"),which(rownames(data_dfa$sdRep)=="Z")]
-  
-  data_loadings <- data_dfa$data_loadings
-  
-  constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
-  
-  for(nb in 1:nboot){
+  if(is.list(data_dfa$group)){
+   
+    ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
     
-    # Draw factor loadings using covariance matrix
-    set.seed(nb)
+    nfac <- length(unique(data_dfa$data_to_plot_tr$variable))
     
-    rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings$value[!constrInd], sigma=cov_mat_Z) 
+    nb_group <- length(unique(data_dfa$group$kmeans_res[[1]]$group))
     
-    # Add fixed term
-    for(j in 1:(nfac-1)){
-      index_0 <- ny*j
-      rand_load <- append(rand_load, rep(0,j), after=index_0)
-    }
+    cov_mat_Z <- data_dfa$sdRep_all$cov.fixed[which(rownames(data_dfa$sdRep)=="Z"),which(rownames(data_dfa$sdRep)=="Z")]
     
-    rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+    data_loadings <- data_dfa$data_loadings
     
-    # Get coordinates of species in the first factorial plan
-    pca_rand_load <- data.frame(group=data_dfa$group$kmeans_res[[1]],rand_load,
-                           (t(apply(rand_load, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
-    
-    # Get coordinates of center in the first factorial plan
-    kmeans_center <- rep(NA,nfac)
-    for(i in 1:nb_group){
-      kmeans_center_row <- c()
-      for(j in 1:nfac){
-        kmeans_center_row <- c(kmeans_center_row,weighted.mean(pca_rand_load[pca_rand_load$group.group==i,paste0("X",j)],
-                                                               pca_rand_load[pca_rand_load$group.group==i,"group.uncert"]))
-      }
-      kmeans_center <- rbind(kmeans_center,kmeans_center_row)
-    }
-    kmeans_center <- kmeans_center[-1,]
-    kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
-                             (t(apply(kmeans_center, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
+    constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
     
     
-    Nb_lat_trend <- Nb_cluster <- Nb_outlier <- Nb_species <-
-    PCA1_SFI <- PCA1_SFI_pval <- PCA1_STI <- PCA1_STI_pval <-
-    PCA1_SSI <- PCA1_SSI_pval <- R2_PCA1 <-
-    PCA2_SFI <- PCA2_SFI_pval <- PCA2_STI <- PCA2_STI_pval <-
-    PCA2_SSI <- PCA2_SSI_pval <- R2_PCA2 <-
-    SFI_12 <- SSI_12 <- STI_12 <-
-    SFI_13 <- SSI_13 <- STI_13 <-
-    SFI_14 <- SSI_14 <- STI_14 <-
-    SFI_15 <- SSI_15 <- STI_15 <-
-    SFI_23 <- SSI_23 <- STI_23 <-
-    SFI_24 <- SSI_24 <- STI_24 <-
-    SFI_25 <- SSI_25 <- STI_25 <-
-    SFI_34 <- SSI_34 <- STI_34 <-
-    SFI_35 <- SSI_35 <- STI_35 <-
-    SFI_45 <- SSI_45 <- STI_45 <- NA
     
-    Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
-    Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
     
-    if(Nb_lat_trend == 1){
-      Nb_cluster <- 1
-      Nb_outlier <- 0
-    }else{
-      Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
-      Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
-      
-      data_mod <- merge(pca_rand_load, trait_mat, by.x="group.name_long", by.y="Species")
-      
-      PCA1_SFI <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
-      PCA1_SFI_pval <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
-      PCA1_STI <- cor.test(data_mod$PC1,data_mod$STI)$estimate
-      PCA1_STI_pval <- cor.test(data_mod$PC1,data_mod$STI)$p.value
-      PCA1_SSI <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
-      PCA1_SSI_pval <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
-      R2_PCA1 <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
-      
-      PCA2_SFI <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
-      PCA2_SFI_pval <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
-      PCA2_STI <- cor.test(data_mod$PC2,data_mod$STI)$estimate
-      PCA2_STI_pval <- cor.test(data_mod$PC2,data_mod$STI)$p.value
-      PCA2_SSI <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
-      PCA2_SSI_pval <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
-      R2_PCA2 <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
-      
-      Nb_anticor_cluster_sig <- Nb_anticor_cluster_all <-
-      SFI_group <- SSI_group <- STI_group <- 0
-      
-      if(Nb_cluster>1){
-        for(j in names(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))){
-          cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
-          if(cor_res$estimate<0 & cor_res$p.value<0.05){
-            Nb_anticor_cluster_sig <- Nb_anticor_cluster_sig + 1
+    if(nb_group > 1 ){
+      for(nb in 1:nboot){
+        
+        # Draw factor loadings using covariance matrix
+        set.seed(nb)
+        
+        rand_load <- mvtnorm::rmvnorm(1, mean=data_loadings$value[!constrInd], sigma=cov_mat_Z) 
+        
+        # Add fixed term
+        for(j in 1:(nfac-1)){
+          index_0 <- ny*j
+          rand_load <- append(rand_load, rep(0,j), after=index_0)
+        }
+        
+        rand_load <- matrix(rand_load, ncol=nfac, nrow=ny)
+        
+        # Compute PCA to get axes of the graph
+        
+        myPCA <- prcomp(rand_load, scale. = F, center = T)
+        
+        # Get coordinates of species in the first factorial plan
+        pca_rand_load <- data.frame(group=data_dfa$group$kmeans_res[[1]],rand_load,myPCA$x)
+        
+        # Get coordinates of center in the first factorial plan
+        kmeans_center <- rep(NA,nfac)
+        for(i in 1:nb_group){
+          kmeans_center_row <- c()
+          for(j in 1:nfac){
+            kmeans_center_row <- c(kmeans_center_row,weighted.mean(pca_rand_load[pca_rand_load$group.group==i,paste0("X",j)],
+                                                                   pca_rand_load[pca_rand_load$group.group==i,"group.uncert"]))
           }
-          if(cor_res$estimate<0){
-            Nb_anticor_cluster_all <- Nb_anticor_cluster_all + 1
+          kmeans_center <- rbind(kmeans_center,kmeans_center_row)
+        }
+        kmeans_center <- kmeans_center[-1,]
+        kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
+                               (t(apply(kmeans_center, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
+        
+        
+        Nb_lat_trend <- Nb_cluster <- Nb_outlier <- Nb_species <-
+          PCA1_SFI <- PCA1_SFI_pval <- PCA1_STI <- PCA1_STI_pval <-
+          PCA1_SSI <- PCA1_SSI_pval <- R2_PCA1 <-
+          PCA2_SFI <- PCA2_SFI_pval <- PCA2_STI <- PCA2_STI_pval <-
+          PCA2_SSI <- PCA2_SSI_pval <- R2_PCA2 <- NA
+        
+        Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
+        Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
+        
+        if(Nb_lat_trend == 1){
+          Nb_cluster <- 1
+          Nb_outlier <- 0
+        }else{
+          Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
+          Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
+          
+          data_mod <- merge(pca_rand_load, trait_mat, by.x="group.name_long", by.y="Species")
+          
+          PCA1_SFI <- cor.test(data_mod$PC1,data_mod$SFI.y)$estimate
+          PCA1_SFI_pval <- cor.test(data_mod$PC1,data_mod$SFI.y)$p.value
+          PCA1_STI <- cor.test(data_mod$PC1,data_mod$STI)$estimate
+          PCA1_STI_pval <- cor.test(data_mod$PC1,data_mod$STI)$p.value
+          PCA1_SSI <- cor.test(data_mod$PC1,data_mod$SSI)$estimate
+          PCA1_SSI_pval <- cor.test(data_mod$PC1,data_mod$SSI)$p.value
+          R2_PCA1 <- summary(lm(PC1~SFI.y+STI+SSI, data=data_mod))$r.squared
+          
+          PCA2_SFI <- cor.test(data_mod$PC2,data_mod$SFI.y)$estimate
+          PCA2_SFI_pval <- cor.test(data_mod$PC2,data_mod$SFI.y)$p.value
+          PCA2_STI <- cor.test(data_mod$PC2,data_mod$STI)$estimate
+          PCA2_STI_pval <- cor.test(data_mod$PC2,data_mod$STI)$p.value
+          PCA2_SSI <- cor.test(data_mod$PC2,data_mod$SSI)$estimate
+          PCA2_SSI_pval <- cor.test(data_mod$PC2,data_mod$SSI)$p.value
+          R2_PCA2 <- summary(lm(PC2~SFI.y+STI+SSI, data=data_mod))$r.squared
+          
+          Nb_anticor_cluster_sig <- Nb_anticor_cluster_all <-
+            SFI_group <- SSI_group <- STI_group <- 0
+          
+          if(Nb_cluster>1){
+            for(j in names(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))){
+              cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
+              if(cor_res$estimate<0 & cor_res$p.value<0.05){
+                Nb_anticor_cluster_sig <- Nb_anticor_cluster_sig + 1
+              }
+              if(cor_res$estimate<0){
+                Nb_anticor_cluster_all <- Nb_anticor_cluster_all + 1
+              }
+            }
+            SFI_group <- ifelse(anova(lm(SFI.y~as.factor(group.group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+            SSI_group <- ifelse(anova(lm(SSI~as.factor(group.group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+            STI_group <- ifelse(anova(lm(STI~as.factor(group.group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
+            
+            # Reproject species on the line between cluster centres
+            
+            result_cor <- data.frame(Nb_lat_trend, Nb_cluster, Nb_outlier, Nb_species,
+                                     PCA1_SFI, PCA1_SFI_pval, PCA1_STI, PCA1_STI_pval,
+                                     PCA1_SSI, PCA1_SSI_pval, R2_PCA1,
+                                     PCA2_SFI, PCA2_SFI_pval, PCA2_STI, PCA2_STI_pval,
+                                     PCA2_SSI, PCA2_SSI_pval, R2_PCA2,
+                                     Nb_anticor_cluster_sig, Nb_anticor_cluster_all,
+                                     SFI_group, SSI_group, STI_group,
+                                     SFI_12 = NA, SSI_12 = NA, STI_12 = NA,
+                                     SFI_13 = NA, SSI_13 = NA, STI_13 = NA,
+                                     SFI_14 = NA, SSI_14 = NA, STI_14 = NA,
+                                     SFI_15 = NA, SSI_15 = NA, STI_15 = NA,
+                                     SFI_16 = NA, SSI_16 = NA, STI_16 = NA,
+                                     SFI_23 = NA, SSI_23 = NA, STI_23 = NA,
+                                     SFI_24 = NA, SSI_24 = NA, STI_24 = NA,
+                                     SFI_25 = NA, SSI_25 = NA, STI_25 = NA,
+                                     SFI_26 = NA, SSI_26 = NA, STI_26 = NA,
+                                     SFI_34 = NA, SSI_34 = NA, STI_34 = NA,
+                                     SFI_35 = NA, SSI_35 = NA, STI_35 = NA,
+                                     SFI_36 = NA, SSI_36 = NA, STI_36 = NA,
+                                     SFI_45 = NA, SSI_45 = NA, STI_45 = NA,
+                                     SFI_46 = NA, SSI_46 = NA, STI_46 = NA,
+                                     SFI_56 = NA, SSI_56 = NA, STI_56 = NA,
+                                     SFI_12_pval = NA, SSI_12_pval = NA, STI_12_pval = NA,
+                                     SFI_13_pval = NA, SSI_13_pval = NA, STI_13_pval = NA,
+                                     SFI_14_pval = NA, SSI_14_pval = NA, STI_14_pval = NA,
+                                     SFI_15_pval = NA, SSI_15_pval = NA, STI_15_pval = NA,
+                                     SFI_16_pval = NA, SSI_16_pval = NA, STI_16_pval = NA,
+                                     SFI_23_pval = NA, SSI_23_pval = NA, STI_23_pval = NA,
+                                     SFI_24_pval = NA, SSI_24_pval = NA, STI_24_pval = NA,
+                                     SFI_25_pval = NA, SSI_25_pval = NA, STI_25_pval = NA,
+                                     SFI_26_pval = NA, SSI_26_pval = NA, STI_26_pval = NA,
+                                     SFI_34_pval = NA, SSI_34_pval = NA, STI_34_pval = NA,
+                                     SFI_35_pval = NA, SSI_35_pval = NA, STI_35_pval = NA,
+                                     SFI_36_pval = NA, SSI_36_pval = NA, STI_36_pval = NA,
+                                     SFI_45_pval = NA, SSI_45_pval = NA, STI_45_pval = NA,
+                                     SFI_46_pval = NA, SSI_46_pval = NA, STI_46_pval = NA,
+                                     SFI_56_pval = NA, SSI_56_pval = NA, STI_56_pval = NA)
+            
+            cluster_centre_coord_all <- kmeans_2[,grepl("X",names(kmeans_2))]
+            comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
+            
+            for(comb_cluster_num in 1:ncol(comb_cluster)){
+              cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
+              mean_coord <- apply(cluster_centre_coord,2,sum)/2
+              data_coord <- pca_rand_load
+              data_coord <- data_coord[data_coord$group.group %in% comb_cluster[,comb_cluster_num],]
+              if(nrow(data_coord)>2){
+                n_axis <-  ncol(cluster_centre_coord)
+                new_coord_all_sp <- data_coord[,which((!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord))) | names(data_coord)=="group.name_long")]
+                new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
+                new_coord_all_sp$new_val <- NA
+                for(sp in data_coord$group.name_long){
+                  coord_sp <- data_coord[data_coord$group.name_long==sp,which(!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord)))]
+                  t_scalar_numer <- t_scalar_denomin <- 0
+                  for(axis_num in 1:n_axis){
+                    t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
+                    t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
+                  }
+                  t_scalar <- t_scalar_numer/t_scalar_denomin
+                  new_coord_sp <- coord_sp
+                  for(axis_num in 1:n_axis){
+                    new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
+                  }
+                  dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
+                  dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
+                  dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
+                  if(dist_c1_new_coord<dist_c2_new_coord){
+                    sign_dist <- -1
+                  }else{sign_dist <- 1}
+                  value_reproj_sp <- sign_dist*dist_mean_new_coord
+                  new_coord_all_sp[new_coord_all_sp$group.name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
+                  new_coord_all_sp$new_val[new_coord_all_sp$group.name_long==sp] <- value_reproj_sp
+                }
+                
+                data_mod_new <- merge(new_coord_all_sp, trait_mat, by.x="group.name_long", by.y="Species")
+                
+                col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+                result_cor[1,col_name1] <- cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$estimate
+                col_name1b <- paste0(col_name1,"_pval")
+                result_cor[1,col_name1b] <- cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value
+                
+                col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+                col_name2b <- paste0(col_name2,"_pval")
+                if(length(which(!is.na(data_mod_new$SSI)))>2){
+                  result_cor[1,col_name2] <- cor.test(data_mod_new$new_val,data_mod_new$SSI)$estimate
+                  result_cor[1,col_name2b] <- cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value
+                }else{
+                  result_cor[1,col_name2] <- result_cor[1,col_name2b] <- NA
+                }
+                
+                col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+                result_cor[1,col_name3] <- cor.test(data_mod_new$new_val,data_mod_new$STI)$estimate
+                col_name3b <- paste0(col_name3,"_pval")
+                result_cor[1,col_name3b] <- cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value
+                
+              }
+            }
+            result_cor_all <- rbind(result_cor_all,result_cor)
           }
         }
-        SFI_group <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-        SSI_group <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-        STI_group <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-        
-        # Reproject species on the line between cluster centres
-        
-        cluster_centre_coord_all <- kmeans_2[,grepl("X",names(kmeans_2))]
-        comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
-        
-        for(comb_cluster_num in 1:ncol(comb_cluster)){
-          cluster_centre_coord <- cluster_centre_coord_all[comb_cluster[,comb_cluster_num],]
-          mean_coord <- apply(cluster_centre_coord,2,sum)/2
-          data_coord <- pca_rand_load
-          data_coord <- data_coord[data_coord$group.group %in% comb_cluster[,comb_cluster_num],]
-          if(nrow(data_coord)>2){
-            n_axis <-  ncol(cluster_centre_coord)
-            new_coord_all_sp <- data_coord[,which((!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord))) | names(data_coord)=="group.name_long")]
-            new_coord_all_sp[,grepl("X",names(new_coord_all_sp))] <- 0
-            new_coord_all_sp$new_val <- NA
-            for(sp in data_coord$group.name_long){
-              coord_sp <- data_coord[data_coord$group.name_long==sp,which(!grepl("group.X",names(data_coord)) & grepl("X",names(data_coord)))]
-              t_scalar_numer <- t_scalar_denomin <- 0
-              for(axis_num in 1:n_axis){
-                t_scalar_numer <- t_scalar_numer + (cluster_centre_coord[1,axis_num])^2 + cluster_centre_coord[2,axis_num]*coord_sp[axis_num] - cluster_centre_coord[2,axis_num]*cluster_centre_coord[1,axis_num] - cluster_centre_coord[1,axis_num]*coord_sp[axis_num]
-                t_scalar_denomin <- t_scalar_denomin + (cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])^2
-              }
-              t_scalar <- t_scalar_numer/t_scalar_denomin
-              new_coord_sp <- coord_sp
-              for(axis_num in 1:n_axis){
-                new_coord_sp[axis_num] <- cluster_centre_coord[1,axis_num] + t_scalar*(cluster_centre_coord[2,axis_num] - cluster_centre_coord[1,axis_num])
-              }
-              dist_mean_new_coord <- sqrt(sum((new_coord_sp-mean_coord)^2))
-              dist_c1_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[1,])^2))
-              dist_c2_new_coord <- sqrt(sum((new_coord_sp-cluster_centre_coord[2,])^2))
-              if(dist_c1_new_coord<dist_c2_new_coord){
-                sign_dist <- -1
-              }else{sign_dist <- 1}
-              value_reproj_sp <- sign_dist*dist_mean_new_coord
-              new_coord_all_sp[new_coord_all_sp$group.name_long==sp,grepl("X",names(new_coord_all_sp))] <- new_coord_sp
-              new_coord_all_sp$new_val[new_coord_all_sp$group.name_long==sp] <- value_reproj_sp
-            }
-            
-            data_mod_new <- merge(new_coord_all_sp, trait_mat, by.x="group.name_long", by.y="Species")
-            col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-            result_cor[i,col_name1] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SFI.y)$p.value < 0.05, 1, 0)
-            col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-            if(length(which(!is.na(data_mod_new$SSI)))>2){
-              result_cor[i,col_name2] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$SSI)$p.value < 0.05, 1, 0)
-            }else{
-              result_cor[i,col_name2] <- NA
-            }
-            col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
-            result_cor[i,col_name3] <- ifelse(cor.test(data_mod_new$new_val,data_mod_new$STI)$p.value < 0.05, 1, 0)
-            
-          }
-        }
       }
+      result_cor_all <- result_cor_all[-1,]
+      
+      result_cor_final$Nb_lat_trend <- result_cor_all$Nb_lat_trend[1]
+      result_cor_final$Nb_cluster <- result_cor_all$Nb_cluster[1]
+      result_cor_final$Nb_outlier <- result_cor_all$Nb_outlier[1]
+      result_cor_final$Nb_species <- result_cor_all$Nb_species[1]
+      result_cor_final$Nb_anticor_cluster_sig <- result_cor_all$Nb_anticor_cluster_sig[1]
+      result_cor_final$Nb_anticor_cluster_all <- result_cor_all$Nb_anticor_cluster_all[1]
+      
+      sig_SFI_12 <- result_cor_all$SFI_12[which(p.adjust(result_cor_all$SFI_12_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_12 <- length(sig_SFI_12)/nboot
+      result_cor_final$perc_sig_neg_SFI_12 <- length(which(sig_SFI_12 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_12 <- length(which(sig_SFI_12 > 0))/nboot
+      result_cor_final$mean_sig_SFI_12 <- mean(sig_SFI_12)
+      result_cor_final$sd_sig_SFI_12 <- sd(sig_SFI_12)
+      result_cor_final$mean_SFI_12 <- mean(result_cor_all$SFI_12)
+      result_cor_final$sd_SFI_12 <- sd(result_cor_all$SFI_12)
+      
+      sig_SSI_12 <- result_cor_all$SSI_12[which(p.adjust(result_cor_all$SSI_12_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_12 <- length(sig_SSI_12)/nboot
+      result_cor_final$perc_sig_neg_SSI_12 <- length(which(sig_SSI_12 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_12 <- length(which(sig_SSI_12 > 0))/nboot
+      result_cor_final$mean_sig_SSI_12 <- mean(na.rm=T,sig_SSI_12)
+      result_cor_final$sd_sig_SSI_12 <- sd(na.rm=T,sig_SSI_12)
+      result_cor_final$mean_SSI_12 <- mean(na.rm=T,result_cor_all$SSI_12)
+      result_cor_final$sd_SSI_12 <- sd(na.rm=T,result_cor_all$SSI_12)
+      
+      sig_STI_12 <- result_cor_all$STI_12[which(p.adjust(result_cor_all$STI_12_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_12 <- length(sig_STI_12)/nboot
+      result_cor_final$perc_sig_neg_STI_12 <- length(which(sig_STI_12 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_12 <- length(which(sig_STI_12 > 0))/nboot
+      result_cor_final$mean_sig_STI_12 <- mean(sig_STI_12)
+      result_cor_final$sd_sig_STI_12 <- sd(sig_STI_12)
+      result_cor_final$mean_STI_12 <- mean(result_cor_all$STI_12)
+      result_cor_final$sd_STI_12 <- sd(result_cor_all$STI_12)
+      
+      sig_SFI_13 <- result_cor_all$SFI_13[which(p.adjust(result_cor_all$SFI_13_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_13 <- length(sig_SFI_13)/nboot
+      result_cor_final$perc_sig_neg_SFI_13 <- length(which(sig_SFI_13 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_13 <- length(which(sig_SFI_13 > 0))/nboot
+      result_cor_final$mean_sig_SFI_13 <- mean(sig_SFI_13)
+      result_cor_final$sd_sig_SFI_13 <- sd(sig_SFI_13)
+      result_cor_final$mean_SFI_13 <- mean(result_cor_all$SFI_13)
+      result_cor_final$sd_SFI_13 <- sd(result_cor_all$SFI_13)
+      
+      sig_SSI_13 <- result_cor_all$SSI_13[which(p.adjust(result_cor_all$SSI_13_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_13 <- length(sig_SSI_13)/nboot
+      result_cor_final$perc_sig_neg_SSI_13 <- length(which(sig_SSI_13 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_13 <- length(which(sig_SSI_13 > 0))/nboot
+      result_cor_final$mean_sig_SSI_13 <- mean(na.rm=T,sig_SSI_13)
+      result_cor_final$sd_sig_SSI_13 <- sd(na.rm=T,sig_SSI_13)
+      result_cor_final$mean_SSI_13 <- mean(na.rm=T,result_cor_all$SSI_13)
+      result_cor_final$sd_SSI_13 <- sd(na.rm=T,result_cor_all$SSI_13)
+      
+      sig_STI_13 <- result_cor_all$STI_13[which(p.adjust(result_cor_all$STI_13_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_13 <- length(sig_STI_13)/nboot
+      result_cor_final$perc_sig_neg_STI_13 <- length(which(sig_STI_13 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_13 <- length(which(sig_STI_13 > 0))/nboot
+      result_cor_final$mean_sig_STI_13 <- mean(sig_STI_13)
+      result_cor_final$sd_sig_STI_13 <- sd(sig_STI_13)
+      result_cor_final$mean_STI_13 <- mean(result_cor_all$STI_13)
+      result_cor_final$sd_STI_13 <- sd(result_cor_all$STI_13)
+      
+      sig_SFI_14 <- result_cor_all$SFI_14[which(p.adjust(result_cor_all$SFI_14_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_14 <- length(sig_SFI_14)/nboot
+      result_cor_final$perc_sig_neg_SFI_14 <- length(which(sig_SFI_14 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_14 <- length(which(sig_SFI_14 > 0))/nboot
+      result_cor_final$mean_sig_SFI_14 <- mean(sig_SFI_14)
+      result_cor_final$sd_sig_SFI_14 <- sd(sig_SFI_14)
+      result_cor_final$mean_SFI_14 <- mean(result_cor_all$SFI_14)
+      result_cor_final$sd_SFI_14 <- sd(result_cor_all$SFI_14)
+      
+      sig_SSI_14 <- result_cor_all$SSI_14[which(p.adjust(result_cor_all$SSI_14_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_14 <- length(sig_SSI_14)/nboot
+      result_cor_final$perc_sig_neg_SSI_14 <- length(which(sig_SSI_14 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_14 <- length(which(sig_SSI_14 > 0))/nboot
+      result_cor_final$mean_sig_SSI_14 <- mean(na.rm=T,sig_SSI_14)
+      result_cor_final$sd_sig_SSI_14 <- sd(na.rm=T,sig_SSI_14)
+      result_cor_final$mean_SSI_14 <- mean(na.rm=T,result_cor_all$SSI_14)
+      result_cor_final$sd_SSI_14 <- sd(na.rm=T,result_cor_all$SSI_14)
+      
+      sig_STI_14 <- result_cor_all$STI_14[which(p.adjust(result_cor_all$STI_14_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_14 <- length(sig_STI_14)/nboot
+      result_cor_final$perc_sig_neg_STI_14 <- length(which(sig_STI_14 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_14 <- length(which(sig_STI_14 > 0))/nboot
+      result_cor_final$mean_sig_STI_14 <- mean(sig_STI_14)
+      result_cor_final$sd_sig_STI_14 <- sd(sig_STI_14)
+      result_cor_final$mean_STI_14 <- mean(result_cor_all$STI_14)
+      result_cor_final$sd_STI_14 <- sd(result_cor_all$STI_14)
+      
+      sig_SFI_15 <- result_cor_all$SFI_15[which(p.adjust(result_cor_all$SFI_15_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_15 <- length(sig_SFI_15)/nboot
+      result_cor_final$perc_sig_neg_SFI_15 <- length(which(sig_SFI_15 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_15 <- length(which(sig_SFI_15 > 0))/nboot
+      result_cor_final$mean_sig_SFI_15 <- mean(sig_SFI_15)
+      result_cor_final$sd_sig_SFI_15 <- sd(sig_SFI_15)
+      result_cor_final$mean_SFI_15 <- mean(result_cor_all$SFI_15)
+      result_cor_final$sd_SFI_15 <- sd(result_cor_all$SFI_15)
+      
+      sig_SSI_15 <- result_cor_all$SSI_15[which(p.adjust(result_cor_all$SSI_15_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_15 <- length(sig_SSI_15)/nboot
+      result_cor_final$perc_sig_neg_SSI_15 <- length(which(sig_SSI_15 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_15 <- length(which(sig_SSI_15 > 0))/nboot
+      result_cor_final$mean_sig_SSI_15 <- mean(na.rm=T,sig_SSI_15)
+      result_cor_final$sd_sig_SSI_15 <- sd(na.rm=T,sig_SSI_15)
+      result_cor_final$mean_SSI_15 <- mean(na.rm=T,result_cor_all$SSI_15)
+      result_cor_final$sd_SSI_15 <- sd(na.rm=T,result_cor_all$SSI_15)
+      
+      sig_STI_15 <- result_cor_all$STI_15[which(p.adjust(result_cor_all$STI_15_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_15 <- length(sig_STI_15)/nboot
+      result_cor_final$perc_sig_neg_STI_15 <- length(which(sig_STI_15 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_15 <- length(which(sig_STI_15 > 0))/nboot
+      result_cor_final$mean_sig_STI_15 <- mean(sig_STI_15)
+      result_cor_final$sd_sig_STI_15 <- sd(sig_STI_15)
+      result_cor_final$mean_STI_15 <- mean(result_cor_all$STI_15)
+      result_cor_final$sd_STI_15 <- sd(result_cor_all$STI_15)
+      
+      sig_SFI_16 <- result_cor_all$SFI_16[which(p.adjust(result_cor_all$SFI_16_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SFI_16 <- length(sig_SFI_16)/nboot
+      result_cor_final$perc_sig_neg_SFI_16 <- length(which(sig_SFI_16 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_16 <- length(which(sig_SFI_16 > 0))/nboot
+      result_cor_final$mean_sig_SFI_16 <- mean(sig_SFI_16)
+      result_cor_final$sd_sig_SFI_16 <- sd(sig_SFI_16)
+      result_cor_final$mean_SFI_16 <- mean(result_cor_all$SFI_16)
+      result_cor_final$sd_SFI_16 <- sd(result_cor_all$SFI_16)
+      
+      sig_SSI_16 <- result_cor_all$SSI_16[which(p.adjust(result_cor_all$SSI_16_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SSI_16 <- length(sig_SSI_16)/nboot
+      result_cor_final$perc_sig_neg_SSI_16 <- length(which(sig_SSI_16 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_16 <- length(which(sig_SSI_16 > 0))/nboot
+      result_cor_final$mean_sig_SSI_16 <- mean(na.rm=T,sig_SSI_16)
+      result_cor_final$sd_sig_SSI_16 <- sd(na.rm=T,sig_SSI_16)
+      result_cor_final$mean_SSI_16 <- mean(na.rm=T,result_cor_all$SSI_16)
+      result_cor_final$sd_SSI_16 <- sd(na.rm=T,result_cor_all$SSI_16)
+      
+      sig_STI_16 <- result_cor_all$STI_16[which(p.adjust(result_cor_all$STI_16_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_STI_16 <- length(sig_STI_16)/nboot
+      result_cor_final$perc_sig_neg_STI_16 <- length(which(sig_STI_16 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_16 <- length(which(sig_STI_16 > 0))/nboot
+      result_cor_final$mean_sig_STI_16 <- mean(sig_STI_16)
+      result_cor_final$sd_sig_STI_16 <- sd(sig_STI_16)
+      result_cor_final$mean_STI_16 <- mean(result_cor_all$STI_16)
+      result_cor_final$sd_STI_16 <- sd(result_cor_all$STI_16)
+      
+      
+      sig_SFI_23 <- result_cor_all$SFI_23[which(p.adjust(result_cor_all$SFI_23_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_23 <- length(sig_SFI_23)/nboot
+      result_cor_final$perc_sig_neg_SFI_23 <- length(which(sig_SFI_23 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_23 <- length(which(sig_SFI_23 > 0))/nboot
+      result_cor_final$mean_sig_SFI_23 <- mean(sig_SFI_23)
+      result_cor_final$sd_sig_SFI_23 <- sd(sig_SFI_23)
+      result_cor_final$mean_SFI_23 <- mean(result_cor_all$SFI_23)
+      result_cor_final$sd_SFI_23 <- sd(result_cor_all$SFI_23)
+      
+      sig_SSI_23 <- result_cor_all$SSI_23[which(p.adjust(result_cor_all$SSI_23_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_23 <- length(sig_SSI_23)/nboot
+      result_cor_final$perc_sig_neg_SSI_23 <- length(which(sig_SSI_23 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_23 <- length(which(sig_SSI_23 > 0))/nboot
+      result_cor_final$mean_sig_SSI_23 <- mean(na.rm=T,sig_SSI_23)
+      result_cor_final$sd_sig_SSI_23 <- sd(na.rm=T,sig_SSI_23)
+      result_cor_final$mean_SSI_23 <- mean(na.rm=T,result_cor_all$SSI_23)
+      result_cor_final$sd_SSI_23 <- sd(na.rm=T,result_cor_all$SSI_23)
+      
+      sig_STI_23 <- result_cor_all$STI_23[which(p.adjust(result_cor_all$STI_23_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_23 <- length(sig_STI_23)/nboot
+      result_cor_final$perc_sig_neg_STI_23 <- length(which(sig_STI_23 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_23 <- length(which(sig_STI_23 > 0))/nboot
+      result_cor_final$mean_sig_STI_23 <- mean(sig_STI_23)
+      result_cor_final$sd_sig_STI_23 <- sd(sig_STI_23)
+      result_cor_final$mean_STI_23 <- mean(result_cor_all$STI_23)
+      result_cor_final$sd_STI_23 <- sd(result_cor_all$STI_23)
+      
+      sig_SFI_24 <- result_cor_all$SFI_24[which(p.adjust(result_cor_all$SFI_24_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_24 <- length(sig_SFI_24)/nboot
+      result_cor_final$perc_sig_neg_SFI_24 <- length(which(sig_SFI_24 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_24 <- length(which(sig_SFI_24 > 0))/nboot
+      result_cor_final$mean_sig_SFI_24 <- mean(sig_SFI_24)
+      result_cor_final$sd_sig_SFI_24 <- sd(sig_SFI_24)
+      result_cor_final$mean_SFI_24 <- mean(result_cor_all$SFI_24)
+      result_cor_final$sd_SFI_24 <- sd(result_cor_all$SFI_24)
+      
+      sig_SSI_24 <- result_cor_all$SSI_24[which(p.adjust(result_cor_all$SSI_24_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_24 <- length(sig_SSI_24)/nboot
+      result_cor_final$perc_sig_neg_SSI_24 <- length(which(sig_SSI_24 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_24 <- length(which(sig_SSI_24 > 0))/nboot
+      result_cor_final$mean_sig_SSI_24 <- mean(na.rm=T,sig_SSI_24)
+      result_cor_final$sd_sig_SSI_24 <- sd(na.rm=T,sig_SSI_24)
+      result_cor_final$mean_SSI_24 <- mean(na.rm=T,result_cor_all$SSI_24)
+      result_cor_final$sd_SSI_24 <- sd(na.rm=T,result_cor_all$SSI_24)
+      
+      sig_STI_24 <- result_cor_all$STI_24[which(p.adjust(result_cor_all$STI_24_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_24 <- length(sig_STI_24)/nboot
+      result_cor_final$perc_sig_neg_STI_24 <- length(which(sig_STI_24 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_24 <- length(which(sig_STI_24 > 0))/nboot
+      result_cor_final$mean_sig_STI_24 <- mean(sig_STI_24)
+      result_cor_final$sd_sig_STI_24 <- sd(sig_STI_24)
+      result_cor_final$mean_STI_24 <- mean(result_cor_all$STI_24)
+      result_cor_final$sd_STI_24 <- sd(result_cor_all$STI_24)
+      
+      sig_SFI_25 <- result_cor_all$SFI_25[which(p.adjust(result_cor_all$SFI_25_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_25 <- length(sig_SFI_25)/nboot
+      result_cor_final$perc_sig_neg_SFI_25 <- length(which(sig_SFI_25 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_25 <- length(which(sig_SFI_25 > 0))/nboot
+      result_cor_final$mean_sig_SFI_25 <- mean(sig_SFI_25)
+      result_cor_final$sd_sig_SFI_25 <- sd(sig_SFI_25)
+      result_cor_final$mean_SFI_25 <- mean(result_cor_all$SFI_25)
+      result_cor_final$sd_SFI_25 <- sd(result_cor_all$SFI_25)
+      
+      sig_SSI_25 <- result_cor_all$SSI_25[which(p.adjust(result_cor_all$SSI_25_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_25 <- length(sig_SSI_25)/nboot
+      result_cor_final$perc_sig_neg_SSI_25 <- length(which(sig_SSI_25 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_25 <- length(which(sig_SSI_25 > 0))/nboot
+      result_cor_final$mean_sig_SSI_25 <- mean(na.rm=T,sig_SSI_25)
+      result_cor_final$sd_sig_SSI_25 <- sd(na.rm=T,sig_SSI_25)
+      result_cor_final$mean_SSI_25 <- mean(na.rm=T,result_cor_all$SSI_25)
+      result_cor_final$sd_SSI_25 <- sd(na.rm=T,result_cor_all$SSI_25)
+      
+      sig_STI_25 <- result_cor_all$STI_25[which(p.adjust(result_cor_all$STI_25_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_25 <- length(sig_STI_25)/nboot
+      result_cor_final$perc_sig_neg_STI_25 <- length(which(sig_STI_25 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_25 <- length(which(sig_STI_25 > 0))/nboot
+      result_cor_final$mean_sig_STI_25 <- mean(sig_STI_25)
+      result_cor_final$sd_sig_STI_25 <- sd(sig_STI_25)
+      result_cor_final$mean_STI_25 <- mean(result_cor_all$STI_25)
+      result_cor_final$sd_STI_25 <- sd(result_cor_all$STI_25)
+      
+      sig_SFI_26 <- result_cor_all$SFI_26[which(p.adjust(result_cor_all$SFI_26_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SFI_26 <- length(sig_SFI_26)/nboot
+      result_cor_final$perc_sig_neg_SFI_26 <- length(which(sig_SFI_26 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_26 <- length(which(sig_SFI_26 > 0))/nboot
+      result_cor_final$mean_sig_SFI_26 <- mean(sig_SFI_26)
+      result_cor_final$sd_sig_SFI_26 <- sd(sig_SFI_26)
+      result_cor_final$mean_SFI_26 <- mean(result_cor_all$SFI_26)
+      result_cor_final$sd_SFI_26 <- sd(result_cor_all$SFI_26)
+      
+      sig_SSI_26 <- result_cor_all$SSI_26[which(p.adjust(result_cor_all$SSI_26_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SSI_26 <- length(sig_SSI_26)/nboot
+      result_cor_final$perc_sig_neg_SSI_26 <- length(which(sig_SSI_26 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_26 <- length(which(sig_SSI_26 > 0))/nboot
+      result_cor_final$mean_sig_SSI_26 <- mean(na.rm=T,sig_SSI_26)
+      result_cor_final$sd_sig_SSI_26 <- sd(na.rm=T,sig_SSI_26)
+      result_cor_final$mean_SSI_26 <- mean(na.rm=T,result_cor_all$SSI_26)
+      result_cor_final$sd_SSI_26 <- sd(na.rm=T,result_cor_all$SSI_26)
+      
+      sig_STI_26 <- result_cor_all$STI_26[which(p.adjust(result_cor_all$STI_26_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_STI_26 <- length(sig_STI_26)/nboot
+      result_cor_final$perc_sig_neg_STI_26 <- length(which(sig_STI_26 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_26 <- length(which(sig_STI_26 > 0))/nboot
+      result_cor_final$mean_sig_STI_26 <- mean(sig_STI_26)
+      result_cor_final$sd_sig_STI_26 <- sd(sig_STI_26)
+      result_cor_final$mean_STI_26 <- mean(result_cor_all$STI_26)
+      result_cor_final$sd_STI_26 <- sd(result_cor_all$STI_26)
+      
+      
+      sig_SFI_34 <- result_cor_all$SFI_34[which(p.adjust(result_cor_all$SFI_34_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_34 <- length(sig_SFI_34)/nboot
+      result_cor_final$perc_sig_neg_SFI_34 <- length(which(sig_SFI_34 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_34 <- length(which(sig_SFI_34 > 0))/nboot
+      result_cor_final$mean_sig_SFI_34 <- mean(sig_SFI_34)
+      result_cor_final$sd_sig_SFI_34 <- sd(sig_SFI_34)
+      result_cor_final$mean_SFI_34 <- mean(result_cor_all$SFI_34)
+      result_cor_final$sd_SFI_34 <- sd(result_cor_all$SFI_34)
+      
+      sig_SSI_34 <- result_cor_all$SSI_34[which(p.adjust(result_cor_all$SSI_34_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_34 <- length(sig_SSI_34)/nboot
+      result_cor_final$perc_sig_neg_SSI_34 <- length(which(sig_SSI_34 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_34 <- length(which(sig_SSI_34 > 0))/nboot
+      result_cor_final$mean_sig_SSI_34 <- mean(na.rm=T,sig_SSI_34)
+      result_cor_final$sd_sig_SSI_34 <- sd(na.rm=T,sig_SSI_34)
+      result_cor_final$mean_SSI_34 <- mean(na.rm=T,result_cor_all$SSI_34)
+      result_cor_final$sd_SSI_34 <- sd(na.rm=T,result_cor_all$SSI_34)
+      
+      sig_STI_34 <- result_cor_all$STI_34[which(p.adjust(result_cor_all$STI_34_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_34 <- length(sig_STI_34)/nboot
+      result_cor_final$perc_sig_neg_STI_34 <- length(which(sig_STI_34 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_34 <- length(which(sig_STI_34 > 0))/nboot
+      result_cor_final$mean_sig_STI_34 <- mean(sig_STI_34)
+      result_cor_final$sd_sig_STI_34 <- sd(sig_STI_34)
+      result_cor_final$mean_STI_34 <- mean(result_cor_all$STI_34)
+      result_cor_final$sd_STI_34 <- sd(result_cor_all$STI_34)
+      
+      sig_SFI_35 <- result_cor_all$SFI_35[which(p.adjust(result_cor_all$SFI_35_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_35 <- length(sig_SFI_35)/nboot
+      result_cor_final$perc_sig_neg_SFI_35 <- length(which(sig_SFI_35 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_35 <- length(which(sig_SFI_35 > 0))/nboot
+      result_cor_final$mean_sig_SFI_35 <- mean(sig_SFI_35)
+      result_cor_final$sd_sig_SFI_35 <- sd(sig_SFI_35)
+      result_cor_final$mean_SFI_35 <- mean(result_cor_all$SFI_35)
+      result_cor_final$sd_SFI_35 <- sd(result_cor_all$SFI_35)
+      
+      sig_SSI_35 <- result_cor_all$SSI_35[which(p.adjust(result_cor_all$SSI_35_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_35 <- length(sig_SSI_35)/nboot
+      result_cor_final$perc_sig_neg_SSI_35 <- length(which(sig_SSI_35 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_35 <- length(which(sig_SSI_35 > 0))/nboot
+      result_cor_final$mean_sig_SSI_35 <- mean(na.rm=T,sig_SSI_35)
+      result_cor_final$sd_sig_SSI_35 <- sd(na.rm=T,sig_SSI_35)
+      result_cor_final$mean_SSI_35 <- mean(na.rm=T,result_cor_all$SSI_35)
+      result_cor_final$sd_SSI_35 <- sd(na.rm=T,result_cor_all$SSI_35)
+      
+      sig_STI_35 <- result_cor_all$STI_35[which(p.adjust(result_cor_all$STI_35_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_35 <- length(sig_STI_35)/nboot
+      result_cor_final$perc_sig_neg_STI_35 <- length(which(sig_STI_35 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_35 <- length(which(sig_STI_35 > 0))/nboot
+      result_cor_final$mean_sig_STI_35 <- mean(sig_STI_35)
+      result_cor_final$sd_sig_STI_35 <- sd(sig_STI_35)
+      result_cor_final$mean_STI_35 <- mean(result_cor_all$STI_35)
+      result_cor_final$sd_STI_35 <- sd(result_cor_all$STI_35)
+      
+      sig_SFI_36 <- result_cor_all$SFI_36[which(p.adjust(result_cor_all$SFI_36_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SFI_36 <- length(sig_SFI_36)/nboot
+      result_cor_final$perc_sig_neg_SFI_36 <- length(which(sig_SFI_36 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_36 <- length(which(sig_SFI_36 > 0))/nboot
+      result_cor_final$mean_sig_SFI_36 <- mean(sig_SFI_36)
+      result_cor_final$sd_sig_SFI_36 <- sd(sig_SFI_36)
+      result_cor_final$mean_SFI_36 <- mean(result_cor_all$SFI_36)
+      result_cor_final$sd_SFI_36 <- sd(result_cor_all$SFI_36)
+      
+      sig_SSI_36 <- result_cor_all$SSI_36[which(p.adjust(result_cor_all$SSI_36_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SSI_36 <- length(sig_SSI_36)/nboot
+      result_cor_final$perc_sig_neg_SSI_36 <- length(which(sig_SSI_36 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_36 <- length(which(sig_SSI_36 > 0))/nboot
+      result_cor_final$mean_sig_SSI_36 <- mean(na.rm=T,sig_SSI_36)
+      result_cor_final$sd_sig_SSI_36 <- sd(na.rm=T,sig_SSI_36)
+      result_cor_final$mean_SSI_36 <- mean(na.rm=T,result_cor_all$SSI_36)
+      result_cor_final$sd_SSI_36 <- sd(na.rm=T,result_cor_all$SSI_36)
+      
+      sig_STI_36 <- result_cor_all$STI_36[which(p.adjust(result_cor_all$STI_36_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_STI_36 <- length(sig_STI_36)/nboot
+      result_cor_final$perc_sig_neg_STI_36 <- length(which(sig_STI_36 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_36 <- length(which(sig_STI_36 > 0))/nboot
+      result_cor_final$mean_sig_STI_36 <- mean(sig_STI_36)
+      result_cor_final$sd_sig_STI_36 <- sd(sig_STI_36)
+      result_cor_final$mean_STI_36 <- mean(result_cor_all$STI_36)
+      result_cor_final$sd_STI_36 <- sd(result_cor_all$STI_36)
+      
+      
+      sig_SFI_45 <- result_cor_all$SFI_45[which(p.adjust(result_cor_all$SFI_45_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_45 <- length(sig_SFI_45)/nboot
+      result_cor_final$perc_sig_neg_SFI_45 <- length(which(sig_SFI_45 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_45 <- length(which(sig_SFI_45 > 0))/nboot
+      result_cor_final$mean_sig_SFI_45 <- mean(sig_SFI_45)
+      result_cor_final$sd_sig_SFI_45 <- sd(sig_SFI_45)
+      result_cor_final$mean_SFI_45 <- mean(result_cor_all$SFI_45)
+      result_cor_final$sd_SFI_45 <- sd(result_cor_all$SFI_45)
+      
+      sig_SSI_45 <- result_cor_all$SSI_45[which(p.adjust(result_cor_all$SSI_45_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_45 <- length(sig_SSI_45)/nboot
+      result_cor_final$perc_sig_neg_SSI_45 <- length(which(sig_SSI_45 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_45 <- length(which(sig_SSI_45 > 0))/nboot
+      result_cor_final$mean_sig_SSI_45 <- mean(na.rm=T,sig_SSI_45)
+      result_cor_final$sd_sig_SSI_45 <- sd(na.rm=T,sig_SSI_45)
+      result_cor_final$mean_SSI_45 <- mean(na.rm=T,result_cor_all$SSI_45)
+      result_cor_final$sd_SSI_45 <- sd(na.rm=T,result_cor_all$SSI_45)
+      
+      sig_STI_45 <- result_cor_all$STI_45[which(p.adjust(result_cor_all$STI_45_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_45 <- length(sig_STI_45)/nboot
+      result_cor_final$perc_sig_neg_STI_45 <- length(which(sig_STI_45 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_45 <- length(which(sig_STI_45 > 0))/nboot
+      result_cor_final$mean_sig_STI_45 <- mean(sig_STI_45)
+      result_cor_final$sd_sig_STI_45 <- sd(sig_STI_45)
+      result_cor_final$mean_STI_45 <- mean(result_cor_all$STI_45)
+      result_cor_final$sd_STI_45 <- sd(result_cor_all$STI_45)
+      
+      sig_SFI_46 <- result_cor_all$SFI_46[which(p.adjust(result_cor_all$SFI_46_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SFI_46 <- length(sig_SFI_46)/nboot
+      result_cor_final$perc_sig_neg_SFI_46 <- length(which(sig_SFI_46 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_46 <- length(which(sig_SFI_46 > 0))/nboot
+      result_cor_final$mean_sig_SFI_46 <- mean(sig_SFI_46)
+      result_cor_final$sd_sig_SFI_46 <- sd(sig_SFI_46)
+      result_cor_final$mean_SFI_46 <- mean(result_cor_all$SFI_46)
+      result_cor_final$sd_SFI_46 <- sd(result_cor_all$SFI_46)
+      
+      sig_SSI_46 <- result_cor_all$SSI_46[which(p.adjust(result_cor_all$SSI_46_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_SSI_46 <- length(sig_SSI_46)/nboot
+      result_cor_final$perc_sig_neg_SSI_46 <- length(which(sig_SSI_46 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_46 <- length(which(sig_SSI_46 > 0))/nboot
+      result_cor_final$mean_sig_SSI_46 <- mean(na.rm=T,sig_SSI_46)
+      result_cor_final$sd_sig_SSI_46 <- sd(na.rm=T,sig_SSI_46)
+      result_cor_final$mean_SSI_46 <- mean(na.rm=T,result_cor_all$SSI_46)
+      result_cor_final$sd_SSI_46 <- sd(na.rm=T,result_cor_all$SSI_46)
+      
+      sig_STI_46 <- result_cor_all$STI_46[which(p.adjust(result_cor_all$STI_46_pval,method = "BH") < 0.06)]
+      result_cor_final$perc_sig_STI_46 <- length(sig_STI_46)/nboot
+      result_cor_final$perc_sig_neg_STI_46 <- length(which(sig_STI_46 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_46 <- length(which(sig_STI_46 > 0))/nboot
+      result_cor_final$mean_sig_STI_46 <- mean(sig_STI_46)
+      result_cor_final$sd_sig_STI_46 <- sd(sig_STI_46)
+      result_cor_final$mean_STI_46 <- mean(result_cor_all$STI_46)
+      result_cor_final$sd_STI_46 <- sd(result_cor_all$STI_46)
+      
+      sig_SFI_56 <- result_cor_all$SFI_56[which(p.adjust(result_cor_all$SFI_56_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SFI_56 <- length(sig_SFI_56)/nboot
+      result_cor_final$perc_sig_neg_SFI_56 <- length(which(sig_SFI_56 < 0))/nboot
+      result_cor_final$perc_sig_pos_SFI_56 <- length(which(sig_SFI_56 > 0))/nboot
+      result_cor_final$mean_sig_SFI_56 <- mean(sig_SFI_56)
+      result_cor_final$sd_sig_SFI_56 <- sd(sig_SFI_56)
+      result_cor_final$mean_SFI_56 <- mean(result_cor_all$SFI_56)
+      result_cor_final$sd_SFI_56 <- sd(result_cor_all$SFI_56)
+      
+      sig_SSI_56 <- result_cor_all$SSI_56[which(p.adjust(result_cor_all$SSI_56_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_SSI_56 <- length(sig_SSI_56)/nboot
+      result_cor_final$perc_sig_neg_SSI_56 <- length(which(sig_SSI_56 < 0))/nboot
+      result_cor_final$perc_sig_pos_SSI_56 <- length(which(sig_SSI_56 > 0))/nboot
+      result_cor_final$mean_sig_SSI_56 <- mean(na.rm=T,sig_SSI_56)
+      result_cor_final$sd_sig_SSI_56 <- sd(na.rm=T,sig_SSI_56)
+      result_cor_final$mean_SSI_56 <- mean(na.rm=T,result_cor_all$SSI_56)
+      result_cor_final$sd_SSI_56 <- sd(na.rm=T,result_cor_all$SSI_56)
+      
+      sig_STI_56 <- result_cor_all$STI_56[which(p.adjust(result_cor_all$STI_56_pval,method = "BH") < 0.05)]
+      result_cor_final$perc_sig_STI_56 <- length(sig_STI_56)/nboot
+      result_cor_final$perc_sig_neg_STI_56 <- length(which(sig_STI_56 < 0))/nboot
+      result_cor_final$perc_sig_pos_STI_56 <- length(which(sig_STI_56 > 0))/nboot
+      result_cor_final$mean_sig_STI_56 <- mean(sig_STI_56)
+      result_cor_final$sd_sig_STI_56 <- sd(sig_STI_56)
+      result_cor_final$mean_STI_56 <- mean(result_cor_all$STI_56)
+      result_cor_final$sd_STI_56 <- sd(result_cor_all$STI_56)
+      
     }
+     
   }
+  
+  return(result_cor_final)
+  
 }
 
 
@@ -1596,7 +2155,7 @@ simul_rand_dfa_intern <- function(cum_perc,
       }
       y_ts <- y_ts + abs(min(y_ts))+1
       y_ts <- exp(scale(log(y_ts)))
-      y_init[i,] <- y_ts
+      y_init[i,] <- y_ts -mean(y_ts)
     }
     test_cor <- cor.test(as.numeric(y_init[1,]),as.numeric(y_init[2,]),method = "spearman")$estimate
   }
@@ -1656,7 +2215,7 @@ simul_rand_dfa_intern <- function(cum_perc,
   
   for(i in 1:n_sp){ # get simulated ts from loadings
     seednum <- seednum + 1
-    set.seed((seed+seednum))
+    set.seed(seed + seednum)
     noise <- rnorm(n_y,0,sd_rand2)
     y[i,1] <- obs_se[i,1] <- sprintf("SP%03d",i)
     y_ts <- rep(0,n_y)
@@ -1667,12 +2226,15 @@ simul_rand_dfa_intern <- function(cum_perc,
       y_ts <- y_ts + as.numeric(y_init[lt,])*lf_u_g[i_g]
     }
     y_ts <- y_ts + noise
-    y_ts <- y_ts + abs(min(y_ts)) + 1
-    y_ts <- exp(scale(log(y_ts)))
+    y_ts_log <- y_ts
+    #y_ts <- y_ts + abs(min(y_ts)) + 1
+    #y_ts <- exp(scale(log(y_ts)))
+    y_ts <- exp(y_ts)
     y[i,2:(n_y+1)] <- y_ts
     y[i,(n_y+2)] <- id_vec[i]
-    obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
-    obs_se[obs_se>1] <- 1
+    #obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*1/y_ts,sd_rand))
+    obs_se[i,2:(n_y+1)] <- abs(rnorm(n_y,0.1*(max(y_ts_log)-min(y_ts_log)),sd_rand))
+    #obs_se[obs_se>1] <- 1
   }  
   
   y_rand <- data.table(y[,1:(n_y+1)])
