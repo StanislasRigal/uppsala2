@@ -2375,7 +2375,7 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_spa_farm,dfa_swe_farm,dfa_swe_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
-result_cor_dfa <- cluster_trait(dfa_aus_farm,SXI)
+result_cor_dfa <- cluster_trait(dfa_aus_farm,SXI, nboot = 1000)
 
 for(i in 1:length(list_dfa)){
   
@@ -2383,7 +2383,7 @@ for(i in 1:length(list_dfa)){
   
   data_dfa <- list_dfa[[i]]
   
-  result_cor_dfa[i,] <- cluster_trait(data_dfa,SXI)
+  result_cor_dfa[i,] <- cluster_trait(data_dfa,SXI, nboot=1000)
 }
 
 result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
