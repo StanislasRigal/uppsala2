@@ -1406,7 +1406,12 @@ cluster_trait <- function(data_dfa,
                           trait_mat,
                           nboot = 100){
   
-  result_cor_final <- data.frame(Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
+  Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
+  Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
+  Nb_cluster <- 1
+  Nb_outlier <- 0
+  
+  result_cor_final <- data.frame(Nb_lat_trend = Nb_lat_trend, Nb_cluster = Nb_cluster, Nb_outlier = Nb_outlier, Nb_species = Nb_species,
                                  Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
                                  mean_SFI_12 = NA, sd_SFI_12 = NA, pvalue_SFI_12 = NA, Q025_SFI_12 = NA, Q975_SFI_12 = NA,
                                  mean_SSI_12 = NA, sd_SSI_12 = NA, pvalue_SSI_12 = NA, Q025_SSI_12 = NA, Q975_SSI_12 = NA,
@@ -1484,10 +1489,11 @@ cluster_trait <- function(data_dfa,
     
     constrInd <- rep(1:nfac, each = ny) > rep(1:ny,  nfac)
     
+    
     if(nb_group > 1){
       
-      Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
-      Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
+      result_cor_final$Nb_cluster <- Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
+      result_cor_final$Nb_outlier <- Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
       
       pca_init_load <- data_dfa$group$kmeans_res[[1]]
       
@@ -1638,15 +1644,6 @@ cluster_trait <- function(data_dfa,
         kmeans_2 <- data.frame(group=as.factor(1:nb_group),kmeans_center,
                                (t(apply(kmeans_center, 1, function(x){x - data_dfa$group$myPCA$center})) %*% data_dfa$group$myPCA$rotation))
         
-        Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
-        Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
-        
-        if(Nb_lat_trend == 1){
-          Nb_cluster <- 1
-          Nb_outlier <- 0
-        }else{
-          Nb_cluster <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)>1))
-          Nb_outlier <- length(which(table(data_dfa$group$kmeans_res[[1]]$group)==1))
           
           data_mod <- merge(pca_rand_load, trait_mat, by.x="group.name_long", by.y="Species")
           
@@ -1753,14 +1750,9 @@ cluster_trait <- function(data_dfa,
               }
             }
             result_cor_all <- rbind(result_cor_all,result_cor)
-          }
         }
       }
       
-      result_cor_final$Nb_lat_trend <- result_cor_all$Nb_lat_trend[1]
-      result_cor_final$Nb_cluster <- result_cor_all$Nb_cluster[1]
-      result_cor_final$Nb_outlier <- result_cor_all$Nb_outlier[1]
-      result_cor_final$Nb_species <- result_cor_all$Nb_species[1]
       result_cor_final$Nb_anticor_cluster_sig <- result_cor_all$Nb_anticor_cluster_sig[1]
       result_cor_final$Nb_anticor_cluster_all <- result_cor_all$Nb_anticor_cluster_all[1]
       

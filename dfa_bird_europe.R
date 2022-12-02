@@ -2397,38 +2397,9 @@ result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czec
 
 saveRDS(result_cor,"output/result_cor.rds")
 
+result_cor$Nb_anticor_cluster_sig[which(is.na(result_cor$Nb_anticor_cluster_sig))] <- 0
+result_cor$Nb_anticor_cluster_all[which(is.na(result_cor$Nb_anticor_cluster_all))] <- 0
 
-# Plot results
-
-result_to_plot <- melt(result_cor, id.vars = c("Country","Index"),
-                       measure.vars = c("PCA1_SFI","PCA1_STI","PCA1_SSI","R2_PCA1","PCA2_SFI","PCA2_STI","PCA2_SSI","R2_PCA2"))
-
-result_to_plot$country_index <- paste0(result_to_plot$Country," ",result_to_plot$Index)
-first_order <- c("Austria FBI","Belgium FBI","Czech Republic FBI","Denmark FBI","Estonia FBI","Finland FBI","France FBI","Germany FBI","Hungary FBI","Ireland FBI","Italy FBI","Latvia FBI","Lithuania FBI","Netherlands FBI","Norway FBI","Poland FBI","Spain FBI","Sweden FBI","Switzerland FBI","United Kingdom FBI","Austria WBI","Belgium WBI","Czech Republic WBI","Denmark WBI","Estonia WBI","Finland WBI","France WBI","Germany WBI","Hungary WBI","Italy WBI","Netherlands WBI","Norway WBI","Poland WBI","Sweden WBI","Switzerland WBI","United Kingdom WBI")
-result_to_plot$country_index <- factor(result_to_plot$country_index, levels=first_order)
-result_to_plot$country_index <- factor(result_to_plot$country_index, levels=rev(first_order))
-
-
-ggplot(data = result_to_plot, aes(y=country_index, x=variable, fill=value)) + 
-  geom_tile() +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal() + geom_text(aes(label=round(value,2)))
-
-ggplot(data = result_to_plot, aes(y=country_index, x=variable, fill=abs(value))) + 
-  geom_tile(data=result_to_plot[result_to_plot$variable %in% c("PCA1_SFI","PCA1_STI","PCA1_SSI","PCA2_SFI","PCA2_STI","PCA2_SSI")], aes(fill=abs(value))) + 
-  geom_tile(data=result_to_plot[result_to_plot$variable %in% c("R2_PCA1","R2_PCA2")], fill= "white")+
-  scale_fill_gradient(low = "white", high = "red", space = "Lab", 
-                       name="Absolute\nPearson\nCorrelation") +
-  theme_minimal() + geom_text(aes(label=abs(round(value,1)))) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
-
-ggsave("output/cormap1.png",
-       dpi=300,
-       width = 6, 
-       height = 8 
-)
 
 ## Results as figures
 
