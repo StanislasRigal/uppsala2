@@ -2375,7 +2375,9 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_spa_farm,dfa_swe_farm,dfa_swe_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
-result_cor_dfa <- cluster_trait(dfa_aus_farm,SXI, nboot = 1000)
+result_cluster_trait <- cluster_trait(dfa_aus_farm,SXI, nboot = 1000)
+result_cluster_trait_final <- result_cluster_trait$result_cor_final
+result_cluster_trait_all <- list()
 
 for(i in 1:length(list_dfa)){
   
@@ -2383,7 +2385,10 @@ for(i in 1:length(list_dfa)){
   
   data_dfa <- list_dfa[[i]]
   
-  result_cor_dfa[i,] <- cluster_trait(data_dfa,SXI, nboot=1000)
+  result_cluster_trait <- cluster_trait(data_dfa,SXI, nboot = 1000)
+  
+  result_cluster_trait_final[i,] <- result_cluster_trait$result_cor_final
+  result_cluster_trait_all[[i]] <- result_cluster_trait$result_cor_all
 }
 
 result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
@@ -2393,13 +2398,12 @@ result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czec
                        rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
                        Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
                                  "FBI",rep(c("FBI","WBI"),3)),
-                       result_cor_dfa)
-
-saveRDS(result_cor,"output/result_cor.rds")
+                       result_cluster_trait_final)
 
 result_cor$Nb_anticor_cluster_sig[which(is.na(result_cor$Nb_anticor_cluster_sig))] <- 0
 result_cor$Nb_anticor_cluster_all[which(is.na(result_cor$Nb_anticor_cluster_all))] <- 0
 
+saveRDS(result_cor,"output/result_cor.rds")
 
 ## Results as figures
 

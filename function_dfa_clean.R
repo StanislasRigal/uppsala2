@@ -1474,7 +1474,6 @@ cluster_trait <- function(data_dfa,
                                  mean_STI_56 = NA, sd_STI_56 = NA, pvalue_STI_56 = NA, Q025_STI_56 = NA, Q975_STI_56 = NA
   )
   
-  
   if(is.list(data_dfa$group)){
    
     ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
@@ -1526,7 +1525,7 @@ cluster_trait <- function(data_dfa,
         SFI_group <- ifelse(anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
         SSI_group <- ifelse(anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
         STI_group <- ifelse(anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]<0.05,1,0)
-        
+      }
       # Reproject species on the line between cluster centres
       
       result_cor <- data.frame(Nb_lat_trend, Nb_cluster, Nb_outlier, Nb_species,
@@ -1751,7 +1750,7 @@ cluster_trait <- function(data_dfa,
             }
             result_cor_all <- rbind(result_cor_all,result_cor)
         }
-      }
+      
       
       result_cor_final$Nb_anticor_cluster_sig <- result_cor_all$Nb_anticor_cluster_sig[1]
       result_cor_final$Nb_anticor_cluster_all <- result_cor_all$Nb_anticor_cluster_all[1]
@@ -2043,7 +2042,11 @@ cluster_trait <- function(data_dfa,
     }
   }
   
-  return(result_cor_final)
+  if(!exists("result_cor_all")){
+    result_cor_all <- NA
+  }
+  
+  return(list(result_cor_final=result_cor_final,result_cor_all=result_cor_all))
   
 }
 
