@@ -1227,21 +1227,32 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     data_loadings <- merge(data_loadings, species_sub[,c("name_long","code_sp")],by="code_sp")
     data_loadings <- merge(data_loadings, group_dfa[[1]][[1]][,c("code_sp","PC1")],by="code_sp")
     data_loadings$name_long <- fct_reorder(data_loadings$name_long,data_loadings$PC1)
-
-    data_loadings$variable <- as.character(data_loadings$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
     
     # Data for % variance of species ts explained by latent trends
     
     exp_var_lt <- data_loadings[,c("variable","value","name_long")]
-    exp_var_lt <- dcast(exp_var_lt, name_long~variable, value.var = "value", fun.aggregate = sum)
+    exp_var_lt <- data.frame(dcast(exp_var_lt, name_long~variable, value.var = "value", fun.aggregate = sum))
+    for(nfac_num in 1:nfac){
+      for(row_num in 1:ny){
+        exp_var_lt[row_num,paste0("X",nfac_num)] <- var(exp_var_lt[row_num,paste0("X",nfac_num)]*data_to_plot_tr_rot[,paste0("X",nfac_num)])
+      }
+    }
     eta_sp <- data.frame(name_long=species_sub$name_long, eta=sdRep[!grepl("log_re_sp", row.names(sdRep)) & grepl("re_sp", row.names(sdRep)) ,1])
+    eta_sp$eta <- eta_sp$eta*eta_sp$eta
     exp_var_lt <- merge(exp_var_lt,eta_sp, by="name_long", all.x=T)
+    
+    #var_index_sp <- data.frame(data_to_plot_sp %>% group_by(name_long) %>% summarise(var_pred = var(pred.value)))
+    #exp_var_lt <- merge(exp_var_lt,var_index_sp, by="name_long", all.x=T)
+    
     
     exp_var_lt$all <- apply(exp_var_lt[,-1],1,function(x){return(sum(abs(x)))})
     exp_var_lt[,2:(ncol(exp_var_lt)-1)] <- exp_var_lt[,2:(ncol(exp_var_lt)-1)]/exp_var_lt$all
     exp_var_lt$name_long <- fct_reorder(exp_var_lt$name_long,exp_var_lt$eta)
+    names(exp_var_lt)[which(grepl("X",names(exp_var_lt)))] <- paste0("Latent trend ",1:length(which(grepl("X",names(exp_var_lt)))))
+    names(exp_var_lt)[which(names(exp_var_lt)=="eta")] <- "Random noise"
     exp_var_lt_long <- melt(exp_var_lt[,1:(ncol(exp_var_lt)-1)])
     
+    data_loadings$variable <- as.character(data_loadings$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
     
     # Plots
     
