@@ -2601,6 +2601,43 @@ ggplot(result_to_plot2, aes(x=as.factor(Axis_Index), y=abs(value), fill=Trait)) 
   xlab("Axes")+
   ylab("Absolute Pearson Correlation")
 
+
+
+# Add histogram of bootstrap by country by pair for significant relationships
+
+for(country_name in result_cor$Country){
+  for(index_name in result_cor$Index){
+    
+    # Extract country shape
+    if(index_name == "FBI"){
+      color_name <- "#f5b041"
+    }else{
+      color_name <- "#52be80"
+    }
+    plot_country_shape <- ggplot() + geom_sf(data = europe_map_simpl[europe_map_simpl$sovereignt==country_name,], fill = color_name) +
+      theme_void()+ coord_sf(datum = NA) + theme(legend.position = "none")
+    
+    # Extract significant relationships
+    
+    relation_country1 <- result_cluster_trait_all[[which(result_cor$Country==country_name & result_cor$Index==index_name)]]
+    relation_country2 <- result_cor[which(result_cor$Country==country_name & result_cor$Index==index_name),names(result_cor)[which(grepl("pvalue",names(result_cor)))]]
+    relation_country2 <- relation_country2[which(relation_country2<0.05)]
+    
+    if(ncol(relation_country2)){
+      relation_country3 <- relation_country1[, which(names(relation_country1) %in% sub(".*pvalue_","",names(relation_country2)))]
+      relation_country3 <- melt(relation_country3, measure.vars = names(relation_country3))
+      
+      plot_signif_pair <- list()
+      for(pair_signif in levels(relation_country3$variable)){
+        plot_signif_pair[[pair_signif]]<-ggplot(data = droplevels(relation_country3[which(relation_country3$variable == pair_signif),]), aes(x=value)) +
+          geom_histogram() + theme_modern() + xlab(NULL) + ylab(NULL) +
+          geom_density() # add vertical line for 0, mean and quantile.
+      }
+    }
+  }
+}
+
+
 # Also plot WBI and FBI by country
 
 # Compute coordinate centroids of each country for farmland
@@ -2836,6 +2873,12 @@ ggsave("output/map_w_ts.png",
        width = 8, 
        height = 8 
 )
+
+
+
+
+
+
 
 
 

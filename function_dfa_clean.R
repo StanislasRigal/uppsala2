@@ -1411,6 +1411,10 @@ cluster_trait <- function(data_dfa,
   Nb_cluster <- 1
   Nb_outlier <- 0
   
+  if(exists("result_cor_all")){
+    rm(result_cor_all)
+  }
+  
   result_cor_final <- data.frame(Nb_lat_trend = Nb_lat_trend, Nb_cluster = Nb_cluster, Nb_outlier = Nb_outlier, Nb_species = Nb_species,
                                  Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
                                  mean_SFI_12 = NA, sd_SFI_12 = NA, pvalue_SFI_12 = NA, Q025_SFI_12 = NA, Q975_SFI_12 = NA,
