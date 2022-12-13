@@ -1548,21 +1548,21 @@ cluster_trait <- function(data_dfa,
                                PCA2_SFI, PCA2_STI, PCA2_SSI, R2_PCA2,
                                Nb_anticor_cluster_sig, Nb_anticor_cluster_all,
                                SFI_group, SSI_group, STI_group,
-                               SFI_12 = NA, SSI_12 = NA, STI_12 = NA,
-                               SFI_13 = NA, SSI_13 = NA, STI_13 = NA,
-                               SFI_14 = NA, SSI_14 = NA, STI_14 = NA,
-                               SFI_15 = NA, SSI_15 = NA, STI_15 = NA,
-                               SFI_16 = NA, SSI_16 = NA, STI_16 = NA,
-                               SFI_23 = NA, SSI_23 = NA, STI_23 = NA,
-                               SFI_24 = NA, SSI_24 = NA, STI_24 = NA,
-                               SFI_25 = NA, SSI_25 = NA, STI_25 = NA,
-                               SFI_26 = NA, SSI_26 = NA, STI_26 = NA,
-                               SFI_34 = NA, SSI_34 = NA, STI_34 = NA,
-                               SFI_35 = NA, SSI_35 = NA, STI_35 = NA,
-                               SFI_36 = NA, SSI_36 = NA, STI_36 = NA,
-                               SFI_45 = NA, SSI_45 = NA, STI_45 = NA,
-                               SFI_46 = NA, SSI_46 = NA, STI_46 = NA,
-                               SFI_56 = NA, SSI_56 = NA, STI_56 = NA)
+                               SFI_12 = NA, SSI_12 = NA, STI_12 = NA, nb_sp_12 = NA,
+                               SFI_13 = NA, SSI_13 = NA, STI_13 = NA, nb_sp_13 = NA,
+                               SFI_14 = NA, SSI_14 = NA, STI_14 = NA, nb_sp_14 = NA,
+                               SFI_15 = NA, SSI_15 = NA, STI_15 = NA, nb_sp_15 = NA,
+                               SFI_16 = NA, SSI_16 = NA, STI_16 = NA, nb_sp_16 = NA,
+                               SFI_23 = NA, SSI_23 = NA, STI_23 = NA, nb_sp_23 = NA,
+                               SFI_24 = NA, SSI_24 = NA, STI_24 = NA, nb_sp_24 = NA,
+                               SFI_25 = NA, SSI_25 = NA, STI_25 = NA, nb_sp_25 = NA,
+                               SFI_26 = NA, SSI_26 = NA, STI_26 = NA, nb_sp_26 = NA,
+                               SFI_34 = NA, SSI_34 = NA, STI_34 = NA, nb_sp_34 = NA,
+                               SFI_35 = NA, SSI_35 = NA, STI_35 = NA, nb_sp_35 = NA,
+                               SFI_36 = NA, SSI_36 = NA, STI_36 = NA, nb_sp_36 = NA,
+                               SFI_45 = NA, SSI_45 = NA, STI_45 = NA, nb_sp_45 = NA,
+                               SFI_46 = NA, SSI_46 = NA, STI_46 = NA, nb_sp_46 = NA,
+                               SFI_56 = NA, SSI_56 = NA, STI_56 = NA, nb_sp_56 = NA)
       
       kmeans_2 <- data_dfa$group$kmeans_res[[2]]
       
@@ -1617,6 +1617,8 @@ cluster_trait <- function(data_dfa,
           col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
           result_cor[1,col_name3] <- cor.test(data_mod_new$new_val,data_mod_new$STI)$estimate
           
+          col_name4 <- paste0("nb_sp_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[1,col_name4] <- nrow(data_mod_new)
         }
       }
       
@@ -1694,21 +1696,21 @@ cluster_trait <- function(data_dfa,
                                      PCA2_SFI, PCA2_STI, PCA2_SSI, R2_PCA2,
                                      Nb_anticor_cluster_sig, Nb_anticor_cluster_all,
                                      SFI_group, SSI_group, STI_group,
-                                     SFI_12 = NA, SSI_12 = NA, STI_12 = NA,
-                                     SFI_13 = NA, SSI_13 = NA, STI_13 = NA,
-                                     SFI_14 = NA, SSI_14 = NA, STI_14 = NA,
-                                     SFI_15 = NA, SSI_15 = NA, STI_15 = NA,
-                                     SFI_16 = NA, SSI_16 = NA, STI_16 = NA,
-                                     SFI_23 = NA, SSI_23 = NA, STI_23 = NA,
-                                     SFI_24 = NA, SSI_24 = NA, STI_24 = NA,
-                                     SFI_25 = NA, SSI_25 = NA, STI_25 = NA,
-                                     SFI_26 = NA, SSI_26 = NA, STI_26 = NA,
-                                     SFI_34 = NA, SSI_34 = NA, STI_34 = NA,
-                                     SFI_35 = NA, SSI_35 = NA, STI_35 = NA,
-                                     SFI_36 = NA, SSI_36 = NA, STI_36 = NA,
-                                     SFI_45 = NA, SSI_45 = NA, STI_45 = NA,
-                                     SFI_46 = NA, SSI_46 = NA, STI_46 = NA,
-                                     SFI_56 = NA, SSI_56 = NA, STI_56 = NA)
+                                     SFI_12 = NA, SSI_12 = NA, STI_12 = NA, nb_sp_12 = NA,
+                                     SFI_13 = NA, SSI_13 = NA, STI_13 = NA, nb_sp_13 = NA,
+                                     SFI_14 = NA, SSI_14 = NA, STI_14 = NA, nb_sp_14 = NA,
+                                     SFI_15 = NA, SSI_15 = NA, STI_15 = NA, nb_sp_15 = NA,
+                                     SFI_16 = NA, SSI_16 = NA, STI_16 = NA, nb_sp_16 = NA,
+                                     SFI_23 = NA, SSI_23 = NA, STI_23 = NA, nb_sp_23 = NA,
+                                     SFI_24 = NA, SSI_24 = NA, STI_24 = NA, nb_sp_24 = NA,
+                                     SFI_25 = NA, SSI_25 = NA, STI_25 = NA, nb_sp_25 = NA,
+                                     SFI_26 = NA, SSI_26 = NA, STI_26 = NA, nb_sp_26 = NA,
+                                     SFI_34 = NA, SSI_34 = NA, STI_34 = NA, nb_sp_34 = NA,
+                                     SFI_35 = NA, SSI_35 = NA, STI_35 = NA, nb_sp_35 = NA,
+                                     SFI_36 = NA, SSI_36 = NA, STI_36 = NA, nb_sp_36 = NA,
+                                     SFI_45 = NA, SSI_45 = NA, STI_45 = NA, nb_sp_45 = NA,
+                                     SFI_46 = NA, SSI_46 = NA, STI_46 = NA, nb_sp_46 = NA,
+                                     SFI_56 = NA, SSI_56 = NA, STI_56 = NA, nb_sp_56 = NA)
             
             cluster_centre_coord_all <- kmeans_2[,grepl("X",names(kmeans_2))]
             comb_cluster <- combn(nrow(cluster_centre_coord_all),2)
@@ -1761,6 +1763,8 @@ cluster_trait <- function(data_dfa,
                 col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
                 result_cor[1,col_name3] <- cor.test(data_mod_new$new_val,data_mod_new$STI)$estimate
                 
+                col_name4 <- paste0("nb_sp_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+                result_cor[1,col_name4] <- nrow(data_mod_new)
               }
             }
             result_cor_all <- rbind(result_cor_all,result_cor)
