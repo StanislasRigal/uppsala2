@@ -2375,6 +2375,7 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_spa_farm,dfa_swe_farm,dfa_swe_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
+
 result_cluster_trait <- cluster_trait(dfa_aus_farm,SXI, nboot = 1000)
 result_cluster_trait_final <- result_cluster_trait$result_cor_final
 result_cluster_trait_all <- list()
@@ -2392,16 +2393,54 @@ for(i in 1:length(list_dfa)){
 }
 
 result_cor <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
+                                     rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
+                                     rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
+                                     rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
+                                     rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
+                         Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
+                                   "FBI",rep(c("FBI","WBI"),3)),
+                         result_cluster_trait_final)
+
+
+result_cluster_trait2 <- cluster_trait2(dfa_aus_farm,SXI)
+
+for(i in 2:length(list_dfa)){
+  
+  print(i)
+  
+  data_dfa <- list_dfa[[i]]
+  
+  result_cluster_trait2 <- rbind(result_cluster_trait2,cluster_trait2(data_dfa,SXI))
+  
+}
+
+result_cor2 <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
                        rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
                        rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
                        rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
                        rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
                        Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
                                  "FBI",rep(c("FBI","WBI"),3)),
-                       result_cluster_trait_final)
+                       result_cluster_trait2)
 
-result_cor$Nb_anticor_cluster_sig[which(is.na(result_cor$Nb_anticor_cluster_sig))] <- 0
-result_cor$Nb_anticor_cluster_all[which(is.na(result_cor$Nb_anticor_cluster_all))] <- 0
+result_cor2_long <- melt(result_cor2, measure.vars = c("SFI_12","SSI_12","STI_12",         
+                                                     "SFI_13","SSI_13","STI_13",           
+                                                     "SFI_14","SSI_14","STI_14",       
+                                                     "SFI_15","SSI_15","STI_15",   
+                                                     "SFI_16","SSI_16","STI_16",    
+                                                     "SFI_23","SSI_23","STI_23",
+                                                     "SFI_24","SSI_24","STI_24",      
+                                                     "SFI_25","SSI_25","STI_25",          
+                                                     "SFI_26","SSI_26","STI_26",          
+                                                     "SFI_34","SSI_34","STI_34",         
+                                                     "SFI_35","SSI_35","STI_35",           
+                                                     "SFI_36","SSI_36","STI_36",          
+                                                     "SFI_45","SSI_45","STI_45",        
+                                                     "SFI_46","SSI_46","STI_46",             
+                                                     "SFI_56","SSI_56","STI_56"))
+
+result_cor2_long$pval_adj <- NA
+result_cor2_long$pval_adj[which(!is.na(result_cor2_long$value))] <- p.adjust(result_cor2_long$value[which(!is.na(result_cor2_long$value))],"BH")
 
 saveRDS(result_cor,"output/result_cor.rds")
 
@@ -2605,8 +2644,8 @@ ggplot(result_to_plot2, aes(x=as.factor(Axis_Index), y=abs(value), fill=Trait)) 
 
 # Add histogram of bootstrap by country by pair for significant relationships
 plot_pair_all <- list()
-list_pair_pval_all <- list()
-list_pair_sp_all <- list()
+list_pair_pval_all <- data.frame()
+list_pair_sp_all <- data.frame()
 index_num <- 0
 result_cor$Country_Index <- paste0(result_cor$Country,sep="_",result_cor$Index)
 for(country_index in result_cor$Country_Index){
@@ -2658,10 +2697,15 @@ for(country_index in result_cor$Country_Index){
         
       }
       plot_pair_all[[index_num]] <- plot_pair
-      list_pair_pval_all[[index_num]] <- list_pair_pval
-      list_pair_sp_all[[index_num]] <- list_pair_sp
+      
+    }else{
+      list_pair_pval <- list_pair_sp <- NA
     }
+    list_pair_sp_all <- rbind.fill(list_pair_sp_all,as.data.frame(list_pair_sp))
+    list_pair_pval_all <- rbind.fill(list_pair_pval_all,as.data.frame(list_pair_pval))
+
 }
+
 
 
 # Also plot WBI and FBI by country

@@ -1427,7 +1427,7 @@ cluster_trait <- function(data_dfa,
   }
   
   result_cor_final <- data.frame(Nb_lat_trend = Nb_lat_trend, Nb_cluster = Nb_cluster, Nb_outlier = Nb_outlier, Nb_species = Nb_species,
-                                 Nb_anticor_cluster_sig = NA, Nb_anticor_cluster_all = NA,
+                                 Nb_anticor_cluster_sig = 0, Nb_anticor_cluster_all = 0,
                                  mean_SFI_12 = NA, sd_SFI_12 = NA, pvalue_SFI_12 = NA, Q025_SFI_12 = NA, Q975_SFI_12 = NA,
                                  mean_SSI_12 = NA, sd_SSI_12 = NA, pvalue_SSI_12 = NA, Q025_SSI_12 = NA, Q975_SSI_12 = NA,
                                  mean_STI_12 = NA, sd_STI_12 = NA, pvalue_STI_12 = NA, Q025_STI_12 = NA, Q975_STI_12 = NA,
@@ -2067,6 +2067,98 @@ cluster_trait <- function(data_dfa,
   
   return(list(result_cor_final=result_cor_final,result_cor_all=result_cor_all))
   
+}
+
+
+cluster_trait2 <- function(data_dfa,
+                           trait_mat){
+  
+  result_cor <- data.frame(Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
+                           Nb_anticor_cluster_sig = 0, Nb_anticor_cluster_all = 0,
+                           SFI_group = NA, SSI_group = NA, STI_group = NA,
+                           SFI_12 = NA, SSI_12 = NA, STI_12 = NA, nb_sp_12 = NA,
+                           SFI_13 = NA, SSI_13 = NA, STI_13 = NA, nb_sp_13 = NA,
+                           SFI_14 = NA, SSI_14 = NA, STI_14 = NA, nb_sp_14 = NA,
+                           SFI_15 = NA, SSI_15 = NA, STI_15 = NA, nb_sp_15 = NA,
+                           SFI_16 = NA, SSI_16 = NA, STI_16 = NA, nb_sp_16 = NA,
+                           SFI_23 = NA, SSI_23 = NA, STI_23 = NA, nb_sp_23 = NA,
+                           SFI_24 = NA, SSI_24 = NA, STI_24 = NA, nb_sp_24 = NA,
+                           SFI_25 = NA, SSI_25 = NA, STI_25 = NA, nb_sp_25 = NA,
+                           SFI_26 = NA, SSI_26 = NA, STI_26 = NA, nb_sp_26 = NA,
+                           SFI_34 = NA, SSI_34 = NA, STI_34 = NA, nb_sp_34 = NA,
+                           SFI_35 = NA, SSI_35 = NA, STI_35 = NA, nb_sp_35 = NA,
+                           SFI_36 = NA, SSI_36 = NA, STI_36 = NA, nb_sp_36 = NA,
+                           SFI_45 = NA, SSI_45 = NA, STI_45 = NA, nb_sp_45 = NA,
+                           SFI_46 = NA, SSI_46 = NA, STI_46 = NA, nb_sp_46 = NA,
+                           SFI_56 = NA, SSI_56 = NA, STI_56 = NA, nb_sp_56 = NA)
+  
+  result_cor$Nb_lat_trend <- Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
+  result_cor$Nb_species <- Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
+  result_cor$Nb_cluster <- Nb_cluster <- 1
+  result_cor$Nb_outlier <- Nb_outlier <- 0
+  
+  
+  if(is.list(data_dfa$group)){
+    
+    result_cor$Nb_species <- ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
+    
+    result_cor$Nb_lat_trend <- nfac <- length(unique(data_dfa$data_to_plot_tr$variable))
+    
+    nb_group <- length(unique(data_dfa$group$kmeans_res[[1]]$group))
+    
+    if(nb_group > 1){
+      
+      pca_init_load <- data_dfa$group$kmeans_res[[1]]
+      
+      result_cor$Nb_cluster <- Nb_cluster <- length(which(table(pca_init_load$group)>1))
+      result_cor$Nb_outlier <- Nb_outlier <- length(which(table(pca_init_load$group)==1))
+      
+      result_cor$Nb_anticor_cluster_sig <- result_cor$Nb_anticor_cluster_all <- 0
+      
+      if(Nb_cluster>1){
+        for(j in names(which(table(pca_init_load$group)>1))){
+          cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
+          if(cor_res$estimate<0 & cor_res$p.value<0.05){
+            result_cor$Nb_anticor_cluster_sig <- result_cor$Nb_anticor_cluster_sig + 1
+          }
+          if(cor_res$estimate<0){
+            result_cor$Nb_anticor_cluster_all <- result_cor$Nb_anticor_cluster_all + 1
+          }
+        }
+        
+        data_mod <- merge(pca_init_load, trait_mat, by.x="name_long", by.y="Species")
+        result_cor$SFI_group <- SFI_group <- anova(lm(SFI.y~as.factor(group), data=data_mod))$`Pr(>F)`[1]
+        result_cor$SSI_group <- SSI_group <- anova(lm(SSI~as.factor(group), data=data_mod))$`Pr(>F)`[1]
+        result_cor$STI_group <- STI_group <- anova(lm(STI~as.factor(group), data=data_mod))$`Pr(>F)`[1]
+        
+        comb_cluster <- combn(sort(unique(pca_init_load$group)),2)
+        
+        for(comb_cluster_num in 1:ncol(comb_cluster)){
+          
+          new_pca_init_load <- pca_init_load[which(pca_init_load$group %in% comb_cluster[,comb_cluster_num]),]
+          
+          data_mod_new <- merge(new_pca_init_load, trait_mat, by.x="name_long", by.y="Species")
+          
+          col_name1 <- paste0("SFI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[1,col_name1] <- anova(lm(SFI.y~as.factor(group), data=data_mod_new))$`Pr(>F)`[1]
+          
+          col_name2 <- paste0("SSI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          if(length(which(!is.na(data_mod_new$SSI[which(data_mod_new$group==unique(data_mod_new$group)[1])])))>1 & length(which(!is.na(data_mod_new$SSI[which(data_mod_new$group==unique(data_mod_new$group)[2])])))>1){
+            result_cor[1,col_name2] <- anova(lm(SSI~as.factor(group), data=data_mod_new))$`Pr(>F)`[1]
+          }else{
+            result_cor[1,col_name2] <- NA
+          }
+          
+          col_name3 <- paste0("STI_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[1,col_name3] <- anova(lm(STI~as.factor(group), data=data_mod_new))$`Pr(>F)`[1]
+          
+          col_name4 <- paste0("nb_sp_",comb_cluster[,comb_cluster_num][1],comb_cluster[,comb_cluster_num][2])
+          result_cor[1,col_name4] <- nrow(data_mod_new)
+        }
+      }
+    }
+  }
+  return(result_cor)
 }
 
 
