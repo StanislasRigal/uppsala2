@@ -1413,6 +1413,64 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
 
 # Analyse cluster and species traits
 
+cluster_trait_lda <- function(data_dfa,
+                           trait_mat){
+  
+  lda <- NA
+  
+  result_cor <- data.frame(Nb_lat_trend = NA, Nb_cluster = NA, Nb_outlier = NA, Nb_species = NA,
+                           Nb_anticor_cluster_sig = 0, Nb_anticor_cluster_all = 0)
+  
+  result_cor$Nb_lat_trend <- Nb_lat_trend <- length(unique(data_dfa$data_loadings$variable))
+  result_cor$Nb_species <- Nb_species <- length(unique(data_dfa$data_to_plot_sp$name_long))
+  result_cor$Nb_cluster <- Nb_cluster <- 1
+  result_cor$Nb_outlier <- Nb_outlier <- 0
+  
+  
+  if(is.list(data_dfa$group)){
+    
+    result_cor$Nb_species <- ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
+    
+    result_cor$Nb_lat_trend <- nfac <- length(unique(data_dfa$data_to_plot_tr$variable))
+    
+    nb_group <- length(unique(data_dfa$group$kmeans_res[[1]]$group))
+    
+    if(nb_group > 1){
+      
+      pca_init_load <- data_dfa$group$kmeans_res[[1]]
+      
+      result_cor$Nb_cluster <- Nb_cluster <- length(which(table(pca_init_load$group)>1))
+      result_cor$Nb_outlier <- Nb_outlier <- length(which(table(pca_init_load$group)==1))
+      
+      result_cor$Nb_anticor_cluster_sig <- result_cor$Nb_anticor_cluster_all <- 0
+      
+      if(Nb_cluster>1){
+        for(j in names(which(table(pca_init_load$group)>1))){
+          cor_res <- cor.test(data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == "all"],data_dfa$trend_group2$Estimate[data_dfa$trend_group2$group == paste0("g",j)])
+          if(cor_res$estimate<0 & cor_res$p.value<0.05){
+            result_cor$Nb_anticor_cluster_sig <- result_cor$Nb_anticor_cluster_sig + 1
+          }
+          if(cor_res$estimate<0){
+            result_cor$Nb_anticor_cluster_all <- result_cor$Nb_anticor_cluster_all + 1
+          }
+        }
+        
+        data_mod <- merge(pca_init_load, trait_mat, by.x="name_long", by.y="Species")
+        
+        if(Nb_outlier > 0){
+                  data_mod <- data_mod[which(data_mod$group != names(which(table(pca_init_load$group)==1))),]
+        }
+        
+        data_mod[,c("SFI.y","STI","SSI")] <- scale(data_mod[,c("SFI.y","STI","SSI")]) 
+        
+        lda <- LDA(group ~ SFI.y + STI + SSI, data = data_mod)
+      }
+    }
+  }
+  return(list(result_cor,lda))
+}
+
+
 cluster_trait <- function(data_dfa,
                           trait_mat,
                           nboot = 100){

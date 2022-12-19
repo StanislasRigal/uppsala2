@@ -2376,6 +2376,198 @@ list_dfa <- list(dfa_aus_farm,dfa_aus_forest,dfa_bel_farm,dfa_bel_forest,
                  dfa_swi_farm,dfa_swi_forest,dfa_uk_farm,dfa_uk_forest)
 
 
+# Number of increase, decrease and stable
+# Load functions https://github.com/StanislasRigal/classtrajectory/blob/master/class-trajectory.Rmd
+index_lin_rel <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
+                                        rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
+                                        rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
+                                        rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
+                                        rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
+                            Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
+                                      "FBI",rep(c("FBI","WBI"),3)),
+                            shape = NA, slope = NA, slope_sd = NA)
+for(i in 1:length(list_dfa)){
+  sdrep <- list_dfa[[i]]$sdRep
+  nb_group <- 1
+  if(is.list(list_dfa[[i]]$group)){
+    nb_group <- length(unique(list_dfa[[i]]$group$kmeans_res[[1]]$group))
+  }
+  test <- data.frame(group=rep(c("all",paste0("g",1:nb_group)),length(unique(list_dfa[[i]]$data_to_plot_sp$Year))),
+                     year=sort(rep(c(unique(list_dfa[[i]]$data_to_plot_sp$Year)), (nb_group+1))),
+                     sdrep[grepl("x_pred2",row.names(sdrep)),])
+  test <- test[test$group=="all",]
+  class.trajectory(test$Estimate, test$year)
+  
+  dataset <- data.frame(Index = test$Estimate, Year = test$year, Index_SE = test$Std..Error)
+  niter <- 100
+  ref_year <- 2000
+  correction <- FALSE
+  example <- res_trend(dataset, niter, ref_year, correction)
+  index_lin_rel$shape[i] <- as.character(example$max_shape)
+  index_lin_rel$slope[i] <- example$slope
+  index_lin_rel$slope_sd[i] <- example$slope_sd
+}
+
+index_lin_rel$slope <- round(index_lin_rel$slope,3)
+index_lin_rel$slope_sd <- round(index_lin_rel$slope_sd,3)
+
+index_lin_rel$Original_class <- index_lin_rel$shape
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "decrease_accelerated")] <- "Accelerated decline"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "decrease_constant")] <- "Constant decline"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "decrease_decelerated")] <- "Decelerated decline"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "increase_accelerated")] <- "Accelerated increase"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "increase_constant")] <- "Constant increase"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "stable_concave")] <- "Concave"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "stable_constant")] <- "Stable"
+index_lin_rel$Original_class[which(index_lin_rel$Original_class == "stable_convex")] <- "Convex"
+
+
+index_lin_rel$Linear_class <- index_lin_rel$shape
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "decrease_accelerated")] <- "Decline"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "decrease_constant")] <- "Decline"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "decrease_decelerated")] <- "Decline"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "increase_accelerated")] <- "Increase"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "increase_constant")] <- "Increase"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "stable_concave")] <- "Stable"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "stable_constant")] <- "Stable"
+index_lin_rel$Linear_class[which(index_lin_rel$Linear_class == "stable_convex")] <- "Stable"
+
+
+table(index_lin_rel$Linear_class[index_lin_rel$Index=="FBI"])
+table(index_lin_rel$Linear_class[index_lin_rel$Index=="WBI"])
+
+write.csv(index_lin_rel,"output/index_lin_rel.csv",row.names = F)
+
+# multivariate analysis (lda: https://www.displayr.com/linear-discriminant-analysis-in-r-an-introduction/)
+
+library(flipMultivariates)
+
+result_cluster_trait_lda <- cluster_trait_lda(dfa_aus_farm,SXI)
+result_cluster_trait_lda_1 <- result_cluster_trait_lda[[1]]
+result_cluster_trait_lda_2 <- list(result_cluster_trait_lda[[2]])
+
+for(i in 2:length(list_dfa)){
+  
+  print(i)
+  
+  data_dfa <- list_dfa[[i]]
+  result_cluster_trait_lda_tempo <- cluster_trait_lda(data_dfa,SXI)
+  result_cluster_trait_lda_1 <- rbind(result_cluster_trait_lda_1,result_cluster_trait_lda_tempo[[1]])
+  result_cluster_trait_lda_2[[i]] <- result_cluster_trait_lda_tempo[[2]]
+}
+
+result_cluster_trait_lda_1$var_SFI <- NA
+result_cluster_trait_lda_1$var_STI <- NA
+result_cluster_trait_lda_1$var_SSI <- NA
+result_cluster_trait_lda_1$lda_qual <- NA
+
+result_cluster_trait_lda_1$var_SFI[5] <- 0.32
+result_cluster_trait_lda_1$var_STI[5] <- 0.04
+result_cluster_trait_lda_1$var_SSI[5] <- 0.29
+result_cluster_trait_lda_1$lda_qual[5] <- 43.75
+
+result_cluster_trait_lda_1$var_SFI[6] <- 0.06
+result_cluster_trait_lda_1$var_STI[6] <- 0.10
+result_cluster_trait_lda_1$var_SSI[6] <- 0.09
+result_cluster_trait_lda_1$lda_qual[6] <- 48.89
+
+result_cluster_trait_lda_1$var_SFI[8] <- 0.00
+result_cluster_trait_lda_1$var_STI[8] <- 0.22
+result_cluster_trait_lda_1$var_SSI[8] <- 0.07
+result_cluster_trait_lda_1$lda_qual[8] <- 77.27
+  
+result_cluster_trait_lda_1$var_SFI[10] <- 0.02
+result_cluster_trait_lda_1$var_STI[10] <- 0.00
+result_cluster_trait_lda_1$var_SSI[10] <- 0.06
+result_cluster_trait_lda_1$lda_qual[10] <- 61.29
+  
+result_cluster_trait_lda_1$var_SFI[13] <- 0.07
+result_cluster_trait_lda_1$var_STI[13] <- 0.38
+result_cluster_trait_lda_1$var_SSI[13] <- 0.10
+result_cluster_trait_lda_1$lda_qual[13] <- 63.64
+  
+result_cluster_trait_lda_1$var_SFI[14] <- 0.04
+result_cluster_trait_lda_1$var_STI[14] <- 0.03
+result_cluster_trait_lda_1$var_SSI[14] <- 0.02
+result_cluster_trait_lda_1$lda_qual[14] <- 54.55
+  
+result_cluster_trait_lda_1$var_SFI[18] <- 0.06
+result_cluster_trait_lda_1$var_STI[18] <- 0.02
+result_cluster_trait_lda_1$var_SSI[18] <- 0.32
+result_cluster_trait_lda_1$lda_qual[18] <- 68.18
+  
+result_cluster_trait_lda_1$var_SFI[19] <- 0.37
+result_cluster_trait_lda_1$var_STI[19] <- 0.45
+result_cluster_trait_lda_1$var_SSI[19] <- 0.10
+result_cluster_trait_lda_1$lda_qual[19] <- 82.35
+  
+result_cluster_trait_lda_1$var_SFI[21] <- 0.07
+result_cluster_trait_lda_1$var_STI[21] <- 0.09
+result_cluster_trait_lda_1$var_SSI[21] <- 0.21
+result_cluster_trait_lda_1$lda_qual[21] <- 95.45
+  
+result_cluster_trait_lda_1$var_SFI[22] <- 0.28
+result_cluster_trait_lda_1$var_STI[22] <- 0.26
+result_cluster_trait_lda_1$var_SSI[22] <- 0.24
+result_cluster_trait_lda_1$lda_qual[22] <- 66.67
+  
+result_cluster_trait_lda_1$var_SFI[26] <- 0.02
+result_cluster_trait_lda_1$var_STI[26] <- 0.04
+result_cluster_trait_lda_1$var_SSI[26] <- 0.01
+result_cluster_trait_lda_1$lda_qual[26] <- 64.29
+  
+result_cluster_trait_lda_1$var_SFI[27] <- 0.04
+result_cluster_trait_lda_1$var_STI[27] <- 0.17
+result_cluster_trait_lda_1$var_SSI[27] <- 0.45
+result_cluster_trait_lda_1$lda_qual[27] <- 75.00
+  
+result_cluster_trait_lda_1$var_SFI[28] <- 0.03
+result_cluster_trait_lda_1$var_STI[28] <- 0.17
+result_cluster_trait_lda_1$var_SSI[28] <- 0.00
+result_cluster_trait_lda_1$lda_qual[28] <- 100 
+  
+result_cluster_trait_lda_1$var_SFI[30] <- 0.03
+result_cluster_trait_lda_1$var_STI[30] <- 0.00
+result_cluster_trait_lda_1$var_SSI[30] <- 0.01
+result_cluster_trait_lda_1$lda_qual[30] <- 90.48
+  
+result_cluster_trait_lda_1$var_SFI[31] <- 0.08
+result_cluster_trait_lda_1$var_STI[31] <- 0.13
+result_cluster_trait_lda_1$var_SSI[31] <- 0.00
+result_cluster_trait_lda_1$lda_qual[31] <- 69.23
+  
+result_cluster_trait_lda_1$var_SFI[32] <- 0.06
+result_cluster_trait_lda_1$var_STI[32] <- 0.07
+result_cluster_trait_lda_1$var_SSI[32] <- 0.29
+result_cluster_trait_lda_1$lda_qual[32] <- 73.08
+  
+result_cluster_trait_lda_1$var_SFI[33] <- 0.01
+result_cluster_trait_lda_1$var_STI[33] <- 0.03
+result_cluster_trait_lda_1$var_SSI[33] <- 0.04
+result_cluster_trait_lda_1$lda_qual[33] <- 91.67
+  
+result_cluster_trait_lda_1$var_SFI[34] <- 0.00
+result_cluster_trait_lda_1$var_STI[34] <- 0.00
+result_cluster_trait_lda_1$var_SSI[34] <- 0.00
+result_cluster_trait_lda_1$lda_qual[34] <- 65.22
+  
+result_cluster_trait_lda_1$var_SFI[35] <- 0.07
+result_cluster_trait_lda_1$var_STI[35] <- 0.11
+result_cluster_trait_lda_1$var_SSI[35] <- 0.02
+result_cluster_trait_lda_1$lda_qual[35] <- 88.24
+
+result_cor_lda <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
+                                     rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
+                                     rep("Hungary",2),rep("Ireland",1),rep("Italy",2),rep("Latvia",1),
+                                     rep("Lithuania",1),rep("Netherlands",2),rep("Norway",2),rep("Poland",2),
+                                     rep("Spain",1),rep("Sweden",2),rep("Switzerland",2),rep("United Kingdom",2)),
+                         Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
+                                   "FBI",rep(c("FBI","WBI"),3)),
+                         result_cluster_trait_lda_1)
+  
+
+# univariate analyses
+
 result_cluster_trait <- cluster_trait(dfa_aus_farm,SXI, nboot = 1000)
 result_cluster_trait_final <- result_cluster_trait$result_cor_final
 result_cluster_trait_all <- list()
@@ -2442,6 +2634,8 @@ result_cor2_long <- melt(result_cor2, measure.vars = c("SFI_12","SSI_12","STI_12
 result_cor2_long$pval_adj <- NA
 result_cor2_long$pval_adj[which(!is.na(result_cor2_long$value))] <- p.adjust(result_cor2_long$value[which(!is.na(result_cor2_long$value))],"BH")
 
+tet=result_cor2_long %>% group_by(Country) %>% summarise(pval_adj2=p.adjust(value,"BH"))
+
 saveRDS(result_cor,"output/result_cor.rds")
 
 ## Results as figures
@@ -2479,12 +2673,29 @@ europe_cropped$fill_param[europe_cropped$sovereignt %in% c("Austria","Belgium","
                                                            "Italy","Latvia","Lithuania","Netherlands","Norway","Portugal","Poland","Romania",
                                                            "Slovakia","Spain","Sweden","Switzerland","United Kingdom","Slovenia","Luxembourg")] <- "PECBMS member (in 2016)"
 
+# if multivariate
+
+europe_cropped <- merge(europe_cropped,droplevels(result_cor_lda[result_cor_lda$Index=="FBI",]), by.x="sovereignt", by.y="Country", all.x=T)
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all","var_SFI",
+                                                         "var_STI","var_SSI"))] <- c("nb_lat_trend_fbi","nb_cluster_fbi","nb_outlier_fbi","nb_species_fbi","nb_anticor_cluster_fbi","nb_anticor_cluster_fbi_all","var_SFI_fbi",
+                                                                                     "var_STI_fbi","var_SSI_fbi")
+europe_cropped <- merge(europe_cropped,droplevels(result_cor_lda[result_cor_lda$Index=="WBI",]), by.x="sovereignt", by.y="Country", all.x=T)
+names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all","var_SFI",
+                                                         "var_STI","var_SSI"))] <- c("nb_lat_trend_wbi","nb_cluster_wbi","nb_outlier_wbi","nb_species_wbi","nb_anticor_cluster_wbi","nb_anticor_cluster_wbi_all","var_SFI_wbi",
+                                                                                     "var_STI_wbi","var_SSI_wbi")
+europe_cropped$nb_anticor_cluster_fbi2 <- europe_cropped$nb_anticor_cluster_fbi+europe_cropped$nb_anticor_cluster_fbi_all
+europe_cropped$nb_anticor_cluster_wbi2 <- europe_cropped$nb_anticor_cluster_wbi+europe_cropped$nb_anticor_cluster_wbi_all
+
+# if univariate
+
 europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="FBI",]), by.x="sovereignt", by.y="Country", all.x=T)
 names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_fbi","nb_cluster_fbi","nb_outlier_fbi","nb_species_fbi","nb_anticor_cluster_fbi","nb_anticor_cluster_fbi_all")
 europe_cropped <- merge(europe_cropped,droplevels(result_cor[result_cor$Index=="WBI",]), by.x="sovereignt", by.y="Country", all.x=T)
 names(europe_cropped)[which(names(europe_cropped) %in% c("Nb_lat_trend","Nb_cluster","Nb_outlier","Nb_species","Nb_anticor_cluster_sig","Nb_anticor_cluster_all"))] <- c("nb_lat_trend_wbi","nb_cluster_wbi","nb_outlier_wbi","nb_species_wbi","nb_anticor_cluster_wbi","nb_anticor_cluster_wbi_all")
 europe_cropped$nb_anticor_cluster_fbi2 <- europe_cropped$nb_anticor_cluster_fbi+europe_cropped$nb_anticor_cluster_fbi_all
 europe_cropped$nb_anticor_cluster_wbi2 <- europe_cropped$nb_anticor_cluster_wbi+europe_cropped$nb_anticor_cluster_wbi_all
+
+
 
 # Reproject data
 
@@ -2560,6 +2771,74 @@ ggsave("output/hist1.png",
        dpi=300,
        width = 2, 
        height = 2 
+)
+
+
+
+# Map effect traits
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_fbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SFI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = var_SFI_fbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_fbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SSI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = var_SSI_fbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_fbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_STI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = var_STI_fbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = lda_qual.x)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$lda_qual.x & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = round(lda_qual.x))) +
+  theme(legend.position = "none")
+
+
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_wbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SFI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = var_SFI_wbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_wbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SSI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = var_SSI_wbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_wbi)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_STI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = var_STI_wbi)) +
+  theme(legend.position = "none")
+
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = lda_qual.y)) +
+  geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$lda_qual.y & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
+  scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
+  theme_void() + coord_sf(datum = NA) + 
+  geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = round(lda_qual.y))) +
+  theme(legend.position = "none")
+
+ggsave("output/effect_map1.png",
+       dpi=300,
+       width = 5, 
+       height = 5 
 )
 
 # plot group trend
