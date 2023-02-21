@@ -1870,6 +1870,28 @@ SXI <- merge(SXI,SSI,by="Species", all.x=T)
 
 write.csv(SXI,"output/SXI.csv", row.names = F)
 
+cor_SXI <- SXI[,c("SFI.y","SSI","STI")]
+names(cor_SXI)[1] <- "SFI"
+
+upper_tri <- matrix(c(1,round(cor.test(cor_SXI$SFI,cor_SXI$SSI)$estimate,2),round(cor.test(cor_SXI$SFI,cor_SXI$STI)$estimate,2),
+                      NA,1,round(cor.test(cor_SXI$SSI,cor_SXI$STI)$estimate,2),
+                      NA,NA,1), ncol=3, dimnames = list(names(cor_SXI),names(cor_SXI)))
+upper_tri <- data.frame(var1=names(cor_SXI),as.data.frame(upper_tri))
+melted_SXI <- melt(upper_tri, na.rm = TRUE)
+
+ggplot(data = melted_SXI, aes(var1,variable, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1),
+        axis.text.y = element_text(size = 12, hjust = 1),
+        axis.title = element_blank())+
+  geom_text(aes(var1, variable, label = value), color = "black", size = 4) +
+  coord_fixed()
+
 ### Test model to explain clusters
 
 data_mod <- merge(dfa_aus_farm$group[[1]][[1]],SXI, by.x="name_long", by.y="Species")

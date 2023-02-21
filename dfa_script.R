@@ -40,9 +40,9 @@ obs_se_farm <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
 # Forest bird
 
 species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %in% c(
-  "ACCNIS","TETBON","TRIOCH","COLOEN","DENMAJ","DRYMAR","PICVIR","JYNTOR",
-  "DRYMIN","PICTRI","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
-  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP",
+  "ACCNIS","TETBON","TRIOCH","COLOEN","DRYMAR",#"DENMAJ","PICVIR","JYNTOR","PICTRI",
+  "DRYMIN","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
+  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP","FICALB",
   "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
 
 Obs <- ts_bird_se_allcountry_data[ts_bird_se_allcountry_data$code_sp %in% species_sub$code_sp,]
