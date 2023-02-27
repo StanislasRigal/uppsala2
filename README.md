@@ -347,7 +347,7 @@ ex_dfa_clust$plot_group_ts$g2
 
 ex_dfa_clust$plot_group_ts2$all
 
-# Plot time-series of cluster barycentres
+# Plot time-series of cluster barycentres from sdRep
 
 ex_dfa_clust$plot_group_ts2$g1
 
@@ -363,7 +363,11 @@ ex_dfa_clust$plot_group_ts2$g2
 
 ex_dfa_clust$aic
 
-# Optimisation output of DFA
+# Summary of otimisation output of DFA
+
+head(ex_dfa_clust$sdRep)
+
+# Detailled otimisation output of DFA
 
 head(ex_dfa_clust$sdRep)
 
@@ -383,7 +387,7 @@ The columns are set as follows:
 
 ```{r}
 
-head(ex_dfa_clust$group[[1]][[1]])
+head(ex_dfa_clust$group$kmeans_res[[1]])
 
 ```
 
@@ -393,23 +397,31 @@ head(ex_dfa_clust$group[[1]][[1]])
 
 # Cluster barycentres
 
-ex_dfa_clust$group[[1]][[2]]
+ex_dfa_clust$group$kmeans_res[[2]]
 
 # Variance captured by PCA first two axes
 
-ex_dfa_clust$group[[1]][[3]]
+ex_dfa_clust$group$kmeans_res[[3]]
 
 # Cluster position in the first factorial plan
 
-ex_dfa_clust$group[[2]]
+ex_dfa_clust$group$centroids
 
 # Cluster stability
 
-ex_dfa_clust$group[[3]]
+ex_dfa_clust$group$stability_cluster_final
 
 # Cluster dispersion
 
-ex_dfa_clust$group[[4]]
+ex_dfa_clust$group$mean_dist_clust
+
+# Cluster position in PCA
+
+ex_dfa_clust$group$pca_centre_list
+
+# PCA results
+
+ex_dfa_clust$group$myPCA
 
 # Time-series of cluster barycentres
 
@@ -734,9 +746,9 @@ obs_se_farm <- dcast(Obs[,c("code_sp","Log_SE_m0","year")],
 # Species names and selection
 
 species_sub <- species_forest <- droplevels(species_data[species_data$code_sp %in% c(
-  "ACCNIS","TETBON","TRIOCH","COLOEN","DENMAJ","DRYMAR","PICVIR","JYNTOR",
-  "DRYMIN","PICTRI","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
-  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP",
+   "ACCNIS","TETBON","TRIOCH","COLOEN","DRYMAR",
+  "DRYMIN","NUCCAR","GARGLA","PERATE","LOPCRI","POEPAL","POEMON",
+  "SITEUR","CERFAM","TURVIS","PHOPHO","PHYCOL","PHYSIB","REGREG","FICHYP","FICALB",
   "ANTTRI","COCCOC","SPISPI","PYRPYR","EMBRUS"),])
 
 # Observation data for woodland birds
