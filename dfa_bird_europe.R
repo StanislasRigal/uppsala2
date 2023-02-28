@@ -1410,8 +1410,8 @@ dfa_swe_farm <- make_dfa(data_ts = y_farm,data_ts_se = obs_se_farm,
 saveRDS(dfa_swe_farm,"output/dfa_swe_farm.rds")
 
 species_swe_forest  <- data.frame(name_long=c("Accipiter nisus","Tetrastes bonasia","Tringa ochropus","Columba oenas",
-                                       "Dendrocopos major","Dryocopus martius","Picus viridis","Jynx torquilla",
-                                       "Dryobates minor","Picoides tridactylus","Nucifraga caryocatactes","Garrulus glandarius",
+                                       "Dryocopus martius","Ficedula albicollis",#"Picus viridis","Jynx torquilla","Dendrocopos major","Picoides tridactylus",
+                                       "Dryobates minor","Nucifraga caryocatactes","Garrulus glandarius",
                                        "Periparus ater","Lophophanes cristatus","Poecile palustris","Poecile montanus",
                                        "Sitta europaea","Certhia familiaris","Turdus viscivorus","Phoenicurus phoenicurus",
                                        "Phylloscopus collybita","Phylloscopus sibilatrix","Regulus regulus","Ficedula hypoleuca",
@@ -1431,7 +1431,7 @@ y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
 obs_se_forest <- dcast(Obs[,c("code_sp","Index_SE","Year")],
                        code_sp~Year, fun.aggregate = sum, value.var = "Index_SE")
 
-#y_forest[y_forest == 0] <- NA
+y_forest[y_forest == 0] <- NA
 
 dfa_swe_forest <- make_dfa(data_ts = y_forest,data_ts_se = obs_se_forest,
                            species_sub = species_swe_forest,nfac = 0,
@@ -2558,10 +2558,10 @@ result_cluster_trait_lda_1$var_STI[31] <- 0.13
 result_cluster_trait_lda_1$var_SSI[31] <- 0.00
 result_cluster_trait_lda_1$lda_qual[31] <- 69.23
   
-result_cluster_trait_lda_1$var_SFI[32] <- 0.06
-result_cluster_trait_lda_1$var_STI[32] <- 0.07
-result_cluster_trait_lda_1$var_SSI[32] <- 0.29
-result_cluster_trait_lda_1$lda_qual[32] <- 73.08
+result_cluster_trait_lda_1$var_SFI[32] <- 0.00 # 0.06
+result_cluster_trait_lda_1$var_STI[32] <- 0.05 # 0.07
+result_cluster_trait_lda_1$var_SSI[32] <- 0.23 # 0.29
+result_cluster_trait_lda_1$lda_qual[32] <- 100 # 73.08
   
 result_cluster_trait_lda_1$var_SFI[33] <- 0.01
 result_cluster_trait_lda_1$var_STI[33] <- 0.03
