@@ -295,7 +295,7 @@ MSI_MC_func <- function(dataset,
                         nsim=1000, # number of Monte Carlo simulations
                         SEbaseyear=1996, # year to set SE to 0. SE of other years is relative to the SE of SEbaseyear
                         plotbaseyear=1996, # year to set MSI or smoothed trend (dependend on 'index_smooth') to 100 in final MSI-plot
-                        index_smooth="SMOOTH", # INDEX / SMOOTH: "INDEX" will cause the MSI in plotbaseyear set to 100; "SMOOTH" will set the smoothed trend value in the plotbaseyear to 100
+                        index_smooth="INDEX", # INDEX / SMOOTH: "INDEX" will cause the MSI in plotbaseyear set to 100; "SMOOTH" will set the smoothed trend value in the plotbaseyear to 100
                         maxCV=3,       # maximum allowed mean Coefficient of Variation (CV) of species indices (0.5 = 50%). Species with higher mean CV are excluded
                         truncfac=10,    # truncation factor (=maximum allowed year-to-year index ratio). Default for Living Planet Index = 10
                         TRUNC=1 # set all indices below TRUNC to this value and their SE to 0. TRUNC <- 0 means no truncation
@@ -624,7 +624,7 @@ MSI_MC_func_eu <- function(dataset,
                         nsim=1000, # number of Monte Carlo simulations
                         SEbaseyear=2000, # year to set SE to 0. SE of other years is relative to the SE of SEbaseyear
                         plotbaseyear=2000, # year to set MSI or smoothed trend (dependend on 'index_smooth') to 100 in final MSI-plot
-                        index_smooth="SMOOTH", # INDEX / SMOOTH: "INDEX" will cause the MSI in plotbaseyear set to 100; "SMOOTH" will set the smoothed trend value in the plotbaseyear to 100
+                        index_smooth="INDEX", # INDEX / SMOOTH: "INDEX" will cause the MSI in plotbaseyear set to 100; "SMOOTH" will set the smoothed trend value in the plotbaseyear to 100
                         maxCV=3,       # maximum allowed mean Coefficient of Variation (CV) of species indices (0.5 = 50%). Species with higher mean CV are excluded
                         truncfac=10,    # truncation factor (=maximum allowed year-to-year index ratio). Default for Living Planet Index = 10
                         TRUNC=1 # set all indices below TRUNC to this value and their SE to 0. TRUNC <- 0 means no truncation
@@ -793,9 +793,11 @@ MSI_MC_func_eu <- function(dataset,
     }
     
     for (y in min(bplus,nyear):nyear){
-      
-      simMSI[y,s] <- simMSI[y-1,s] + mnCHAIN[y-1,s]
-      
+      if(is.na(mnCHAIN[y-1,s])){
+        simMSI[y,s] <- simMSI[y-1,s]
+      } else{
+        simMSI[y,s] <- simMSI[y-1,s] + mnCHAIN[y-1,s]
+      }
     }
   }
   
@@ -857,20 +859,20 @@ MSI_MC_func_eu <- function(dataset,
   
   Diff <- array(NA, dim=c(nyear, nsim))
   
-  for (s in 1:nsim) {
+  #for (s in 1:nsim) {
     
-    smooth <- predict(loess(simMSI[,s]~uyear, span=0.75, degree=2, na.action=na.exclude),
-                      data.frame(uyear), se=TRUE)
+   # smooth <- predict(loess(simMSI[,s]~uyear, span=0.75, degree=2, na.action=na.exclude),
+    #                  data.frame(uyear), se=TRUE)
     
-    loessMSI[,s] <- round(smooth$fit, digits=4)
+    #loessMSI[,s] <- round(smooth$fit, digits=4)
     
     
-    for (y in 1:nyear) {
+    #for (y in 1:nyear) {
       
-      Diff[y,s] <- loessMSI[nyear,s] - loessMSI[y,s]
+    #  Diff[y,s] <- loessMSI[nyear,s] - loessMSI[y,s]
       
-    } 
-  }
+    #} 
+  #}
   
   
   # create output for flexible trend estimates
@@ -893,25 +895,25 @@ MSI_MC_func_eu <- function(dataset,
     smoothMSI[y,9] <- round(exp(log(smoothMSI[y,6])/(nyear-y)), digits=4)		# = CI- YCR
     smoothMSI[y,10] <- round(exp(log(smoothMSI[y,7])/(nyear-y)), digits=4)		# = CI+ YCR
   }
-  for (y in 1:(nyear-1)) {
-    if (smoothMSI[y,9] > 1.05) {smoothMSI[y,11] <- 1} else
-      if (smoothMSI[y,10] < 0.95) {smoothMSI[y,11] <- 6} else
-        if (smoothMSI[y,9] > 1.00) {smoothMSI[y,11] <- 2} else
-          if (smoothMSI[y,10] < 1.00) {smoothMSI[y,11] <- 5} else
-            if ((smoothMSI[y,9] - 0.95)*(1.05 - smoothMSI[y,10]) < 0.00) {smoothMSI[y,11] <- 3} else
-              if ((smoothMSI[y,10]) - (smoothMSI[y,9]) > 0.10) {smoothMSI[y,11] <- 3} else
-              {smoothMSI[y,11] <- 4}
-  } 
+  #for (y in 1:(nyear-1)) {
+  #  if (smoothMSI[y,9] > 1.05) {smoothMSI[y,11] <- 1} else
+  #    if (smoothMSI[y,10] < 0.95) {smoothMSI[y,11] <- 6} else
+  #      if (smoothMSI[y,9] > 1.00) {smoothMSI[y,11] <- 2} else
+  #        if (smoothMSI[y,10] < 1.00) {smoothMSI[y,11] <- 5} else
+  #          if ((smoothMSI[y,9] - 0.95)*(1.05 - smoothMSI[y,10]) < 0.00) {smoothMSI[y,11] <- 3} else
+  #            if ((smoothMSI[y,10]) - (smoothMSI[y,9]) > 0.10) {smoothMSI[y,11] <- 3} else
+  #           {smoothMSI[y,11] <- 4}
+  #} 
   TrendClass_flex <- matrix(NA, nrow= nyear, ncol=1)
-  for (y in 1:(nyear-1)) {
-    if (smoothMSI[y,9] > 1.05) {TrendClass_flex[y] <- "strong_increase" } else
-      if (smoothMSI[y,10] < 0.95) { TrendClass_flex[y] <- "steep_decline" } else
-        if (smoothMSI[y,9] > 1.00) { TrendClass_flex[y] <- "moderate_increase"} else
-          if (smoothMSI[y,10] < 1.00) { TrendClass_flex[y] <- "moderate_decline" } else
-            if ((smoothMSI[y,9] - 0.95)*(1.05 - smoothMSI[y,10]) < 0.00) { TrendClass_flex[y] <- "uncertain"} else
-              if ((smoothMSI[y,10]) - (smoothMSI[y,9]) > 0.10) { TrendClass_flex[y] <- "uncertain" } else
-              {TrendClass_flex[y] <- "stable"}
-  } 
+  #for (y in 1:(nyear-1)) {
+  #  if (smoothMSI[y,9] > 1.05) {TrendClass_flex[y] <- "strong_increase" } else
+  #    if (smoothMSI[y,10] < 0.95) { TrendClass_flex[y] <- "steep_decline" } else
+  #      if (smoothMSI[y,9] > 1.00) { TrendClass_flex[y] <- "moderate_increase"} else
+  #        if (smoothMSI[y,10] < 1.00) { TrendClass_flex[y] <- "moderate_decline" } else
+  #          if ((smoothMSI[y,9] - 0.95)*(1.05 - smoothMSI[y,10]) < 0.00) { TrendClass_flex[y] <- "uncertain"} else
+  #            if ((smoothMSI[y,10]) - (smoothMSI[y,9]) > 0.10) { TrendClass_flex[y] <- "uncertain" } else
+  #            {TrendClass_flex[y] <- "stable"}
+  #} 
   
   # rescaling (for presentation of plot)
   

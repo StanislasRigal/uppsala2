@@ -44,6 +44,9 @@ template<class Type>
   matrix<Type> x_mean(x.rows(), 1);
   x_mean.setZero();
   
+  // Mean-centred latent trends
+  matrix<Type> x_mc(x.rows(), x.cols());
+  
   // Matrix to hold predicted species trends
   matrix<Type> x_sp(nSp, nT);
   
@@ -74,6 +77,13 @@ template<class Type>
       }
     }
   }
+  
+  // Mean-centred random walks
+  for(int t = 0; t < nT; ++t){
+    for(int f = 0; f < x.rows(); ++f){
+      x_mc(f, t) = (x(f,t)-x_mean(f));
+    }
+  }  
 
   // Species trends
   for(int i = 0; i < nSp; ++i) {
@@ -125,6 +135,7 @@ template<class Type>
   ADREPORT(x_pred);
   ADREPORT(x_pred2);
   ADREPORT(Z_pred);
+  ADREPORT(x_mc);
   
   // Report simulated values
   //SIMULATE{
@@ -1218,6 +1229,17 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     
     data_to_plot_tr$variable <- as.character(data_to_plot_tr$variable) %>% gsub(pattern="X", replacement = "Latent trend ") %>% as.factor()
     
+    # Add mean-centred trends
+    
+    x_mc_ts <- sdRep[rownames(sdRep)=="x_mc",]
+    
+    x_mc_ts <- data.frame(x_mc_ts = x_mc_ts[,1],
+                     x_mc_sd = x_mc_ts[,2],
+                     x_mc_id = paste0("Latent trend ",rep(1:nfac,nT)),
+                     x_mc_year = sort(rep(min(data_to_plot_sp$Year):max(data_to_plot_sp$Year),nfac)))
+    
+    data_to_plot_tr <- merge(data_to_plot_tr, x_mc_ts, by.x=c("variable","Year"), by.y=c("x_mc_id","x_mc_year"), all.x=TRUE)
+    
     # Data for species loadings
     
     data_loadings <- cbind(melt(data.frame(code_sp=data_ts_save[,1],
@@ -1264,8 +1286,14 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
       theme_modern() + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=rot_tr.value)) + 
-      geom_line(aes(colour=variable))+ylab("Rotated value") +
+      geom_line(aes(colour=variable))+ylab("Rotated values") +
       geom_ribbon(aes(ymax = (rot_tr.value+1.96*se.value), ymin=(rot_tr.value-1.96*se.value), fill=variable), alpha=0.1) +
+      facet_wrap(variable ~ ., ncol=min(3,length(unique(data_to_plot_tr$variable)))) +
+      theme_modern() + theme(legend.position = "none")
+    
+    plot_tr_mc <- ggplot(data_to_plot_tr, aes(x=Year, y=x_mc_ts)) + 
+      geom_line(aes(colour=variable))+ylab("Mean-centred values") +
+      geom_ribbon(aes(ymax = (x_mc_ts+1.96*x_mc_sd), ymin=(x_mc_ts-1.96*x_mc_sd), fill=variable), alpha=0.1) +
       facet_wrap(variable ~ ., ncol=min(3,length(unique(data_to_plot_tr$variable)))) +
       theme_modern() + theme(legend.position = "none")
     
@@ -1288,6 +1316,20 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     
     data_to_plot_tr <- cbind(melt(data_to_plot_tr, id.vars = "Year"),
                              se=melt(data_to_plot_tr_se, id.vars = "Year")[,3])
+    
+    data_to_plot_tr$variable <- "Latent trend 1"
+    
+    # Add mean-centred trends
+    
+    x_mc_ts <- sdRep[rownames(sdRep)=="x_mc",]
+    
+    x_mc_ts <- data.frame(x_mc_ts = x_mc_ts[,1],
+                          x_mc_sd = x_mc_ts[,2],
+                          x_mc_id = "Latent trend 1",
+                          x_mc_year = sort(rep(min(data_to_plot_sp$Year):max(data_to_plot_sp$Year),nfac)))
+    
+    data_to_plot_tr <- merge(data_to_plot_tr, x_mc_ts, by.x=c("variable","Year"), by.y=c("x_mc_id","x_mc_year"), all.x=TRUE)
+    
     
     # Data for species loadings
     
@@ -1315,12 +1357,19 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     
     plot_sp <- ggplot(data_to_plot_sp, aes(x=Year, y=value)) + geom_point() +
       geom_pointrange(aes(ymax = value + 1.96 * se.value_exp, ymin=value - 1.96 * se.value_exp)) + 
-      facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
+      #facet_wrap(code_sp ~ ., ncol=4, scales = "free") +
+      facet_wrap(name_long ~ ., ncol=round(sqrt(length(unique(data_to_plot_sp$code_sp)))), scales = "free", labeller = label_bquote(col = italic(.(name_long)))) +
       theme_modern()
     
     plot_tr <- ggplot(data_to_plot_tr, aes(x=Year, y=value)) + 
       geom_line(aes(colour=variable))+
       theme_modern()
+      
+    plot_tr_mc <- ggplot(data_to_plot_tr, aes(x=Year, y=x_mc_ts)) + 
+      geom_line(aes(colour=variable))+ylab("Mean-centred value") +
+      geom_ribbon(aes(ymax = (x_mc_ts+1.96*x_mc_sd), ymin=(x_mc_ts-1.96*x_mc_sd), fill=variable), alpha=0.1) +
+      facet_wrap(variable ~ ., ncol=min(3,length(unique(data_to_plot_tr$variable)))) +
+      theme_modern() + theme(legend.position = "none")
     
     plot_ld <- ggplot(data_loadings) + 
       geom_col(aes(value, name_long, fill=variable)) +
@@ -1395,7 +1444,7 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
               data_loadings = data_loadings, # Data on factor loadings
               exp_var_lt = exp_var_lt, # Data on % of variance of species ts explained by latent trends
               plot_sp = plot_sp, # Plot of species time-series and fit
-              plot_tr = plot_tr, # Plot of latent trends
+              plot_tr = plot_tr_mc, # Plot of latent trends (mean_centred)
               plot_ld = plot_ld, # Plot of factor loadings
               plot_perc_var = plot_perc_var, # Plot of % of variance of species ts explained by latent trends
               plot_sp_group = plot_sp_group, # Plot clusters in factorial plan
@@ -1414,7 +1463,8 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
 # Analyse cluster and species traits
 
 cluster_trait_lda <- function(data_dfa,
-                           trait_mat){
+                           trait_mat,
+                           missing_opt="Exclude cases with missing data"){
   
   lda <- NA
   
@@ -1463,7 +1513,7 @@ cluster_trait_lda <- function(data_dfa,
         
         data_mod[,c("SFI.y","STI","SSI")] <- scale(data_mod[,c("SFI.y","STI","SSI")]) 
         
-        lda <- LDA(group ~ SFI.y + STI + SSI, data = data_mod)
+        lda <- LDA(group ~ SFI.y + STI + SSI, data = data_mod, missing = missing_opt)
       }
     }
   }

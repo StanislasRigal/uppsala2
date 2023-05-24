@@ -1,5 +1,9 @@
 # Retrieve data for time series of all European birds by country
 
+# Specify wd if needed
+
+setwd("/media/stanislas/disk1T/Documents/Postdoc/Uppsala")
+
 # Download Species national indices from Brlik et al. (2021)
 
 df <- fread('https://zenodo.org/record/4590199/files/national_indices2017.csv?download=1')
@@ -102,6 +106,35 @@ df_ger$Index_SE <- round(sqrt(((df_ger$`Index_SE_Germany East`)^2*subd$frac[subd
 df_ger$Index_SE[is.na(df_ger$Index_SE)] <- df_ger$`Index_SE_Germany West`[is.na(df_ger$Index_SE)]
 
 
+df_ger2 <- df[df$CountryGroup %in% c("Germany East", "Germany West") & df$Year>1990,]
+
+df_ger2 <- na.omit(dcast(df_ger2, Species + Year ~ CountryGroup, value.var = c("Index","Index_SE")))
+
+diff_start_year <- function(subdata){
+  ref_ger_w <- subdata$`Index_Germany West`[1]
+  subdata$`Index_Germany West` <- round(subdata$`Index_Germany West`/ref_ger_w*100)
+  subdata$`Index_SE_Germany West` <- round(subdata$`Index_SE_Germany West`/ref_ger_w*100)
+  subdata$`Index_SE_Germany West`[1] <- 0
+  return(subdata)
+}
+
+df_ger2 <- ddply(df_ger2, .(Species), .fun = diff_start_year, .progress = "text")
+
+df_ger2$Index <- round((df_ger2$`Index_Germany East`*subd$frac[subd$reg=="Germany East"] +
+                         df_ger2$`Index_Germany West` *subd$frac[subd$reg=="Germany West"]) /
+                        (subd$frac[subd$reg=="Germany East"] + subd$frac[subd$reg=="Germany West"]))
+
+df_ger2$Index[is.na(df_ger2$Index)] <- df_ger2$`Index_Germany West`[is.na(df_ger2$Index)]
+
+df_ger2$Index_SE <- round(sqrt(((df_ger2$`Index_SE_Germany East`)^2*subd$frac[subd$reg=="Germany East"] +
+                                 (df_ger2$`Index_SE_Germany West`)^2*subd$frac[subd$reg=="Germany West"]) /
+                                (subd$frac[subd$reg=="Germany East"] + subd$frac[subd$reg=="Germany West"])))
+
+df_ger2$Index_SE[is.na(df_ger2$Index_SE)] <- df_ger2$`Index_SE_Germany West`[is.na(df_ger2$Index_SE)]
+
+
+
+
 # Merge all data
 
 df$Code <- as.character(df$Code)
@@ -112,7 +145,7 @@ species_all <- data.frame(df %>% group_by(Code, Species) %>% summarise(count=n()
 species_all$count <- NULL
 
 df_bel <- merge(df_bel,species_all, by="Species")
-df_ger <- merge(df_ger,species_all, by="Species")
+df_ger <- merge(df_ger2,species_all, by="Species")
 
 df_all_country <- rbind.fill(droplevels(df[!(df$CountryGroup %in% c("Belgium-Brussels", "Belgium-Wallonia",
                                                                     "Germany East", "Germany West")),]),
@@ -135,7 +168,7 @@ plot(unlist(df_select_timespan[29,-1])~as.numeric(names(df_select_timespan[,-1])
 country_to_keep <- df_select_timespan$CountryGroup[which(!is.na(df_select_timespan$`2000`))]
 country_to_keep <- country_to_keep[1:(length(country_to_keep)-1)]
 
-df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep,]) #& df_all_country$Year >= 1999,])
+df_all_country_2000 <- droplevels(df_all_country[df_all_country$CountryGroup %in% country_to_keep,]) # & df_all_country$Year > 1999,])
 
 # List farmland and woodland species by country
 
@@ -155,7 +188,7 @@ species_sub <- species_aus_farm <- na.omit(species_aus_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Austria",]
-#MSI_aus_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_aus_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_aus_farm <- species_aus_farm[species_aus_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -179,7 +212,8 @@ species_sub <- species_aus_forest <- na.omit(species_aus_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Austria",]
-#MSI_aus_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#remove Lullula arborea
+MSI_aus_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_aus_forest <- species_aus_forest[species_aus_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -210,7 +244,7 @@ species_sub <- species_bel_farm <- na.omit(species_bel_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Belgium",]
-#MSI_bel_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_bel_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_bel_farm <- species_bel_farm[species_bel_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -239,7 +273,7 @@ species_sub <- species_bel_forest <- na.omit(species_bel_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Belgium",]
-#MSI_bel_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_bel_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_bel_forest <- species_bel_forest[species_bel_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -379,7 +413,7 @@ species_sub <- species_cze_farm <- na.omit(species_cze_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Czech Republic",]
-#MSI_cze_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_cze_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_cze_farm <- species_cze_farm[species_cze_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -413,7 +447,7 @@ species_sub <- species_cze_forest <- na.omit(species_cze_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Czech Republic",]
-#MSI_cze_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_cze_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_cze_forest <- species_cze_forest[species_cze_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -445,7 +479,7 @@ species_sub <- species_den_farm <- na.omit(species_den_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Denmark",]
-#MSI_den_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_den_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_den_farm <- species_den_farm[species_den_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -474,7 +508,7 @@ species_sub <- species_den_forest <- na.omit(species_den_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Denmark",]
-#MSI_den_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_den_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_den_forest <- species_den_forest[species_den_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -511,7 +545,7 @@ species_sub <- species_est_farm <- na.omit(species_est_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Estonia",]
-#MSI_est_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_est_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_est_farm <- species_est_farm[species_est_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -543,7 +577,7 @@ species_sub <- species_est_forest <- na.omit(species_est_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Estonia",]
-#MSI_est_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_est_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_est_forest <- species_est_forest[species_est_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -573,7 +607,7 @@ species_sub <- species_fin_farm <- na.omit(species_fin_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Finland",]
-#MSI_fin_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_fin_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fin_farm <- species_fin_farm[species_fin_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -601,7 +635,7 @@ species_sub <- species_fin_forest <- na.omit(species_fin_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Finland",]
-#MSI_fin_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_fin_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fin_forest <- species_fin_forest[species_fin_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -633,7 +667,7 @@ species_sub <- species_fra_farm <- na.omit(species_fra_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "France",]
-#MSI_fra_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_fra_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fra_farm <- species_fra_farm[species_fra_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -663,7 +697,8 @@ species_sub <- species_fra_forest <- na.omit(species_fra_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "France",]
-#MSI_fra_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+# remove Dryocopus martius
+MSI_fra_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_fra_forest <- species_fra_forest[species_fra_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -693,7 +728,7 @@ species_sub <- species_ger_farm <- na.omit(species_ger_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Germany",]
-#MSI_ger_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_ger_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ger_farm <- species_ger_farm[species_ger_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -726,7 +761,7 @@ species_sub <- species_ger_forest <- na.omit(species_ger_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Germany",]
-#MSI_ger_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_ger_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ger_forest <- species_ger_forest[species_ger_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -759,7 +794,7 @@ species_sub <- species_hun_farm <- na.omit(species_hun_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Hungary",]
-#MSI_hun_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_hun_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_hun_farm <- species_hun_farm[species_hun_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -788,7 +823,7 @@ species_sub <- species_hun_forest <- na.omit(species_hun_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Hungary",]
-#MSI_hun_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_hun_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_hun_forest <- species_hun_forest[species_hun_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -820,7 +855,7 @@ species_sub <- species_ita_farm <- na.omit(species_ita_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Italy",]
-#MSI_ita_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_ita_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2001, plotbaseyear=2001)
 species_sub <- species_ita_farm <- species_ita_farm[species_ita_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -850,7 +885,7 @@ species_sub <- species_ita_forest <- na.omit(species_ita_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Italy",]
-#MSI_ita_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_ita_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2001, plotbaseyear=2001)
 species_sub <- species_ita_forest <- species_ita_forest[species_ita_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -879,7 +914,7 @@ species_sub <- species_lat_farm <- na.omit(species_lat_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Latvia",]
-#MSI_lat_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_lat_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_lat_farm <- species_lat_farm[species_lat_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -936,7 +971,7 @@ species_sub <- species_lit_farm <- na.omit(species_lit_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                              df_all_country_2000$CountryGroup == "Lithuania",]
-#MSI_lit_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_lit_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_lit_farm <- species_lit_farm[species_lit_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1021,7 +1056,7 @@ species_sub <- species_net_farm <- na.omit(species_net_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Netherlands",]
-#MSI_net_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_net_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_net_farm <- species_net_farm[species_net_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1053,7 +1088,7 @@ species_sub <- species_net_forest <- na.omit(species_net_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Netherlands",]
-#MSI_net_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_net_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_net_forest <- species_net_forest[species_net_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1084,7 +1119,8 @@ species_sub <- species_nor_farm <- na.omit(species_nor_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Norway",]
-#MSI_nor_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+# remove "Numenius arquata"
+MSI_nor_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_nor_farm <- species_nor_farm[species_nor_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1113,7 +1149,8 @@ species_sub <- species_nor_forest <- na.omit(species_nor_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Norway",]
-#MSI_nor_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#remove Picus viridis
+MSI_nor_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_nor_forest <- species_nor_forest[species_nor_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1145,7 +1182,7 @@ species_sub <- species_pol_farm <- na.omit(species_pol_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Poland",]
-#MSI_pol_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_pol_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_pol_farm <- species_pol_farm[species_pol_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1178,7 +1215,7 @@ species_sub <- species_pol_forest <- na.omit(species_pol_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Poland",]
-#MSI_pol_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_pol_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2001, plotbaseyear=2001)
 species_sub <- species_pol_forest <- species_pol_forest[species_pol_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1264,7 +1301,7 @@ species_sub <- species_ire_farm <- na.omit(species_ire_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Republic of Ireland",]
-#MSI_ire_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_ire_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_ire_farm <- species_ire_farm[species_ire_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1365,7 +1402,7 @@ species_sub <- species_spa_farm <- na.omit(species_spa_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Spain",]
-#MSI_spa_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_spa_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_spa_farm <- species_spa_farm[species_spa_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1393,7 +1430,8 @@ species_sub <- species_swe_farm <- na.omit(species_swe_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Sweden",]
-#MSI_swe_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+#remove Corvus frugilegus
+MSI_swe_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swe_farm <- species_swe_farm[species_swe_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1424,7 +1462,7 @@ species_sub <- species_swe_forest <- na.omit(species_swe_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Sweden",]
-#MSI_swe_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_swe_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swe_forest <- species_swe_forest[species_swe_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1462,7 +1500,7 @@ species_sub <- species_swi_farm <- na.omit(species_swi_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Switzerland",]
-#MSI_swi_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_swi_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swi_farm <- species_swi_farm[species_swi_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1499,7 +1537,7 @@ species_sub <- species_swi_forest <- na.omit(species_swi_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "Switzerland",]
-#MSI_swi_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_swi_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_swi_forest <- species_swi_forest[species_swi_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1531,7 +1569,7 @@ species_sub <- species_uk_farm <- na.omit(species_uk_farm)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "United Kingdom",]
-#MSI_uk_farmland <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_uk_farmland <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_uk_farm <- species_uk_farm[species_uk_farm$code_sp %in% unique(Obs$code_sp),]
 y_farm <- dcast(Obs[,c("code_sp","Index","Year")],
                 code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -1564,7 +1602,7 @@ species_sub <- species_uk_forest <- na.omit(species_uk_forest)
 
 Obs <- df_all_country_2000[df_all_country_2000$Species %in% species_sub$name_long &
                         df_all_country_2000$CountryGroup == "United Kingdom",]
-#MSI_uk_forest <- #MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
+MSI_uk_forest <- MSI_MC_func_eu(Obs,SEbaseyear=2000, plotbaseyear=2000)
 species_sub <- species_uk_forest <- species_uk_forest[species_uk_forest$code_sp %in% unique(Obs$code_sp),]
 y_forest <- dcast(Obs[,c("code_sp","Index","Year")],
                   code_sp~Year, fun.aggregate = sum, value.var = "Index")
@@ -2464,29 +2502,49 @@ write.csv(index_lin_rel,"output/index_lin_rel.csv",row.names = F)
 
 library(flipMultivariates)
 
-result_cluster_trait_lda <- cluster_trait_lda(dfa_aus_farm,SXI)
-result_cluster_trait_lda_1 <- result_cluster_trait_lda[[1]]
-result_cluster_trait_lda_2 <- list(result_cluster_trait_lda[[2]])
+### exclude NA
+
+result_cluster_trait_lda_na_rm <- cluster_trait_lda(dfa_aus_farm,SXI)
+result_cluster_trait_lda_na_rm_1 <- result_cluster_trait_lda_na_rm[[1]]
+result_cluster_trait_lda_na_rm_2 <- list(result_cluster_trait_lda_na_rm[[2]])
 
 for(i in 2:length(list_dfa)){
   
   print(i)
   
   data_dfa <- list_dfa[[i]]
-  result_cluster_trait_lda_tempo <- cluster_trait_lda(data_dfa,SXI)
-  result_cluster_trait_lda_1 <- rbind(result_cluster_trait_lda_1,result_cluster_trait_lda_tempo[[1]])
-  result_cluster_trait_lda_2[[i]] <- result_cluster_trait_lda_tempo[[2]]
+  result_cluster_trait_lda_na_rm_tempo <- cluster_trait_lda(data_dfa,SXI)
+  result_cluster_trait_lda_na_rm_1 <- rbind(result_cluster_trait_lda_na_rm_1,result_cluster_trait_lda_tempo[[1]])
+  result_cluster_trait_lda_na_rm_2[[i]] <- result_cluster_trait_lda_na_rm_tempo[[2]]
 }
+
+### Impute NA
+
+result_cluster_trait_lda_na_imput <- cluster_trait_lda(dfa_aus_farm,SXI, missing_opt = "Imputation (replace missing values with estimates)")
+result_cluster_trait_lda_na_imput_1 <- result_cluster_trait_lda_na_imput[[1]]
+result_cluster_trait_lda_na_imput_2 <- list(result_cluster_trait_lda_na_imput[[2]])
+
+for(i in 2:length(list_dfa)){
+  
+  print(i)
+  
+  data_dfa <- list_dfa[[i]]
+  result_cluster_trait_lda_na_imput_tempo <- cluster_trait_lda(data_dfa,SXI, missing_opt = "Imputation (replace missing values with estimates)")
+  result_cluster_trait_lda_na_imput_1 <- rbind(result_cluster_trait_lda_na_imput_1,result_cluster_trait_lda_na_imput_tempo[[1]])
+  result_cluster_trait_lda_na_imput_2[[i]] <- result_cluster_trait_lda_na_imput_tempo[[2]]
+}
+
+result_cluster_trait_lda_1 <- result_cluster_trait_lda_na_imput_1
 
 result_cluster_trait_lda_1$var_SFI <- NA
 result_cluster_trait_lda_1$var_STI <- NA
 result_cluster_trait_lda_1$var_SSI <- NA
 result_cluster_trait_lda_1$lda_qual <- NA
 
-result_cluster_trait_lda_1$var_SFI[5] <- 0.32
-result_cluster_trait_lda_1$var_STI[5] <- 0.04
-result_cluster_trait_lda_1$var_SSI[5] <- 0.29
-result_cluster_trait_lda_1$lda_qual[5] <- 43.75
+result_cluster_trait_lda_1$var_SFI[5] <- 0.23# 0.32
+result_cluster_trait_lda_1$var_STI[5] <- 0.00# 0.04
+result_cluster_trait_lda_1$var_SSI[5] <- 0.29# 0.29
+result_cluster_trait_lda_1$lda_qual[5] <- 38.89# 43.75
 
 result_cluster_trait_lda_1$var_SFI[6] <- 0.06
 result_cluster_trait_lda_1$var_STI[6] <- 0.10
@@ -2508,10 +2566,10 @@ result_cluster_trait_lda_1$var_STI[13] <- 0.38
 result_cluster_trait_lda_1$var_SSI[13] <- 0.10
 result_cluster_trait_lda_1$lda_qual[13] <- 63.64
   
-result_cluster_trait_lda_1$var_SFI[14] <- 0.04
-result_cluster_trait_lda_1$var_STI[14] <- 0.03
-result_cluster_trait_lda_1$var_SSI[14] <- 0.02
-result_cluster_trait_lda_1$lda_qual[14] <- 54.55
+result_cluster_trait_lda_1$var_SFI[14] <- 0.04#0.04
+result_cluster_trait_lda_1$var_STI[14] <- 0.04#0.03
+result_cluster_trait_lda_1$var_SSI[14] <- 0.01#0.02
+result_cluster_trait_lda_1$lda_qual[14] <- 52.17#54.55
   
 result_cluster_trait_lda_1$var_SFI[18] <- 0.06
 result_cluster_trait_lda_1$var_STI[18] <- 0.02
@@ -2528,55 +2586,55 @@ result_cluster_trait_lda_1$var_STI[21] <- 0.09
 result_cluster_trait_lda_1$var_SSI[21] <- 0.21
 result_cluster_trait_lda_1$lda_qual[21] <- 95.45
   
-result_cluster_trait_lda_1$var_SFI[22] <- 0.28
-result_cluster_trait_lda_1$var_STI[22] <- 0.26
-result_cluster_trait_lda_1$var_SSI[22] <- 0.24
-result_cluster_trait_lda_1$lda_qual[22] <- 66.67
+result_cluster_trait_lda_1$var_SFI[22] <- 0.31#0.28
+result_cluster_trait_lda_1$var_STI[22] <- 0.07#0.26
+result_cluster_trait_lda_1$var_SSI[22] <- 0.22#0.24
+result_cluster_trait_lda_1$lda_qual[22] <- 72.73#66.67
   
-result_cluster_trait_lda_1$var_SFI[26] <- 0.02
-result_cluster_trait_lda_1$var_STI[26] <- 0.04
-result_cluster_trait_lda_1$var_SSI[26] <- 0.01
-result_cluster_trait_lda_1$lda_qual[26] <- 64.29
+result_cluster_trait_lda_1$var_SFI[26] <- 0.04#0.02
+result_cluster_trait_lda_1$var_STI[26] <- 0.01#0.04
+result_cluster_trait_lda_1$var_SSI[26] <- 0.02#0.01
+result_cluster_trait_lda_1$lda_qual[26] <- 56.25#64.29
   
 result_cluster_trait_lda_1$var_SFI[27] <- 0.04
 result_cluster_trait_lda_1$var_STI[27] <- 0.17
 result_cluster_trait_lda_1$var_SSI[27] <- 0.45
 result_cluster_trait_lda_1$lda_qual[27] <- 75.00
   
-result_cluster_trait_lda_1$var_SFI[28] <- 0.03
-result_cluster_trait_lda_1$var_STI[28] <- 0.17
-result_cluster_trait_lda_1$var_SSI[28] <- 0.00
-result_cluster_trait_lda_1$lda_qual[28] <- 100 
+result_cluster_trait_lda_1$var_SFI[28] <- 0.00#0.03
+result_cluster_trait_lda_1$var_STI[28] <- 0.00#0.17
+result_cluster_trait_lda_1$var_SSI[28] <- 0.02#0.00
+result_cluster_trait_lda_1$lda_qual[28] <- 90.48#100 
   
-result_cluster_trait_lda_1$var_SFI[30] <- 0.03
-result_cluster_trait_lda_1$var_STI[30] <- 0.00
-result_cluster_trait_lda_1$var_SSI[30] <- 0.01
-result_cluster_trait_lda_1$lda_qual[30] <- 90.48
+result_cluster_trait_lda_1$var_SFI[30] <- 0.03#0.03
+result_cluster_trait_lda_1$var_STI[30] <- 0.00#0.00
+result_cluster_trait_lda_1$var_SSI[30] <- 0.00#0.01
+result_cluster_trait_lda_1$lda_qual[30] <- 90.91#90.48
   
-result_cluster_trait_lda_1$var_SFI[31] <- 0.08
-result_cluster_trait_lda_1$var_STI[31] <- 0.13
-result_cluster_trait_lda_1$var_SSI[31] <- 0.00
-result_cluster_trait_lda_1$lda_qual[31] <- 69.23
+result_cluster_trait_lda_1$var_SFI[31] <- 0.05#0.08
+result_cluster_trait_lda_1$var_STI[31] <- 0.14#0.13
+result_cluster_trait_lda_1$var_SSI[31] <- 0.00#0.00
+result_cluster_trait_lda_1$lda_qual[31] <- 64.29#69.23
   
-result_cluster_trait_lda_1$var_SFI[32] <- 0.00 # 0.06
-result_cluster_trait_lda_1$var_STI[32] <- 0.05 # 0.07
-result_cluster_trait_lda_1$var_SSI[32] <- 0.23 # 0.29
-result_cluster_trait_lda_1$lda_qual[32] <- 100 # 73.08
+result_cluster_trait_lda_1$var_SFI[32] <- 0.00 #0.00 
+result_cluster_trait_lda_1$var_STI[32] <- 0.24 #0.05 
+result_cluster_trait_lda_1$var_SSI[32] <- 0.07 #0.23 
+result_cluster_trait_lda_1$lda_qual[32] <- 100 #100 
   
-result_cluster_trait_lda_1$var_SFI[33] <- 0.01
-result_cluster_trait_lda_1$var_STI[33] <- 0.03
-result_cluster_trait_lda_1$var_SSI[33] <- 0.04
-result_cluster_trait_lda_1$lda_qual[33] <- 91.67
+result_cluster_trait_lda_1$var_SFI[33] <- 0.01 #0.01
+result_cluster_trait_lda_1$var_STI[33] <- 0.02 #0.03
+result_cluster_trait_lda_1$var_SSI[33] <- 0.04 #0.04
+result_cluster_trait_lda_1$lda_qual[33] <- 92 #91.67
   
-result_cluster_trait_lda_1$var_SFI[34] <- 0.00
-result_cluster_trait_lda_1$var_STI[34] <- 0.00
-result_cluster_trait_lda_1$var_SSI[34] <- 0.00
-result_cluster_trait_lda_1$lda_qual[34] <- 65.22
+result_cluster_trait_lda_1$var_SFI[34] <- 0.00 #0.00
+result_cluster_trait_lda_1$var_STI[34] <- 0.01 #0.00
+result_cluster_trait_lda_1$var_SSI[34] <- 0.00 #0.00
+result_cluster_trait_lda_1$lda_qual[34] <- 63.83 #65.22
   
-result_cluster_trait_lda_1$var_SFI[35] <- 0.07
-result_cluster_trait_lda_1$var_STI[35] <- 0.11
-result_cluster_trait_lda_1$var_SSI[35] <- 0.02
-result_cluster_trait_lda_1$lda_qual[35] <- 88.24
+result_cluster_trait_lda_1$var_SFI[35] <- 0.07 #0.07
+result_cluster_trait_lda_1$var_STI[35] <- 0.12 #0.11
+result_cluster_trait_lda_1$var_SSI[35] <- 0.02 #0.02
+result_cluster_trait_lda_1$lda_qual[35] <- 89.47 #88.24
 
 result_cor_lda <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("Czech Republic",2),rep("Denmark",2),
                                      rep("Estonia",2),rep("Finland",2),rep("France",2),rep("Germany",2),
@@ -2799,21 +2857,27 @@ ggsave("output/hist1.png",
 
 # Map effect traits
 
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_fbi)) +
+europe_map_simpl$var_SFI_fbi2 <- europe_map_simpl$var_SFI_fbi
+europe_map_simpl$var_SFI_fbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_fbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SFI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
   geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = var_SFI_fbi)) +
   theme(legend.position = "none")
 
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_fbi)) +
+europe_map_simpl$var_SSI_fbi2 <- europe_map_simpl$var_SSI_fbi
+europe_map_simpl$var_SSI_fbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_fbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SSI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
   geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = var_SSI_fbi)) +
   theme(legend.position = "none")
 
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_fbi)) +
+europe_map_simpl$var_STI_fbi2 <- europe_map_simpl$var_STI_fbi
+europe_map_simpl$var_STI_fbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_fbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_STI_fbi & !is.na(europe_map_simpl$nb_species_fbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
@@ -2828,22 +2892,27 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = lda_qual.x)) +
   theme(legend.position = "none")
 
 
-
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_wbi)) +
+europe_map_simpl$var_SFI_wbi2 <- europe_map_simpl$var_SFI_wbi
+europe_map_simpl$var_SFI_wbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SFI_wbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SFI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
   geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = var_SFI_wbi)) +
   theme(legend.position = "none")
 
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_wbi)) +
+europe_map_simpl$var_SSI_wbi2 <- europe_map_simpl$var_SSI_wbi
+europe_map_simpl$var_SSI_wbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_SSI_wbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_SSI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
   geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = var_SSI_wbi)) +
   theme(legend.position = "none")
 
-ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_wbi)) +
+europe_map_simpl$var_STI_wbi2 <- europe_map_simpl$var_STI_wbi
+europe_map_simpl$var_STI_wbi2[1] <- 0.5
+ggplot() + geom_sf(data = europe_map_simpl, aes(fill = var_STI_wbi2)) +
   geom_sf(data = europe_map_simpl[which(is.na(europe_map_simpl$var_STI_wbi & !is.na(europe_map_simpl$nb_species_wbi))),], aes(fill = 0)) +
   scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
   theme_void() + coord_sf(datum = NA) + 
@@ -2870,12 +2939,23 @@ ggplot(dfa_fra_forest$trend_group2[dfa_fra_forest$trend_group2$group=="g1",], ae
   geom_ribbon(aes(ymin=Estimate-1.96*Std..Error,ymax=Estimate+1.96*Std..Error),alpha=0.2)+
   xlab(NULL) + 
   ylab(NULL) + 
+  scale_y_continuous(limits = c(-1,1)) +
   theme_modern() +theme(axis.text.x = element_blank(), axis.text.y = element_blank())
 
 ggsave("output/trend_fr_w1.png",
        dpi=300,
        width = 2, 
        height = 1.3
+)
+
+# Plot group biplot
+
+dfa_fra_forest$plot_sp_group[[1]]
+
+ggsave("output/biplot_fr_w.png",
+       dpi=300,
+       width = 10, 
+       height = 10
 )
 
 # Plot map instead of correlation
@@ -3073,6 +3153,22 @@ country_ts_fbi$upper_CL_MSI <- 100*(country_ts_fbi$Index_c+1.96*country_ts_fbi$I
 country_ts_fbi$lower_CL_MSI[country_ts_fbi$Country=="Lithuania"] <- 100*(country_ts_fbi$Index_c[country_ts_fbi$Country=="Lithuania"]-0.1*country_ts_fbi$Index_SE_c[country_ts_fbi$Country=="Lithuania"])
 country_ts_fbi$upper_CL_MSI[country_ts_fbi$Country=="Lithuania"] <- 100*(country_ts_fbi$Index_c[country_ts_fbi$Country=="Lithuania"]+0.1*country_ts_fbi$Index_SE_c[country_ts_fbi$Country=="Lithuania"])
 
+# or
+country_ts_fbi <- rbind(data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Austria"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Belgium"),
+                        data.frame(dfa_cze_farm$trend_group2[dfa_cze_farm$trend_group2$group=="all",],Country="Czech Republic"),data.frame(dfa_den_farm$trend_group2[dfa_den_farm$trend_group2$group=="all",],Country="Denmark"),
+                        data.frame(dfa_est_farm$trend_group2[dfa_est_farm$trend_group2$group=="all",],Country="Estonia"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Finland"),
+                        data.frame(dfa_fra_farm$trend_group2[dfa_fra_farm$trend_group2$group=="all",],Country="France"),data.frame(dfa_ger_farm$trend_group2[dfa_ger_farm$trend_group2$group=="all",],Country="Germany"),
+                        data.frame(dfa_hun_farm$trend_group2[dfa_hun_farm$trend_group2$group=="all",],Country="Hungary"),data.frame(dfa_ire_farm$trend_group2[dfa_ire_farm$trend_group2$group=="all",],Country="Ireland"),
+                        data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Italy"),data.frame(dfa_lat_farm$trend_group2[dfa_lat_farm$trend_group2$group=="all",],Country="Latvia"),
+                        data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Lithuania"),data.frame(dfa_net_farm$trend_group2[dfa_net_farm$trend_group2$group=="all",],Country="Netherlands"),
+                        data.frame(dfa_nor_farm$trend_group2[dfa_nor_farm$trend_group2$group=="all",],Country="Norway"),data.frame(dfa_pol_farm$trend_group2[dfa_pol_farm$trend_group2$group=="all",],Country="Poland"),
+                        data.frame(dfa_spa_farm$trend_group2[dfa_spa_farm$trend_group2$group=="all",],Country="Spain"),data.frame(dfa_swe_farm$trend_group2[dfa_swe_farm$trend_group2$group=="all",],Country="Sweden"),
+                        data.frame(dfa_swi_farm$trend_group2[dfa_swi_farm$trend_group2$group=="all",],Country="Switzerland"),data.frame(dfa_uk_farm$trend_group2[dfa_uk_farm$trend_group2$group=="all",],Country="United Kingdom"))
+country_ts_fbi$MSI <- country_ts_fbi$Estimate
+country_ts_fbi$lower_CL_MSI <- (country_ts_fbi$Estimate-1.96*country_ts_fbi$Std..Error)
+country_ts_fbi$upper_CL_MSI <- (country_ts_fbi$Estimate+1.96*country_ts_fbi$Std..Error)
+
+
 data_pres_wide <- country_ts_fbi[,c("year","Country","MSI","lower_CL_MSI","upper_CL_MSI")]
 
 data_pres_long <- add_rownames(centroids, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
@@ -3083,19 +3179,48 @@ graph_farmland <- setNames(lapply(1:length(data_pres_long), function(i){
   bound <- max(test$MSI)-min(test$MSI)
   med_val <- bound/2+min(test$MSI)
   
-  ylimit <- c(min(na.omit(test$lower_CL_MSI)),max(na.omit(test$upper_CL_MSI)))
+  #ylimit <- c(55,130)#c(min(na.omit(test$lower_CL_MSI)),max(na.omit(test$upper_CL_MSI)))
+  
+  #test$lower_CL_MSI[which(test$lower_CL_MSI < 55)] <- 55
+  #test$upper_CL_MSI[which(test$upper_CL_MSI > 130)] <- 130
+  ylimit <- c(-0.4,0.4)
   
   ggplot(na.omit(test), aes(x=year, y=MSI, group=Country)) + 
-    geom_line(col="black" ,size=1, alpha=0.8)+
     xlab(NULL) + ylab(NULL) + 
-    geom_ribbon(aes(ymin=lower_CL_MSI,ymax=upper_CL_MSI),alpha=0.2) +
+    geom_ribbon(fill="#f5b041",aes(ymin=lower_CL_MSI,ymax=upper_CL_MSI),alpha=1) +
+    geom_line(col="black" ,size=0.5, alpha=0.7)+
     theme_modern() + theme_transparent()+
     scale_y_continuous(limits = ylimit, breaks= c((round(ylimit)[1]+1),(round(ylimit)[2]-1)))+#seq(0,200,by=25)) +
     scale_x_continuous(limits = c(2000,2017)) +
     theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
-          axis.title.y=element_blank(),axis.text.y=element_text(size=5),
+          axis.title.y=element_blank(),axis.text.y=element_blank(),#axis.text.y=element_text(size=5),
           axis.ticks.y=element_blank(),aspect.ratio = 2/3)
   }), names(data_pres_long))
+
+# with log and mean centred MSI
+data_pres_wide <- country_ts_fbi[,c("year","Country","MSI","sd_MSI")]
+
+data_pres_long <- add_rownames(centroids, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
+
+graph_farmland <- setNames(lapply(1:length(data_pres_long), function(i){
+  test <- data_pres_long[[i]]
+  
+  test <- na.omit(as.data.frame(test[,c("MSI","sd_MSI","year")]))
+  
+  rescale_value <- rescale_index(test$MSI,test$sd_MSI,min(test$year):max(test$year) %in% 2000:max(test$year))
+  
+  ylimit <- c(-1,1)
+  
+  ggplot(data.frame(t(rescale_value), year=test$year), aes(x=year, y=log_index)) + 
+    geom_line(col="black" ,size=1, alpha=0.8)+
+    geom_ribbon(aes(ymin=log_index-1.96*se_log,ymax=log_index+1.96*se_log),alpha=0.4) +
+    theme_modern()+ theme_transparent()+
+    scale_y_continuous(limits = c(-1,1)) +
+    scale_x_continuous(limits = c(2000,2017)) +
+    theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),axis.text.y=element_blank(),#axis.text.y=element_text(size=5),
+          axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+}), names(data_pres_long))
 
 
 # Reproject centroids of countries
@@ -3112,6 +3237,9 @@ centroid_b$lat2 <- as.data.frame(centroid_coord)[,2]
 centroid_b$lat2[centroid_b$Country=="Sweden"] <- centroid_b$lat2[centroid_b$Country=="Sweden"] - 400000
 centroid_b$lat2[centroid_b$Country=="United Kingdom"] <- centroid_b$lat2[centroid_b$Country=="United Kingdom"] - 300000
 centroid_b$lon2[centroid_b$Country=="Norway"] <- centroid_b$lon2[centroid_b$Country=="Norway"] - 200000
+
+centroid_b <- centroid_b[which(!(centroid_b$Country %in% c("Austria","Belgium","Lithuania","Italy","Finland"))),]
+graph_farmland$Austria <- graph_farmland$Belgium <- graph_farmland$Finland <- graph_farmland$Italy <- graph_farmland$Lithuania <-NULL
 
 centroid_farmland <- tibble(x=centroid_b$lon2,
                         y=centroid_b$lat2,
@@ -3187,6 +3315,22 @@ country_ts_wbi$MSI <- country_ts_wbi$Index_c*100
 country_ts_wbi$lower_CL_MSI <- 100*(country_ts_wbi$Index_c-1.96*country_ts_wbi$Index_SE_c)
 country_ts_wbi$upper_CL_MSI <- 100*(country_ts_wbi$Index_c+1.96*country_ts_wbi$Index_SE_c)
 
+# or
+country_ts_wbi <- rbind(data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Austria"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Belgium"),
+                        data.frame(dfa_cze_forest$trend_group2[dfa_cze_forest$trend_group2$group=="all",],Country="Czech Republic"),data.frame(dfa_den_forest$trend_group2[dfa_den_forest$trend_group2$group=="all",],Country="Denmark"),
+                        data.frame(dfa_est_forest$trend_group2[dfa_est_forest$trend_group2$group=="all",],Country="Estonia"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Finland"),
+                        data.frame(dfa_fra_forest$trend_group2[dfa_fra_forest$trend_group2$group=="all",],Country="France"),data.frame(dfa_ger_forest$trend_group2[dfa_ger_forest$trend_group2$group=="all",],Country="Germany"),
+                        data.frame(dfa_hun_forest$trend_group2[dfa_hun_forest$trend_group2$group=="all",],Country="Hungary"),
+                        data.frame(dfa_ita_forest$trend_group2[dfa_ita_forest$trend_group2$group=="all",],Country="Italy"),
+                        data.frame(dfa_net_forest$trend_group2[dfa_net_forest$trend_group2$group=="all",],Country="Netherlands"),
+                        data.frame(dfa_nor_forest$trend_group2[dfa_nor_forest$trend_group2$group=="all",],Country="Norway"),data.frame(dfa_pol_forest$trend_group2[dfa_pol_forest$trend_group2$group=="all",],Country="Poland"),
+                        data.frame(dfa_swe_forest$trend_group2[dfa_swe_forest$trend_group2$group=="all",],Country="Sweden"),
+                        data.frame(dfa_swi_forest$trend_group2[dfa_swi_forest$trend_group2$group=="all",],Country="Switzerland"),data.frame(dfa_uk_forest$trend_group2[dfa_uk_forest$trend_group2$group=="all",],Country="United Kingdom"))
+country_ts_wbi$MSI <- country_ts_wbi$Estimate
+country_ts_wbi$lower_CL_MSI <- (country_ts_wbi$Estimate-1.96*country_ts_wbi$Std..Error)
+country_ts_wbi$upper_CL_MSI <- (country_ts_wbi$Estimate+1.96*country_ts_wbi$Std..Error)
+
+
 
 data_pres_wide <- country_ts_wbi[,c("year","Country","MSI","lower_CL_MSI","upper_CL_MSI")]
 
@@ -3198,20 +3342,49 @@ graph_forest <- setNames(lapply(1:length(data_pres_long), function(i){
   bound <- max(test$MSI)-min(test$MSI)
   med_val <- bound/2+min(test$MSI)
   
-  ylimit <- c(min(test$lower_CL_MSI),max(test$upper_CL_MSI))
+  #ylimit <- c(40,180)#c(min(test$lower_CL_MSI),max(test$upper_CL_MSI))
+  
+  #test$lower_CL_MSI[which(test$lower_CL_MSI < 40)] <- 40
+  #test$upper_CL_MSI[which(test$upper_CL_MSI > 180)] <- 180
+  
+  ylimit <- c(-0.4,0.4)
   
   ggplot(na.omit(test), aes(x=year, y=MSI, group=Country)) + 
-    geom_line(col="black" ,size=1, alpha=0.8)+
     xlab(NULL) + ylab(NULL) + 
-    geom_ribbon(aes(ymin=lower_CL_MSI,ymax=upper_CL_MSI),alpha=0.2) +
+    geom_ribbon(fill="#52be80",aes(ymin=lower_CL_MSI,ymax=upper_CL_MSI),alpha=1) +
+    geom_line(col="black" ,size=0.5, alpha=0.7)+
     theme_modern() + theme_transparent()+
     scale_y_continuous(limits = ylimit, breaks=c((round(ylimit)[1]+1),(round(ylimit)[2]-1)))+#seq(0,200,by=25)) +
     scale_x_continuous(limits = c(2000,2017)) +
     theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
-          axis.title.y=element_blank(),axis.text.y=element_text(size=5),
+          axis.title.y=element_blank(),axis.text.y=element_blank(),#element_text(size=5),
           axis.ticks.y=element_blank(),aspect.ratio = 2/3)
 }), names(data_pres_long))
 
+# with log and mean centred MSI
+data_pres_wide <- country_ts_wbi[,c("year","Country","MSI","sd_MSI")]
+
+data_pres_long <- add_rownames(centroids_w, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
+
+graph_forest <- setNames(lapply(1:length(data_pres_long), function(i){
+  test <- data_pres_long[[i]]
+  
+  test <- na.omit(as.data.frame(test[,c("MSI","sd_MSI","year")]))
+  
+  rescale_value <- rescale_index(test$MSI,test$sd_MSI,min(test$year):max(test$year) %in% 2000:max(test$year))
+  
+  ylimit <- c(-1,1)
+  
+  ggplot(data.frame(t(rescale_value), year=test$year), aes(x=year, y=log_index)) + 
+    geom_line(col="black" ,size=1, alpha=0.8)+
+    geom_ribbon(aes(ymin=log_index-1.96*se_log,ymax=log_index+1.96*se_log),alpha=0.4) +
+    theme_modern()+ theme_transparent()+
+    scale_y_continuous(limits = c(-1,1)) +
+    scale_x_continuous(limits = c(2000,2017)) +
+    theme(plot.margin=unit(c(0,0,0,0),"mm"),axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),axis.text.y=element_blank(),#axis.text.y=element_text(size=5),
+          axis.ticks.y=element_blank(),aspect.ratio = 2/3)
+}), names(data_pres_long))
 
 # Reproject centroids of countries
 
@@ -3227,6 +3400,9 @@ centroid_w2$lat2 <- as.data.frame(centroid_coord)[,2]
 centroid_w2$lat2[centroid_w2$Country=="Sweden"] <- centroid_w2$lat2[centroid_w2$Country=="Sweden"] - 400000
 centroid_w2$lat2[centroid_w2$Country=="United Kingdom"] <- centroid_w2$lat2[centroid_w2$Country=="United Kingdom"] - 300000
 centroid_w2$lon2[centroid_w2$Country=="Norway"] <- centroid_w2$lon2[centroid_w2$Country=="Norway"] - 200000
+
+centroid_w2 <- centroid_w2[which(!(centroid_w2$Country %in% c("Austria","Belgium","Finland"))),]
+graph_forest$Austria <- graph_forest$Belgium <- graph_forest$Finland <- NULL
 
 
 centroid_forest <- tibble(x=centroid_w2$lon2,
