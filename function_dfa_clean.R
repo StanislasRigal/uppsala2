@@ -563,15 +563,20 @@ plot_group_boot <- function(nb_group, # Number of clusters
                                  year=sort(rep(c(min_year:(nT+min_year-1)), (nb_group+1))),
                                  sdrep[grepl("x_pred2",row.names(sdrep)),])
   
-  outlier_cluster <- paste0("g",names(which(table(kmeans_res[[1]]$group)==1)))
-  
-  if(length(outlier_cluster) == 1){
-    if(outlier_cluster != "g"){
-      data_trend_group2 <- data_trend_group2[which(data_trend_group2$group != outlier_cluster),]
+  if(ncol(Z_hat)>1){
+    outlier_cluster <- paste0("g",names(which(table(kmeans_res[[1]]$group)==1)))
+    
+    if(length(outlier_cluster) == 1){
+      if(outlier_cluster != "g"){
+        data_trend_group2 <- data_trend_group2[which(data_trend_group2$group != outlier_cluster),]
+      }
+    }else{
+      data_trend_group2 <- data_trend_group2[which(!(data_trend_group2$group %in% outlier_cluster)),]
     }
   }else{
-    data_trend_group2 <- data_trend_group2[which(!(data_trend_group2$group %in% outlier_cluster)),]
+    data_trend_group2 <- data_trend_group2[which(data_trend_group2$group=="all"),]
   }
+  
   
   # Plot time-series of barycentres
   
@@ -625,164 +630,170 @@ plot_group_boot <- function(nb_group, # Number of clusters
   }), levels(as.factor(data_trend_group2$group)))
   
   
-  # Combine data for PCA centres
-  
-  mat_tr_rot <- t(solve(varimax(Z_hat)$rotmat) %*% x_hat)
+  if(ncol(Z_hat)>1){
     
-  ts_pca <- apply(pca_centre[[1]], 2, function(x){mat_tr_rot %*% matrix(x)})
-  min_y_graph3 <- min(apply(ts_pca, 2, min))
-  max_y_graph3 <- max(apply(ts_pca, 2, max))
-  
-  graph3 <- setNames(lapply(1:4, function(i){
-    test <- data.frame(Index=ts_pca[,i], year=1:length(ts_pca[,i]))
-    ggplot(test, aes(x=year, y=Index)) +
-      geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
-      theme_modern() + 
-      ggimage::theme_transparent() +
-      ylim(c(min_y_graph3,max_y_graph3)) +
-      theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
-            axis.title = element_blank(),
-            axis.text = element_blank(),
-            axis.text.x = element_blank())
-    }), paste0("pca centre ", 1:4))
-  
-  if(length(kmeans_res[[3]])>2){
-    ts_pca2 <- apply(pca_centre[[2]], 2, function(x){mat_tr_rot %*% matrix(x)})
-    min_y_graph32 <- min(apply(ts_pca2, 2, min))
-    max_y_graph32 <- max(apply(ts_pca2, 2, max))
+    # Combine data for PCA centres
     
-    graph32 <- setNames(lapply(1:4, function(i){
-      test <- data.frame(Index=ts_pca2[,i], year=1:length(ts_pca2[,i]))
+    mat_tr_rot <- t(solve(varimax(Z_hat)$rotmat) %*% x_hat)
+    
+    ts_pca <- apply(pca_centre[[1]], 2, function(x){mat_tr_rot %*% matrix(x)})
+    min_y_graph3 <- min(apply(ts_pca, 2, min))
+    max_y_graph3 <- max(apply(ts_pca, 2, max))
+    
+    graph3 <- setNames(lapply(1:4, function(i){
+      test <- data.frame(Index=ts_pca[,i], year=1:length(ts_pca[,i]))
       ggplot(test, aes(x=year, y=Index)) +
         geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
         theme_modern() + 
         ggimage::theme_transparent() +
-        ylim(c(min_y_graph32,max_y_graph32)) +
+        ylim(c(min_y_graph3,max_y_graph3)) +
         theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
               axis.title = element_blank(),
               axis.text = element_blank(),
               axis.text.x = element_blank())
     }), paste0("pca centre ", 1:4))
     
-    ts_pca3 <- apply(pca_centre[[3]], 2, function(x){mat_tr_rot %*% matrix(x)})
-    min_y_graph33 <- min(apply(ts_pca3, 2, min))
-    max_y_graph33 <- max(apply(ts_pca3, 2, max))
+    if(length(kmeans_res[[3]])>2){
+      ts_pca2 <- apply(pca_centre[[2]], 2, function(x){mat_tr_rot %*% matrix(x)})
+      min_y_graph32 <- min(apply(ts_pca2, 2, min))
+      max_y_graph32 <- max(apply(ts_pca2, 2, max))
+      
+      graph32 <- setNames(lapply(1:4, function(i){
+        test <- data.frame(Index=ts_pca2[,i], year=1:length(ts_pca2[,i]))
+        ggplot(test, aes(x=year, y=Index)) +
+          geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
+          theme_modern() + 
+          ggimage::theme_transparent() +
+          ylim(c(min_y_graph32,max_y_graph32)) +
+          theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
+                axis.title = element_blank(),
+                axis.text = element_blank(),
+                axis.text.x = element_blank())
+      }), paste0("pca centre ", 1:4))
+      
+      ts_pca3 <- apply(pca_centre[[3]], 2, function(x){mat_tr_rot %*% matrix(x)})
+      min_y_graph33 <- min(apply(ts_pca3, 2, min))
+      max_y_graph33 <- max(apply(ts_pca3, 2, max))
+      
+      graph33 <- setNames(lapply(1:4, function(i){
+        test <- data.frame(Index=ts_pca3[,i], year=1:length(ts_pca3[,i]))
+        ggplot(test, aes(x=year, y=Index)) +
+          geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
+          theme_modern() + 
+          ggimage::theme_transparent() +
+          ylim(c(min_y_graph33,max_y_graph33)) +
+          theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
+                axis.title = element_blank(),
+                axis.text = element_blank(),
+                axis.text.x = element_blank())
+      }), paste0("pca centre ", 1:4))
+    }
     
-    graph33 <- setNames(lapply(1:4, function(i){
-      test <- data.frame(Index=ts_pca3[,i], year=1:length(ts_pca3[,i]))
-      ggplot(test, aes(x=year, y=Index)) +
-        geom_line(size=1.5, alpha=0.4) + xlab(NULL) + ylab(NULL) +
-        theme_modern() + 
-        ggimage::theme_transparent() +
-        ylim(c(min_y_graph33,max_y_graph33)) +
-        theme(plot.margin=unit(c(0,0,0,0),"mm"),aspect.ratio = 2/3,
-              axis.title = element_blank(),
-              axis.text = element_blank(),
-              axis.text.x = element_blank())
-    }), paste0("pca centre ", 1:4))
-  }
-  
-  
-  # Plot species cluster in the first factorial plane
-  
-  res_to_plot <- kmeans_res[[1]]
-  res_to_plot$group2 <- res_to_plot$group
-  res_to_plot$group2 <- as.factor(res_to_plot$group2)
-  
-  # Add some space between species name and dot
-  width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
-  
-  # Species latin name in italic
-  res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
-  
-  pca_centre_data <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
-                                       0,max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
-                                       min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0,
-                                       max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0),nrow=2))
-  
-  pca_centre_data2 <- tibble(x=pca_centre_data[,1],
-                           y=pca_centre_data[,2],
-                           width=0.08,
-                           pie = graph3)
-  
-  if(length(kmeans_res[[3]])>2){
     
-    pca_centre_datab <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
-                                         0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+    # Plot species cluster in the first factorial plane
+    
+    res_to_plot <- kmeans_res[[1]]
+    res_to_plot$group2 <- res_to_plot$group
+    res_to_plot$group2 <- as.factor(res_to_plot$group2)
+    
+    # Add some space between species name and dot
+    width_nudge <- (max(res_to_plot$PC1)-min(res_to_plot$PC1))/50
+    
+    # Species latin name in italic
+    res_to_plot$name_long2 <- paste0("italic('",res_to_plot$name_long,"')")
+    
+    pca_centre_data <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
+                                         0,max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,
                                          min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0,
                                          max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0),nrow=2))
     
-    pca_centre_data2b <- tibble(x=pca_centre_datab[,1],
-                               y=pca_centre_datab[,2],
+    pca_centre_data2 <- tibble(x=pca_centre_data[,1],
+                               y=pca_centre_data[,2],
                                width=0.08,
-                               pie = graph32)
+                               pie = graph3)
+    
+    if(length(kmeans_res[[3]])>2){
+      
+      pca_centre_datab <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                            0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                            min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0,
+                                            max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/8,0),nrow=2))
+      
+      pca_centre_data2b <- tibble(x=pca_centre_datab[,1],
+                                  y=pca_centre_datab[,2],
+                                  width=0.08,
+                                  pie = graph32)
+      
+      
+      pca_centre_datac <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                            0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
+                                            min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0,
+                                            max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0),nrow=2))
+      
+      pca_centre_data2c <- tibble(x=pca_centre_datac[,1],
+                                  y=pca_centre_datac[,2],
+                                  width=0.04,
+                                  pie = graph33)
+    }
     
     
-    pca_centre_datac <- t(matrix(data = c(0,min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
-                                          0,max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/8,
-                                          min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0,
-                                          max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/8,0),nrow=2))
-    
-    pca_centre_data2c <- tibble(x=pca_centre_datac[,1],
-                                y=pca_centre_datac[,2],
-                                width=0.04,
-                                pie = graph33)
-  }
-  
-  
-  final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
-    geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
-    geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
-    geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15) +
-    ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2) +
-    theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
-    ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
-    xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
-           max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5))+
-    ylim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
-           max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
-    theme(legend.position='none')
-  
-  if(length(kmeans_res[[3]])>2){
-    
-    final_plot2 <- ggplot(res_to_plot, aes(PC1,PC3)) +
+    final_plot <- ggplot(res_to_plot, aes(PC1,PC2)) +
       geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
       geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
-      geom_point(data=centroids,aes(x=PC1,y=PC3), shape=15) +
-      ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2b) +
+      geom_point(data=centroids,aes(x=PC1,y=PC2), shape=15) +
+      ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2) +
       theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
-      ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
+      ylab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
       xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
              max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5))+
-      ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
-             max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
+      ylim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
+             max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
       theme(legend.position='none')
     
-    final_plot3 <- ggplot(res_to_plot, aes(PC2,PC3)) +
-      geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
-      geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
-      geom_point(data=centroids,aes(x=PC2,y=PC3), shape=15) +
-      ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2c) +
-      theme_modern() + xlab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
-      ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
-      xlim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
-             max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
-      ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
-             max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
-      theme(legend.position='none')
+    if(length(kmeans_res[[3]])>2){
+      
+      final_plot2 <- ggplot(res_to_plot, aes(PC1,PC3)) +
+        geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+        geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+        geom_point(data=centroids,aes(x=PC1,y=PC3), shape=15) +
+        ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2b) +
+        theme_modern() + xlab(paste0("PC1 (",round(kmeans_res[[3]][1]*100,1)," %)")) +
+        ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
+        xlim(c(min(kmeans_res[[1]]$PC1)-(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5,
+               max(kmeans_res[[1]]$PC1)+(max(kmeans_res[[1]]$PC1)-min(kmeans_res[[1]]$PC1))/5))+
+        ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
+               max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
+        theme(legend.position='none')
+      
+      final_plot3 <- ggplot(res_to_plot, aes(PC2,PC3)) +
+        geom_point(aes(colour=group2, size=(1-uncert),alpha=uncert)) + 
+        geom_text_repel(label=res_to_plot$name_long2, nudge_x = width_nudge, nudge_y = width_nudge, parse = TRUE, max.overlaps = 30) +
+        geom_point(data=centroids,aes(x=PC2,y=PC3), shape=15) +
+        ggimage::geom_subview(aes(x=x, y=y, subview=pie, width=width, height=width), data=pca_centre_data2c) +
+        theme_modern() + xlab(paste0("PC2 (",round(kmeans_res[[3]][2]*100,1)," %)")) +
+        ylab(paste0("PC3 (",round(kmeans_res[[3]][3]*100,1)," %)")) +
+        xlim(c(min(kmeans_res[[1]]$PC2)-(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5,
+               max(kmeans_res[[1]]$PC2)+(max(kmeans_res[[1]]$PC2)-min(kmeans_res[[1]]$PC2))/5))+
+        ylim(c(min(kmeans_res[[1]]$PC3)-(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5,
+               max(kmeans_res[[1]]$PC3)+(max(kmeans_res[[1]]$PC3)-min(kmeans_res[[1]]$PC3))/5))+
+        theme(legend.position='none')
+      
+    }else{
+      final_plot2 <- final_plot3 <- NA
+    }
+    
+    final_plot_list <- list(final_plot, final_plot2, final_plot3)
     
   }else{
-    final_plot2 <- final_plot3 <- NA
+    final_plot_list <- NA
   }
-  
-  final_plot_list <- list(final_plot, final_plot2, final_plot3)
-  
+    
   return(list(final_plot_list = final_plot_list, # Plot of species clusters
               graph = graph, # Plot of time-series of cluster barycentres 
               data_trend_group = data_trend_group, # Data of time-series of cluster barycentres 
               graph2 = graph2, # Plot of time-series of cluster barycentres from sdRep
               data_trend_group2 = data_trend_group2 # Data of time-series of cluster barycentres from sdRep
-              ))
+  ))
 }
 
 ## 4) Core function running the DFA and find the best number of latent trends
@@ -1152,9 +1163,16 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
     }
     
   }else{
-    group_dfa <- 1
+    group_dfa <- list(
+      kmeans_res = list(1,1,1),
+      centroids = data.frame(group=1,PC1=0,PC2=0),
+      stability_cluster_final=1,
+      mean_dist_clust = data.frame(mean_dist=NA),
+      pca_centre_list = list(data.frame(1),NA,NA),
+      myPCA=NA
+    )
     
-    Z_pred_from_kmeans <- matrix(rep(0, 10 * nfac), ncol = nfac)
+    Z_pred_from_kmeans <- matrix(rep(1, 10 * nfac), ncol = nfac)
     W_from_kmeans <- rbind(1/nrow(data_ts), rep(0, nrow(data_ts)))
   }
   
@@ -1431,12 +1449,25 @@ make_dfa <- function(data_ts, # Dataset of time series (species in row, year in 
   }
   
   if(!is.list(group_dfa)){
-    plot_sp_group_all <- NA
-    plot_sp_group <- NA
-    plot_group_ts <- NA
-    trend_group <- NA
-    plot_group_ts2 <- NA
-    trend_group2 <- NA
+    plot_sp_group_all <- plot_group_boot(nb_group = 1,
+                                         centroids = group_dfa[[2]],
+                                         kmeans_res = group_dfa[[1]],
+                                         sdrep = sdRep, nT = nT,
+                                         min_year = min_year,
+                                         stability_cluster_final = group_dfa[[3]], 
+                                         mean_dist_clust = group_dfa[[4]],
+                                         pca_centre = group_dfa[[5]],
+                                         Z_hat = Z_hat,
+                                         x_hat = x_hat,
+                                         data_ts = data_ts,
+                                         data_ts_se = data_ts_se,
+                                         data_to_plot_sp = data_to_plot_sp,
+                                         species_name_ordre = species_name_ordre)
+    plot_sp_group <- plot_sp_group_all$final_plot_list
+    plot_group_ts <- plot_sp_group_all$graph
+    trend_group <- plot_sp_group_all$data_trend_group
+    plot_group_ts2 <- plot_sp_group_all$graph2
+    trend_group2 <- plot_sp_group_all$data_trend_group2
   }
   
   return(list(data_to_plot_sp = data_to_plot_sp, # Data on species time-series and fit

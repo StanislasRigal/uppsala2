@@ -3154,13 +3154,13 @@ country_ts_fbi$lower_CL_MSI[country_ts_fbi$Country=="Lithuania"] <- 100*(country
 country_ts_fbi$upper_CL_MSI[country_ts_fbi$Country=="Lithuania"] <- 100*(country_ts_fbi$Index_c[country_ts_fbi$Country=="Lithuania"]+0.1*country_ts_fbi$Index_SE_c[country_ts_fbi$Country=="Lithuania"])
 
 # or
-country_ts_fbi <- rbind(data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Austria"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Belgium"),
+country_ts_fbi <- rbind(data.frame(dfa_aus_farm$trend_group2[dfa_aus_farm$trend_group2$group=="all",],Country="Austria"),data.frame(dfa_bel_farm$trend_group2[dfa_bel_farm$trend_group2$group=="all",],Country="Belgium"),
                         data.frame(dfa_cze_farm$trend_group2[dfa_cze_farm$trend_group2$group=="all",],Country="Czech Republic"),data.frame(dfa_den_farm$trend_group2[dfa_den_farm$trend_group2$group=="all",],Country="Denmark"),
-                        data.frame(dfa_est_farm$trend_group2[dfa_est_farm$trend_group2$group=="all",],Country="Estonia"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Finland"),
+                        data.frame(dfa_est_farm$trend_group2[dfa_est_farm$trend_group2$group=="all",],Country="Estonia"),data.frame(dfa_fin_farm$trend_group2[dfa_fin_farm$trend_group2$group=="all",],Country="Finland"),
                         data.frame(dfa_fra_farm$trend_group2[dfa_fra_farm$trend_group2$group=="all",],Country="France"),data.frame(dfa_ger_farm$trend_group2[dfa_ger_farm$trend_group2$group=="all",],Country="Germany"),
                         data.frame(dfa_hun_farm$trend_group2[dfa_hun_farm$trend_group2$group=="all",],Country="Hungary"),data.frame(dfa_ire_farm$trend_group2[dfa_ire_farm$trend_group2$group=="all",],Country="Ireland"),
-                        data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Italy"),data.frame(dfa_lat_farm$trend_group2[dfa_lat_farm$trend_group2$group=="all",],Country="Latvia"),
-                        data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Lithuania"),data.frame(dfa_net_farm$trend_group2[dfa_net_farm$trend_group2$group=="all",],Country="Netherlands"),
+                        data.frame(dfa_ita_farm$trend_group2[dfa_ita_farm$trend_group2$group=="all",],Country="Italy"),data.frame(dfa_lat_farm$trend_group2[dfa_lat_farm$trend_group2$group=="all",],Country="Latvia"),
+                        data.frame(dfa_lit_farm$trend_group2[dfa_lit_farm$trend_group2$group=="all",],Country="Lithuania"),data.frame(dfa_net_farm$trend_group2[dfa_net_farm$trend_group2$group=="all",],Country="Netherlands"),
                         data.frame(dfa_nor_farm$trend_group2[dfa_nor_farm$trend_group2$group=="all",],Country="Norway"),data.frame(dfa_pol_farm$trend_group2[dfa_pol_farm$trend_group2$group=="all",],Country="Poland"),
                         data.frame(dfa_spa_farm$trend_group2[dfa_spa_farm$trend_group2$group=="all",],Country="Spain"),data.frame(dfa_swe_farm$trend_group2[dfa_swe_farm$trend_group2$group=="all",],Country="Sweden"),
                         data.frame(dfa_swi_farm$trend_group2[dfa_swi_farm$trend_group2$group=="all",],Country="Switzerland"),data.frame(dfa_uk_farm$trend_group2[dfa_uk_farm$trend_group2$group=="all",],Country="United Kingdom"))
@@ -3171,7 +3171,7 @@ country_ts_fbi$upper_CL_MSI <- (country_ts_fbi$Estimate+1.96*country_ts_fbi$Std.
 
 data_pres_wide <- country_ts_fbi[,c("year","Country","MSI","lower_CL_MSI","upper_CL_MSI")]
 
-data_pres_long <- add_rownames(centroids, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
+data_pres_long <- tibble::rownames_to_column(centroids, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
 
 graph_farmland <- setNames(lapply(1:length(data_pres_long), function(i){
   test <- data_pres_long[[i]]
@@ -3238,8 +3238,8 @@ centroid_b$lat2[centroid_b$Country=="Sweden"] <- centroid_b$lat2[centroid_b$Coun
 centroid_b$lat2[centroid_b$Country=="United Kingdom"] <- centroid_b$lat2[centroid_b$Country=="United Kingdom"] - 300000
 centroid_b$lon2[centroid_b$Country=="Norway"] <- centroid_b$lon2[centroid_b$Country=="Norway"] - 200000
 
-centroid_b <- centroid_b[which(!(centroid_b$Country %in% c("Austria","Belgium","Lithuania","Italy","Finland"))),]
-graph_farmland$Austria <- graph_farmland$Belgium <- graph_farmland$Finland <- graph_farmland$Italy <- graph_farmland$Lithuania <-NULL
+#centroid_b <- centroid_b[which(!(centroid_b$Country %in% c("Austria","Belgium","Lithuania","Italy","Finland"))),]
+#graph_farmland$Austria <- graph_farmland$Belgium <- graph_farmland$Finland <- graph_farmland$Italy <- graph_farmland$Lithuania <-NULL
 
 centroid_farmland <- tibble(x=centroid_b$lon2,
                         y=centroid_b$lat2,
@@ -3316,9 +3316,9 @@ country_ts_wbi$lower_CL_MSI <- 100*(country_ts_wbi$Index_c-1.96*country_ts_wbi$I
 country_ts_wbi$upper_CL_MSI <- 100*(country_ts_wbi$Index_c+1.96*country_ts_wbi$Index_SE_c)
 
 # or
-country_ts_wbi <- rbind(data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Austria"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Belgium"),
+country_ts_wbi <- rbind(data.frame(dfa_aus_forest$trend_group2[dfa_aus_forest$trend_group2$group=="all",],Country="Austria"),data.frame(dfa_bel_forest$trend_group2[dfa_bel_forest$trend_group2$group=="all",],Country="Belgium"),
                         data.frame(dfa_cze_forest$trend_group2[dfa_cze_forest$trend_group2$group=="all",],Country="Czech Republic"),data.frame(dfa_den_forest$trend_group2[dfa_den_forest$trend_group2$group=="all",],Country="Denmark"),
-                        data.frame(dfa_est_forest$trend_group2[dfa_est_forest$trend_group2$group=="all",],Country="Estonia"),data.frame(group=NA,year=2000:2017,Estimate=NA, Std..Error=NA,Country="Finland"),
+                        data.frame(dfa_est_forest$trend_group2[dfa_est_forest$trend_group2$group=="all",],Country="Estonia"),data.frame(dfa_fin_forest$trend_group2[dfa_fin_forest$trend_group2$group=="all",],Country="Finland"),
                         data.frame(dfa_fra_forest$trend_group2[dfa_fra_forest$trend_group2$group=="all",],Country="France"),data.frame(dfa_ger_forest$trend_group2[dfa_ger_forest$trend_group2$group=="all",],Country="Germany"),
                         data.frame(dfa_hun_forest$trend_group2[dfa_hun_forest$trend_group2$group=="all",],Country="Hungary"),
                         data.frame(dfa_ita_forest$trend_group2[dfa_ita_forest$trend_group2$group=="all",],Country="Italy"),
@@ -3334,7 +3334,7 @@ country_ts_wbi$upper_CL_MSI <- (country_ts_wbi$Estimate+1.96*country_ts_wbi$Std.
 
 data_pres_wide <- country_ts_wbi[,c("year","Country","MSI","lower_CL_MSI","upper_CL_MSI")]
 
-data_pres_long <- add_rownames(centroids_w, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
+data_pres_long <- tibble::rownames_to_column(centroids_w, "Country") %>% left_join(data_pres_wide) %>% split(., .$Country)
 
 graph_forest <- setNames(lapply(1:length(data_pres_long), function(i){
   test <- data_pres_long[[i]]
@@ -3401,8 +3401,8 @@ centroid_w2$lat2[centroid_w2$Country=="Sweden"] <- centroid_w2$lat2[centroid_w2$
 centroid_w2$lat2[centroid_w2$Country=="United Kingdom"] <- centroid_w2$lat2[centroid_w2$Country=="United Kingdom"] - 300000
 centroid_w2$lon2[centroid_w2$Country=="Norway"] <- centroid_w2$lon2[centroid_w2$Country=="Norway"] - 200000
 
-centroid_w2 <- centroid_w2[which(!(centroid_w2$Country %in% c("Austria","Belgium","Finland"))),]
-graph_forest$Austria <- graph_forest$Belgium <- graph_forest$Finland <- NULL
+#centroid_w2 <- centroid_w2[which(!(centroid_w2$Country %in% c("Austria","Belgium","Finland"))),]
+#graph_forest$Austria <- graph_forest$Belgium <- graph_forest$Finland <- NULL
 
 
 centroid_forest <- tibble(x=centroid_w2$lon2,
