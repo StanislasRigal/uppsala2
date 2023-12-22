@@ -1507,8 +1507,16 @@ cluster_trait_lda <- function(data_dfa,
   result_cor$Nb_cluster <- Nb_cluster <- 1
   result_cor$Nb_outlier <- Nb_outlier <- 0
   
+  result_var <- data.frame(var_sfi = NA,
+                           var_sti = NA,
+                           var_ssi = NA)
   
-  if(is.list(data_dfa$group)){
+  result_mean <- data.frame(mean_sfi = NA,
+                            mean_sti = NA,
+                            mean_ssi = NA)
+  
+  
+  if(length(list_dfa[[i]]$group$stability_cluster_final)>1){
     
     result_cor$Nb_species <- ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
     
@@ -1542,13 +1550,21 @@ cluster_trait_lda <- function(data_dfa,
                   data_mod <- data_mod[which(data_mod$group != names(which(table(pca_init_load$group)==1))),]
         }
         
+        result_var <- data.frame(var_sfi = var(data_mod$SFI.y, na.rm = TRUE),
+                                 var_sti = var(data_mod$STI, na.rm = TRUE),
+                                 var_ssi = var(data_mod$SSI, na.rm = TRUE))
+        
+        result_mean <- data.frame(mean_sfi = mean(data_mod$SFI.y, na.rm = TRUE),
+                                 mean_sti = mean(data_mod$STI, na.rm = TRUE),
+                                 mean_ssi = mean(data_mod$SSI, na.rm = TRUE))
+        
         data_mod[,c("SFI.y","STI","SSI")] <- scale(data_mod[,c("SFI.y","STI","SSI")]) 
         
         lda <- LDA(group ~ SFI.y + STI + SSI, data = data_mod, missing = missing_opt)
       }
     }
   }
-  return(list(result_cor,lda))
+  return(list(result_cor,lda, result_var, result_mean))
 }
 
 
@@ -1628,7 +1644,7 @@ cluster_trait <- function(data_dfa,
                                  mean_STI_56 = NA, sd_STI_56 = NA, pvalue_STI_56 = NA, Q025_STI_56 = NA, Q975_STI_56 = NA
   )
   
-  if(is.list(data_dfa$group)){
+  if(length(list_dfa[[i]]$group$stability_cluster_final)>1){
    
     ny <- length(unique(data_dfa$data_to_plot_sp$code_sp))
     

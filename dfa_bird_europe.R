@@ -2449,7 +2449,7 @@ index_lin_rel <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("C
 for(i in 1:length(list_dfa)){
   sdrep <- list_dfa[[i]]$sdRep
   nb_group <- 1
-  if(is.list(list_dfa[[i]]$group)){
+  if(length(list_dfa[[i]]$group$stability_cluster_final)>1){
     nb_group <- length(unique(list_dfa[[i]]$group$kmeans_res[[1]]$group))
   }
   test <- data.frame(group=rep(c("all",paste0("g",1:nb_group)),length(unique(list_dfa[[i]]$data_to_plot_sp$Year))),
@@ -2520,9 +2520,14 @@ for(i in 2:length(list_dfa)){
 
 ### Impute NA
 
+i <- 1
+
 result_cluster_trait_lda_na_imput <- cluster_trait_lda(dfa_aus_farm,SXI, missing_opt = "Imputation (replace missing values with estimates)")
 result_cluster_trait_lda_na_imput_1 <- result_cluster_trait_lda_na_imput[[1]]
 result_cluster_trait_lda_na_imput_2 <- list(result_cluster_trait_lda_na_imput[[2]])
+result_cluster_trait_lda_na_imput_3 <- result_cluster_trait_lda_na_imput[[3]]
+result_cluster_trait_lda_na_imput_4 <- result_cluster_trait_lda_na_imput[[4]]
+
 
 for(i in 2:length(list_dfa)){
   
@@ -2532,9 +2537,13 @@ for(i in 2:length(list_dfa)){
   result_cluster_trait_lda_na_imput_tempo <- cluster_trait_lda(data_dfa,SXI, missing_opt = "Imputation (replace missing values with estimates)")
   result_cluster_trait_lda_na_imput_1 <- rbind(result_cluster_trait_lda_na_imput_1,result_cluster_trait_lda_na_imput_tempo[[1]])
   result_cluster_trait_lda_na_imput_2[[i]] <- result_cluster_trait_lda_na_imput_tempo[[2]]
+  result_cluster_trait_lda_na_imput_3 <- rbind(result_cluster_trait_lda_na_imput_3,result_cluster_trait_lda_na_imput_tempo[[3]])
+  result_cluster_trait_lda_na_imput_4 <- rbind(result_cluster_trait_lda_na_imput_4,result_cluster_trait_lda_na_imput_tempo[[4]])
+  
 }
 
-result_cluster_trait_lda_1 <- result_cluster_trait_lda_na_imput_1
+#result_cluster_trait_lda_1 <- result_cluster_trait_lda_na_imput_1
+result_cluster_trait_lda_1 <- cbind(result_cluster_trait_lda_na_imput_1,result_cluster_trait_lda_na_imput_3,result_cluster_trait_lda_na_imput_4)
 
 result_cluster_trait_lda_1$var_SFI <- NA
 result_cluster_trait_lda_1$var_STI <- NA
@@ -2570,7 +2579,12 @@ result_cluster_trait_lda_1$var_SFI[14] <- 0.04#0.04
 result_cluster_trait_lda_1$var_STI[14] <- 0.04#0.03
 result_cluster_trait_lda_1$var_SSI[14] <- 0.01#0.02
 result_cluster_trait_lda_1$lda_qual[14] <- 52.17#54.55
-  
+
+result_cluster_trait_lda_1$var_SFI[16] <- 0.01
+result_cluster_trait_lda_1$var_STI[16] <- 0.00
+result_cluster_trait_lda_1$var_SSI[16] <- 0.10
+result_cluster_trait_lda_1$lda_qual[16] <- 67.65
+
 result_cluster_trait_lda_1$var_SFI[18] <- 0.06
 result_cluster_trait_lda_1$var_STI[18] <- 0.02
 result_cluster_trait_lda_1$var_SSI[18] <- 0.32
@@ -2644,7 +2658,248 @@ result_cor_lda <- data.frame(Country = c(rep("Austria",2),rep("Belgium",2),rep("
                          Index = c(rep(c("FBI","WBI"),9),"FBI",rep(c("FBI","WBI"),1),"FBI","FBI",rep(c("FBI","WBI"),3),
                                    "FBI",rep(c("FBI","WBI"),3)),
                          result_cluster_trait_lda_1)
+
+# compare with national global change 
+
+pressure_EU <- read.csv2("/home/stanislas/Documents/Gitlab_dossier/Drivers_European_bird_decline/output/data_PNAS_press.csv", header=T)
+pressure_EU$Pressure <- c("hic","hic_t","temp","temp_t","tree","tree_t","urb","urb_t")
+pressure_EU <- melt(pressure_EU, id.vars = "Pressure")
+pressure_EU <- dcast(pressure_EU, variable ~ Pressure, value.var = "value")
+pressure_EU$variable <- as.character(pressure_EU$variable)
+pressure_EU$variable[which(pressure_EU$variable=="Czech.Republic")] <- "Czech Republic"
+pressure_EU$variable[which(pressure_EU$variable=="United.Kingdom")] <- "United Kingdom"
+names(pressure_EU)[1] <- "Country"
+
+result_cor_lda_pressure <- merge(result_cor_lda,as.data.frame(pressure_EU), by="Country", all.x=T)
+result_cor_lda_pressure$hic <- as.numeric(result_cor_lda_pressure$hic)
+result_cor_lda_pressure$hic_t <- as.numeric(result_cor_lda_pressure$hic_t)
+result_cor_lda_pressure$temp <- as.numeric(result_cor_lda_pressure$temp)
+result_cor_lda_pressure$temp_t <- as.numeric(result_cor_lda_pressure$temp_t)
+result_cor_lda_pressure$tree <- as.numeric(result_cor_lda_pressure$tree)
+result_cor_lda_pressure$tree_t <- as.numeric(result_cor_lda_pressure$tree_t)
+result_cor_lda_pressure$urb <- as.numeric(result_cor_lda_pressure$urb)
+result_cor_lda_pressure$urb_t <- as.numeric(result_cor_lda_pressure$urb_t)
+
+
+result_cor_lda_pressure_scale <- as.data.frame(scale(result_cor_lda_pressure[,c("var_SFI","var_SSI","var_STI","hic","hic_t","temp","temp_t","tree","tree_t","urb","urb_t")]))
+result_cor_lda_pressure_scale$Index <- result_cor_lda_pressure$Index
+result_cor_lda_pressure_scale$Nb_lat_trend <- result_cor_lda_pressure$Nb_lat_trend
+result_cor_lda_pressure_scale$Nb_cluster <- result_cor_lda_pressure$Nb_cluster
+result_cor_lda_pressure_scale$Nb_species <- result_cor_lda_pressure$Nb_species
+
+library(nlme)
+l_mod1 <- lme(Nb_cluster~hic+hic_t + temp_t + urb + urb_t + tree + tree_t+Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_cluster","Nb_species","hic","hic_t","temp_t","tree","tree_t","urb","urb_t")]))
+Anova(l_mod1)
+
+l_mod1 <- lme(Nb_lat_trend~hic+hic_t + temp_t + urb + urb_t + tree + tree_t+Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_lat_trend","Nb_species","hic","hic_t","temp_t","tree","tree_t","urb","urb_t")]))
+Anova(l_mod1)
+
+
+l_mod1 <- lme(var_STI~hic + temp_t + urb + urb_t + tree + tree_t, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_STI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_STI~hic + urb_t, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_STI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+# hic + et urb_t -
+
+l_mod1 <- lme(var_SFI~hic + temp_t + urb + urb_t + tree + tree_t, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_SFI~ urb_t + tree, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+# urb_t - et tree +
+
+l_mod1 <- lme(var_SSI~hic + temp_t + urb + urb_t + tree + tree_t, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SSI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_SSI~ temp_t, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SSI","hic","temp_t","tree","tree_t","urb","urb_t")]))
+# temp_t +
+
+cor_df <- round(cor(result_cor_lda_pressure_scale, use="pairwise.complete.obs"), 2)
+cor_df_fbi <- round(cor(result_cor_lda_pressure[which(result_cor_lda_pressure$Index=="FBI"),c("var_SFI","var_SSI","var_STI","hic","hic_t","temp","temp_t","tree","tree_t","urb","urb_t")],use="pairwise.complete.obs"), 2)
+cor_df_wbi <- round(cor(result_cor_lda_pressure[which(result_cor_lda_pressure$Index=="WBI"),c("var_SFI","var_SSI","var_STI","hic","hic_t","temp","temp_t","tree","tree_t","urb","urb_t")],use="pairwise.complete.obs"), 2)
+
+# compare with national pool species traits
+
+result_cor_lda_pressure_scale <- as.data.frame(scale(result_cor_lda_pressure[,c("var_SFI","var_SSI","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+result_cor_lda_pressure_scale$Index <- result_cor_lda_pressure$Index
+result_cor_lda_pressure_scale$Nb_lat_trend <- result_cor_lda_pressure$Nb_lat_trend
+result_cor_lda_pressure_scale$Nb_cluster <- result_cor_lda_pressure$Nb_cluster
+result_cor_lda_pressure_scale$Nb_species <- result_cor_lda_pressure$Nb_species
+
+l_mod1 <- lme(var_SFI~var_sfi+mean_sfi, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","var_sfi","mean_sfi")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_SFI~var_sfi+mean_sfi, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","var_sfi","mean_sfi")]))
+summary(l_mod2)
+
+l_mod1 <- lme(var_SSI~var_ssi+mean_ssi, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SSI","var_ssi","mean_ssi")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_SSI~1, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_SSI","var_ssi","mean_ssi")]))
+summary(l_mod2)
+
+l_mod1 <- lme(var_STI~var_sti+mean_sti, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_STI","var_sti","mean_sti")]))
+Anova(l_mod1)
+l_mod2 <- lme(var_STI~1, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","var_STI","var_sti","mean_sti")]))
+summary(l_mod2)
+
+l_mod1 <- lme(Nb_lat_trend~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_species","Nb_lat_trend","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+Anova(l_mod1)
+l_mod2 <- lme(Nb_lat_trend~mean_sti+var_ssi+mean_ssi+Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_species","Nb_lat_trend","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+summary(l_mod2)
+
+l_mod1 <- lme(Nb_cluster~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_species","Nb_cluster","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+Anova(l_mod1)
+l_mod2 <- lme(Nb_cluster~Nb_species, random=~1|Index, method="ML", data=na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_species","Nb_cluster","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+summary(l_mod2)
+
+
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","var_sfi","mean_sfi")])
+l_mod1 <- lme(var_SFI~var_sfi+mean_sfi, random=~1+var_sfi+mean_sfi|Index, method="ML", data=dd)
+Anova(l_mod1)
+summary(l_mod1)
+
+pframe <- with(dd,expand.grid(var_sfi=seq(min(dd$var_sfi),max(dd$var_sfi),length=10),
+                      mean_sfi=seq(min(dd$mean_sfi),max(dd$mean_sfi),length=10),
+                      Index=unique(dd$Index)))
+pframe$var_SFI <- predict(l_mod1,newdata=pframe,level=1)
+
+ggplot(dd,aes(mean_sfi,var_SFI,colour=Index))+
+  geom_point()+
+  geom_line(data=pframe)
+
+
+# idem model with lmer for plotting
+
+library(lme4)
+
+result_cor_lda_pressure_scale <- as.data.frame(scale(result_cor_lda_pressure[,c("var_SFI","var_SSI","var_STI","var_sti","mean_sti","var_sfi","mean_sfi","var_ssi","mean_ssi")]))
+result_cor_lda_pressure_scale$Index <- result_cor_lda_pressure$Index
+result_cor_lda_pressure_scale$Index[which(result_cor_lda_pressure_scale$Index=="FBI")] <- "FaBI"
+result_cor_lda_pressure_scale$Index[which(result_cor_lda_pressure_scale$Index=="WBI")] <- "FoBI"
+result_cor_lda_pressure_scale$Nb_lat_trend <- result_cor_lda_pressure$Nb_lat_trend
+result_cor_lda_pressure_scale$Nb_cluster <- result_cor_lda_pressure$Nb_cluster
+result_cor_lda_pressure_scale$Nb_species <- result_cor_lda_pressure$Nb_species
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","var_SFI","var_sfi","mean_sfi")])
+
+l_mod1 <- lmer(var_SFI~1+var_sfi+mean_sfi+(1+var_sfi+mean_sfi|Index), data=dd, REML = FALSE)
+summary(l_mod1)
+l_mod1_REML <- lmer(var_SFI~1+var_sfi+mean_sfi+(1+var_sfi+mean_sfi|Index), data=dd, REML = TRUE)
+summary(l_mod1_REML)
+
+dd$pred <- predict(l_mod1)
+
+ggplot(dd,aes(x=var_sfi,y=pred,colour=Index, group=Index)) + 
+  geom_point() + scale_color_manual(values=c("FaBI"="#f5b041","FoBI"="#52be80")) + 
+  geom_abline(slope = summary(l_mod1)$coef[2,1], intercept = summary(l_mod1)$coef[1,1]) +
+  geom_curve(x=-2, xend=2,
+               y = (summary(l_mod1)$coef[2,1] + 1.96*summary(l_mod1)$coef[2,2])*(-2) + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+               yend = (summary(l_mod1)$coef[2,1] - 1.96*summary(l_mod1)$coef[2,2])*2 + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             curvature=-0.1, col="black",linetype="dashed") +
+  geom_curve(x=-2, xend=2,
+               y = (summary(l_mod1)$coef[2,1] - 1.96*summary(l_mod1)$coef[2,2])*(-2) + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+               yend = (summary(l_mod1)$coef[2,1] + 1.96*summary(l_mod1)$coef[2,2])*2 + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+               curvature=0.1, col="black",linetype="dashed") +
+  #geom_abline(slope = summary(l_mod1)$coef[2,1] + ranef(l_mod1_REML)$Index[1,2], intercept = summary(l_mod1)$coef[1,1] + ranef(l_mod1_REML)$Index[1,1], col="#f5b041") +
+  #geom_abline(slope = summary(l_mod1)$coef[2,1] + ranef(l_mod1_REML)$Index[2,2], intercept = summary(l_mod1)$coef[1,1] + ranef(l_mod1_REML)$Index[2,1], col="#52be80") +
+  theme(legend.position="bottom", legend.direction = "horizontal") +
+  xlab("Variance of SFI in index species pool") + ylab("Variance between clusters expalined by SFI") +
+  theme_modern()
+
+ggsave("output/var_SFI_var_sfi.png",
+       dpi=300,
+       width = 5, 
+       height = 5 
+)
+
+ggplot(dd,aes(x=mean_sfi,y=pred,colour=Index, group=Index)) + 
+  geom_point() + scale_color_manual(values=c("FaBI"="#f5b041","FoBI"="#52be80")) + 
+  geom_abline(slope = summary(l_mod1)$coef[3,1], intercept = summary(l_mod1)$coef[1,1]) +
+  geom_curve(x=-2, xend=2,
+             y = (summary(l_mod1)$coef[3,1] + 1.96*summary(l_mod1)$coef[3,2])*(-2) + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[3,1] - 1.96*summary(l_mod1)$coef[3,2])*2 + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             curvature=-0.1, col="black",linetype="dashed") +
+  geom_curve(x=-2, xend=2,
+             y = (summary(l_mod1)$coef[3,1] - 1.96*summary(l_mod1)$coef[3,2])*(-2) + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[3,1] + 1.96*summary(l_mod1)$coef[3,2])*2 + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             curvature=0.1, col="black",linetype="dashed") +
+  #geom_abline(slope = summary(l_mod1)$coef[3,1] + ranef(l_mod1_REML)$Index[1,3], intercept = summary(l_mod1)$coef[1,1] + ranef(l_mod1_REML)$Index[1,1], col="#f5b041") +
+  #geom_abline(slope = summary(l_mod1)$coef[3,1] + ranef(l_mod1_REML)$Index[2,3], intercept = summary(l_mod1)$coef[1,1] + ranef(l_mod1_REML)$Index[2,1], col="#52be80") +
+  theme(legend.position="bottom", legend.direction = "horizontal") +
+  xlab("Mean of SFI in index species pool") + ylab("Variance between clusters expalined by SFI") +
+  theme_modern()
+
+ggsave("output/var_SFI_mean_sfi.png",
+       dpi=300,
+       width = 5, 
+       height = 5 
+)
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","var_SSI","var_ssi","mean_ssi")])
+l_mod1 <- lmer(var_SSI~1+var_ssi+mean_ssi+(1+var_ssi+mean_ssi|Index), data=dd, REML = FALSE)
+summary(l_mod1)
+l_mod1_REML <- lmer(var_SSI~1+var_ssi+mean_ssi+(1+var_ssi+mean_ssi|Index), data=dd, REML = TRUE)
+summary(l_mod1_REML)
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","var_STI","var_sti","mean_sti")])
+l_mod1 <- lmer(var_STI~1+var_sti+mean_sti+(1+var_sti+mean_sti|Index), data=dd, REML = FALSE)
+summary(l_mod1)
+l_mod1_REML <- lmer(var_STI~1+var_sti+mean_sti+(1+var_sti+mean_sti|Index), data=dd, REML = TRUE)
+summary(l_mod1_REML)
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_lat_trend","Nb_species","var_sti","mean_sti","var_ssi","mean_ssi","var_sfi","mean_sfi")])
+l_mod1 <- lmer(Nb_lat_trend~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species+(1|Index), data=dd, REML = FALSE)
+summary(l_mod1)
+l_mod1_REML <- lmer(Nb_lat_trend~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species+(1|Index), data=dd, REML = TRUE)
+summary(l_mod1_REML)
+
+dd$pred <- predict(l_mod1)
+
+ggplot(dd,aes(x=var_ssi,y=pred,colour=Index, group=Index)) + 
+  geom_point() + scale_color_manual(values=c("FaBI"="#f5b041","FoBI"="#52be80")) + 
+  geom_abline(slope = summary(l_mod1)$coef[4,1], intercept = summary(l_mod1)$coef[1,1]) +
+  geom_curve(x=-3, xend=2,
+             y = (summary(l_mod1)$coef[4,1] + 1.96*summary(l_mod1)$coef[4,2])*(-3) + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[4,1] - 1.96*summary(l_mod1)$coef[4,2])*2 + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             curvature=-0.1, col="black",linetype="dashed") +
+  geom_curve(x=-3, xend=2,
+             y = (summary(l_mod1)$coef[4,1] - 1.96*summary(l_mod1)$coef[4,2])*(-3) + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[4,1] + 1.96*summary(l_mod1)$coef[4,2])*2 + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             curvature=0.1, col="black",linetype="dashed") +
+  theme(legend.position="bottom", legend.direction = "horizontal") +
+  xlab("Variance of SSI in index species pool") + ylab("Number of latent trends in index") +
+  theme_modern()
+
+ggsave("output/nb_lat_trend_var_ssi.png",
+       dpi=300,
+       width = 5, 
+       height = 5 
+)
+
+ggplot(dd,aes(x=mean_sti,y=pred,colour=Index, group=Index)) + 
+  geom_point() + scale_color_manual(values=c("FaBI"="#f5b041","FoBI"="#52be80")) + 
+  geom_abline(slope = summary(l_mod1)$coef[3,1], intercept = summary(l_mod1)$coef[1,1]) +
+  geom_curve(x=-3, xend=4,
+             y = (summary(l_mod1)$coef[3,1] + 1.96*summary(l_mod1)$coef[3,2])*(-3) + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[3,1] - 1.96*summary(l_mod1)$coef[3,2])*4 + summary(l_mod1)$coef[1,1] - 1.96*summary(l_mod1)$coef[1,2],
+             curvature=-0.2, col="black",linetype="dashed") +
+  geom_curve(x=-3, xend=4,
+             y = (summary(l_mod1)$coef[3,1] - 1.96*summary(l_mod1)$coef[3,2])*(-3) + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             yend = (summary(l_mod1)$coef[3,1] + 1.96*summary(l_mod1)$coef[3,2])*4 + summary(l_mod1)$coef[1,1] + 1.96*summary(l_mod1)$coef[1,2],
+             curvature=0.2, col="black",linetype="dashed") +
+  theme(legend.position="bottom", legend.direction = "horizontal") +
+  xlab("Mean of STI in index species pool") + ylab("Number of latent trends in index") +
+  theme_modern()
+
+ggsave("output/nb_lat_trend_mean_sti.png",
+       dpi=300,
+       width = 5, 
+       height = 5 
+)
   
+
+dd <- na.omit(result_cor_lda_pressure_scale[,c("Index","Nb_cluster","Nb_species","var_sti","mean_sti","var_ssi","mean_ssi","var_sfi","mean_sfi")])
+l_mod1 <- lmer(Nb_cluster~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species+(1|Index), data=dd, REML = FALSE)
+summary(l_mod1)
+l_mod1_REML <- lmer(Nb_cluster~var_sti+mean_sti+var_ssi+mean_ssi+var_sfi+mean_sfi+Nb_species+(1|Index), data=dd, REML = TRUE)
+summary(l_mod1_REML)
+
 
 # univariate analyses
 
@@ -2795,7 +3050,7 @@ europe_map_simpl <- ms_simplify(europe_map, keep = 0.3,
 ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_fbi)) + scale_fill_gradient(low="white",high="#f5b041",na.value="lightgrey")+
   theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_fbi)),], aes(label = paste0(nb_lat_trend_fbi,"(",nb_species_fbi,")"))) +
   theme(legend.position = "none")
-ggplot(result_cor[result_cor$Index=="FBI",], aes(x=Nb_lat_trend, fill=Index)) +
+ggplot(result_cor_lda[result_cor_lda$Index=="FBI",], aes(x=Nb_lat_trend, fill=Index)) +
   geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#f5b041")) + theme_modern() + 
   #xlab("Number of latent trends") + ylab("Number of countries") + theme(legend.position = "none")
@@ -2804,7 +3059,7 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_fbi)) + scale_
   theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[which(europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi>0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland"))),], aes(label = paste0(nb_cluster_fbi,"(",nb_outlier_fbi,")"))) +
   geom_sf_text(data = europe_map_simpl[which(europe_map_simpl$nb_cluster_fbi>0 & europe_map_simpl$nb_outlier_fbi==0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland"))),], aes(label = as.character(nb_cluster_fbi))) +
   theme(legend.position = "none")
-ggplot(result_cor[result_cor$Index=="FBI",], aes(x=Nb_cluster, fill=Index)) +
+ggplot(result_cor_lda[result_cor_lda$Index=="FBI",], aes(x=Nb_cluster, fill=Index)) +
   geom_histogram(color="#e9ecef", alpha=0.6, bins=3) +
   scale_fill_manual(values=c("#f5b041")) + theme_modern() + 
   #xlab("Number of clusters") + ylab("Number of countries") + theme(legend.position = "none")
@@ -2819,7 +3074,7 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_anticor_cluster_fbi2))
 ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_lat_trend_wbi)) + scale_fill_gradient(low="white",high="#52be80",na.value="lightgrey")+
   theme_void()+ coord_sf(datum = NA) +geom_sf_text(data = europe_map_simpl[which(!(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")) & !is.na(europe_map_simpl$nb_species_wbi)),], aes(label = paste0(nb_lat_trend_wbi,"(",nb_species_wbi,")"))) +
   theme(legend.position = "none")
-ggplot(result_cor[result_cor$Index=="WBI",], aes(x=Nb_lat_trend, fill=Index)) +
+ggplot(result_cor_lda[result_cor_lda$Index=="WBI",], aes(x=Nb_lat_trend, fill=Index)) +
   geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#52be80")) + theme_modern() + 
   #xlab("Number of latent trends") + ylab("Number of countries") + theme(legend.position = "none")
@@ -2828,7 +3083,7 @@ ggplot() + geom_sf(data = europe_map_simpl, aes(fill = nb_cluster_wbi)) + scale_
   theme_void()+ coord_sf(datum = NA) + geom_sf_text(data = europe_map_simpl[europe_map_simpl$nb_cluster_wbi>0 & europe_map_simpl$nb_outlier_wbi>0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = paste0(nb_cluster_wbi,"(",nb_outlier_wbi,")"))) +
   geom_sf_text(data = europe_map_simpl[europe_map_simpl$nb_cluster_wbi>0 & europe_map_simpl$nb_outlier_wbi==0 & !(europe_map_simpl$admin %in% c("Isle of Man","Faroe Islands","Aland")),], aes(label = as.character(nb_cluster_wbi))) +
   theme(legend.position = "none")
-ggplot(result_cor[result_cor$Index=="WBI",], aes(x=Nb_cluster, fill=Index)) +
+ggplot(result_cor_lda[result_cor_lda$Index=="WBI",], aes(x=Nb_cluster, fill=Index)) +
   geom_histogram(color="#e9ecef", alpha=0.6, bins=5) +
   scale_fill_manual(values=c("#52be80")) + theme_modern() + 
   #xlab("Number of clusters") + ylab("Number of countries") + theme(legend.position = "none")
